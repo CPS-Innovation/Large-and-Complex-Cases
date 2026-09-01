@@ -15,11 +15,11 @@ public class DurableEntityClientStub : DurableEntityClient
 
     public List<EntityInstanceId> SignalledEntityIds { get; } = new();
     public List<(EntityInstanceId Id, string Operation, object? Input)> SignalledCalls { get; } = new();
-    
+
     public EntityInstanceId? SignaledEntityId { get; private set; }
     public string? SignaledOperationName { get; private set; }
     public bool SignalEntityAsyncCalled { get; private set; } = false;
-    
+
     public Func<EntityInstanceId, string, object?, SignalEntityOptions?, CancellationToken, Task>? OnSignalEntityAsync { get; set; }
 
     public override Task<CleanEntityStorageResult> CleanEntityStorageAsync(
@@ -95,12 +95,12 @@ public class DurableEntityClientStub : DurableEntityClient
         SignaledOperationName = operationName;
         SignalledEntityIds.Add(id);
         SignalledCalls.Add((id, operationName, input));
-        
+
         if (OnSignalEntityAsync != null)
         {
             return OnSignalEntityAsync(id, operationName, input, options, cancellation);
         }
-        
+
         return Task.CompletedTask;
     }
 }

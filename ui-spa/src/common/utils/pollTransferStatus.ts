@@ -14,7 +14,7 @@ const MID_INTERVAL_MS = 3000;
  * instead of polling forever (e.g. an orchestration that failed before the
  * entity was created, or a stale/incorrect transfer ID).
  */
-const NOT_FOUND_GRACE_MS = 30000;
+const NOT_FOUND_GRACE_MS = 90000; // 90s
 
 /**
  * Polls the transfer status endpoint with adaptive backoff until a terminal state is reached

@@ -1,8 +1,8 @@
+using System.Reflection;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Abstractions;
 using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Attributes;
 using Microsoft.OpenApi.Models;
-using System.Reflection;
 
 namespace CPS.ComplexCases.Common.OpenApi.Filters
 {

@@ -1,10 +1,4 @@
 using System.Net;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Azure.Functions.Worker;
-using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Attributes;
-using Microsoft.Extensions.Logging;
-using Microsoft.OpenApi.Models;
 using CPS.ComplexCases.ActivityLog.Services;
 using CPS.ComplexCases.API.Constants;
 using CPS.ComplexCases.API.Context;
@@ -13,9 +7,16 @@ using CPS.ComplexCases.API.Validators.Requests;
 using CPS.ComplexCases.Common.Attributes;
 using CPS.ComplexCases.Common.Handlers;
 using CPS.ComplexCases.Common.Helpers;
+using CPS.ComplexCases.Common.Services;
 using CPS.ComplexCases.NetApp.Client;
 using CPS.ComplexCases.NetApp.Factories;
 using CPS.ComplexCases.NetApp.Models.Requests;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Azure.Functions.Worker;
+using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Attributes;
+using Microsoft.Extensions.Logging;
+using Microsoft.OpenApi.Models;
 
 namespace CPS.ComplexCases.API.Functions;
 
@@ -24,7 +25,8 @@ public class CreateNetAppFolder(ILogger<CreateNetAppFolder> logger,
     INetAppArgFactory netAppArgFactory,
     IActivityLogService activityLogService,
     IRequestValidator requestValidator,
-    ISecurityGroupMetadataService securityGroupMetadataService,
+    IUserBucketAccessService userBucketAccessService,
+    ICaseMetadataService caseMetadataService,
     IInitializationHandler initializationHandler)
 {
     private readonly ILogger<CreateNetAppFolder> _logger = logger;
@@ -32,7 +34,8 @@ public class CreateNetAppFolder(ILogger<CreateNetAppFolder> logger,
     private readonly INetAppArgFactory _netAppArgFactory = netAppArgFactory;
     private readonly IActivityLogService _activityLogService = activityLogService;
     private readonly IRequestValidator _requestValidator = requestValidator;
-    private readonly ISecurityGroupMetadataService _securityGroupMetadataService = securityGroupMetadataService;
+    private readonly IUserBucketAccessService _userBucketAccessService = userBucketAccessService;
+    private readonly ICaseMetadataService _caseMetadataService = caseMetadataService;
     private readonly IInitializationHandler _initializationHandler = initializationHandler;
 
     [Function(nameof(CreateNetAppFolder))]
@@ -59,8 +62,9 @@ public class CreateNetAppFolder(ILogger<CreateNetAppFolder> logger,
         var folderPath = createFolderRequest.Value.Path.TrimEnd('/');
         var caseId = createFolderRequest.Value.CaseId;
 
-        var securityGroups = await _securityGroupMetadataService.GetUserSecurityGroupsAsync(context.BearerToken);
-        var bucketName = securityGroups.First().BucketName;
+        var caseMetadata = await _caseMetadataService.GetCaseMetadataForCaseIdAsync(caseId);
+        var bucketName = (await _userBucketAccessService.ResolveBucketAsync(
+            context.BearerToken, caseMetadata?.NetappBucketName, null)).BucketName;
 
         var folderName = folderPath.Contains('/') ? folderPath[(folderPath.LastIndexOf('/') + 1)..] : folderPath;
 

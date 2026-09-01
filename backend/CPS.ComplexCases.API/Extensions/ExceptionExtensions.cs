@@ -5,61 +5,61 @@ namespace CPS.ComplexCases.API.Exceptions;
 
 public static class ExceptionExtensions
 {
-  public static string ToStringFullResponse(this Exception exception)
-  {
-    var sb = new StringBuilder();
-    try
+    public static string ToStringFullResponse(this Exception exception)
     {
-      var deployedFunctionName = Environment.GetEnvironmentVariable("WEBSITE_HOSTNAME");
-      sb.AppendLine($"Function: {deployedFunctionName}");
-    }
-    catch (Exception localException)
-    {
-      sb.AppendLine("Local failure appending function hostname: " + localException.ToString());
-    }
+        var sb = new StringBuilder();
+        try
+        {
+            var deployedFunctionName = Environment.GetEnvironmentVariable("WEBSITE_HOSTNAME");
+            sb.AppendLine($"Function: {deployedFunctionName}");
+        }
+        catch (Exception localException)
+        {
+            sb.AppendLine("Local failure appending function hostname: " + localException.ToString());
+        }
 
-    try
-    {
-      var assemblyVersion = Assembly
-        .GetExecutingAssembly()
-        .GetName()
-        .Version?.ToString() ?? "Unknown version";
+        try
+        {
+            var assemblyVersion = Assembly
+              .GetExecutingAssembly()
+              .GetName()
+              .Version?.ToString() ?? "Unknown version";
 
-      sb.AppendLine($"Version: {assemblyVersion}");
-    }
-    catch (Exception localException)
-    {
-      sb.AppendLine("Local failure appending assembly version number: " + localException.ToString());
-    }
+            sb.AppendLine($"Version: {assemblyVersion}");
+        }
+        catch (Exception localException)
+        {
+            sb.AppendLine("Local failure appending assembly version number: " + localException.ToString());
+        }
 
-    try
-    {
-      var informationalVersion = Assembly
-          .GetExecutingAssembly()
-          .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
-          ?.InformationalVersion;
+        try
+        {
+            var informationalVersion = Assembly
+                .GetExecutingAssembly()
+                .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
+                ?.InformationalVersion;
 
-      sb.AppendLine($"Informational Version: {informationalVersion}");
-    }
-    catch (Exception localException)
-    {
-      sb.AppendLine("Local failure appending assembly informational version number: " + localException.ToString());
-    }
+            sb.AppendLine($"Informational Version: {informationalVersion}");
+        }
+        catch (Exception localException)
+        {
+            sb.AppendLine("Local failure appending assembly informational version number: " + localException.ToString());
+        }
 
-    sb.Append(NestedMessage(exception));
+        sb.Append(NestedMessage(exception));
 
-    return sb.ToString();
-  }
-
-  private static string NestedMessage(Exception exception)
-  {
-    if (exception == null || exception.InnerException == null)
-    {
-      return string.Empty;
+        return sb.ToString();
     }
 
-    var innerExceptionMessage = NestedMessage(exception.InnerException);
+    private static string NestedMessage(Exception exception)
+    {
+        if (exception == null || exception.InnerException == null)
+        {
+            return string.Empty;
+        }
 
-    return $"{exception.Message};\n{innerExceptionMessage}";
-  }
+        var innerExceptionMessage = NestedMessage(exception.InnerException);
+
+        return $"{exception.Message};\n{innerExceptionMessage}";
+    }
 }

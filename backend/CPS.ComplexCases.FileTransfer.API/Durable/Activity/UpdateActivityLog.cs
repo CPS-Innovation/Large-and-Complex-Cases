@@ -1,7 +1,3 @@
-using Microsoft.Azure.Functions.Worker;
-using Microsoft.DurableTask.Client;
-using Microsoft.DurableTask.Entities;
-using Microsoft.Extensions.Logging;
 using CPS.ComplexCases.ActivityLog.Enums;
 using CPS.ComplexCases.ActivityLog.Extensions;
 using CPS.ComplexCases.ActivityLog.Models;
@@ -13,6 +9,10 @@ using CPS.ComplexCases.FileTransfer.API.Durable.Helpers;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads.Domain;
 using CPS.ComplexCases.FileTransfer.API.Durable.State;
+using Microsoft.Azure.Functions.Worker;
+using Microsoft.DurableTask.Client;
+using Microsoft.DurableTask.Entities;
+using Microsoft.Extensions.Logging;
 
 namespace CPS.ComplexCases.FileTransfer.API.Durable.Activity;
 
@@ -80,6 +80,13 @@ public class UpdateActivityLog(IActivityLogService activityLogService, ILogger<U
             ErrorMessage = x.ErrorMessage
         }).ToList();
 
+        var skippedItems = entity.State.SkippedItems.Select(x => new FileTransferError
+        {
+            Path = x.SourcePath,
+            ErrorCode = "EmptyFileSkipped",
+            ErrorMessage = "Empty (0-byte) files cannot be uploaded to Egress and were skipped."
+        }).ToList();
+
         var sourcePath = entity.State.SourceRootFolderPath
             ?? Path.GetDirectoryName(entity.State.SourcePaths[0].FullFilePath)
             ?? entity.State.SourcePaths[0].Path;
@@ -116,6 +123,7 @@ public class UpdateActivityLog(IActivityLogService activityLogService, ILogger<U
             DestinationPath = entity.State.DestinationPath,
             Files = successfulItems,
             Errors = errorItems,
+            Skipped = skippedItems,
             DeletionErrors = deletionErrors,
             ExceptionMessage = payload.ExceptionMessage,
             StartTime = entity.State.StartedAt,

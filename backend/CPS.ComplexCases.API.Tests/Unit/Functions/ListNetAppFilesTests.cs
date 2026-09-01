@@ -1,16 +1,19 @@
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 using AutoFixture;
 using CPS.ComplexCases.API.Constants;
 using CPS.ComplexCases.API.Domain.Models;
+using CPS.ComplexCases.API.Exceptions;
 using CPS.ComplexCases.API.Functions;
 using CPS.ComplexCases.API.Services;
 using CPS.ComplexCases.API.Tests.Unit.Helpers;
 using CPS.ComplexCases.Common.Handlers;
+using CPS.ComplexCases.Common.Services;
+using CPS.ComplexCases.Data.Entities;
 using CPS.ComplexCases.NetApp.Client;
 using CPS.ComplexCases.NetApp.Factories;
 using CPS.ComplexCases.NetApp.Models.Args;
 using CPS.ComplexCases.NetApp.Models.Dto;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace CPS.ComplexCases.API.Tests.Unit.Functions;
@@ -20,7 +23,8 @@ public class ListNetAppFilesTests
     private readonly Mock<ILogger<ListNetAppFiles>> _loggerMock;
     private readonly Mock<INetAppClient> _netAppClientMock;
     private readonly Mock<INetAppArgFactory> _netAppArgFactoryMock;
-    private readonly Mock<ISecurityGroupMetadataService> _securityGroupMetadataServiceMock;
+    private readonly Mock<IUserBucketAccessService> _userBucketAccessServiceMock;
+    private readonly Mock<ICaseMetadataService> _caseMetadataServiceMock;
     private readonly Mock<IInitializationHandler> _initializationHandlerMock;
     private readonly ListNetAppFiles _function;
     private readonly Fixture _fixture;
@@ -35,7 +39,8 @@ public class ListNetAppFilesTests
         _loggerMock = new Mock<ILogger<ListNetAppFiles>>();
         _netAppClientMock = new Mock<INetAppClient>();
         _netAppArgFactoryMock = new Mock<INetAppArgFactory>();
-        _securityGroupMetadataServiceMock = new Mock<ISecurityGroupMetadataService>();
+        _userBucketAccessServiceMock = new Mock<IUserBucketAccessService>();
+        _caseMetadataServiceMock = new Mock<ICaseMetadataService>();
         _initializationHandlerMock = new Mock<IInitializationHandler>();
         _fixture = new Fixture();
 
@@ -45,23 +50,22 @@ public class ListNetAppFilesTests
         _testUsername = _fixture.Create<string>();
         _testCmsAuthValues = _fixture.Create<string>();
 
-        _securityGroupMetadataServiceMock
-                .Setup(s => s.GetUserSecurityGroupsAsync(It.IsAny<string>()))
-                .ReturnsAsync([
-                    new SecurityGroup
-                    {
-                        Id = _fixture.Create<Guid>(),
-                        BucketName = _testBucketName,
-                        VolumeUuid = _fixture.Create<Guid>(),
-                        DisplayName = "Test Security Group"
-                    }
-                ]);
+        _userBucketAccessServiceMock
+            .Setup(s => s.ResolveBucketAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>()))
+            .ReturnsAsync(new SecurityGroup
+            {
+                Id = _fixture.Create<Guid>(),
+                BucketName = _testBucketName,
+                VolumeUuid = _fixture.Create<Guid>(),
+                DisplayName = "Test Security Group"
+            });
 
         _function = new ListNetAppFiles(
             _loggerMock.Object,
             _netAppClientMock.Object,
             _netAppArgFactoryMock.Object,
-            _securityGroupMetadataServiceMock.Object,
+            _userBucketAccessServiceMock.Object,
+            _caseMetadataServiceMock.Object,
             _initializationHandlerMock.Object);
     }
 
@@ -152,5 +156,119 @@ public class ListNetAppFilesTests
         var result = await _function.Run(httpRequest, functionContext);
         // Assert
         Assert.IsType<BadRequestResult>(result);
+    }
+
+    [Fact]
+    public async Task Run_WhenCaseIdSupplied_ResolvesUsingPersistedBucket()
+    {
+        // Arrange
+        var caseId = 12345;
+        var persistedBucket = "manchester-bucket";
+
+        _caseMetadataServiceMock
+            .Setup(s => s.GetCaseMetadataForCaseIdAsync(caseId))
+            .ReturnsAsync(new CaseMetadata { CaseId = caseId, NetappBucketName = persistedBucket });
+
+        var queryParams = new Dictionary<string, string>
+        {
+            [InputParameters.Take] = "50",
+            [InputParameters.Path] = "/some/path",
+            [InputParameters.CaseId] = caseId.ToString()
+        };
+        var httpRequest = HttpRequestStubHelper.CreateHttpRequestWithQueryParameters(queryParams);
+
+        _netAppArgFactoryMock
+            .Setup(f => f.CreateListObjectsInBucketArg(
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<int>(), It.IsAny<string?>(), It.IsAny<bool>()))
+            .Returns(_fixture.Create<ListObjectsInBucketArg>());
+
+        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername, _testBearerToken);
+
+        // Act
+        await _function.Run(httpRequest, functionContext);
+
+        // Assert
+        _userBucketAccessServiceMock.Verify(
+            s => s.ResolveBucketAsync(_testBearerToken, persistedBucket, null), Times.Once);
+    }
+
+    [Fact]
+    public async Task Run_WhenNoCaseIdSupplied_FallsBackWithoutPersistedBucket()
+    {
+        // Arrange
+        var queryParams = new Dictionary<string, string>
+        {
+            [InputParameters.Take] = "50",
+            [InputParameters.Path] = "/some/path"
+        };
+        var httpRequest = HttpRequestStubHelper.CreateHttpRequestWithQueryParameters(queryParams);
+
+        _netAppArgFactoryMock
+            .Setup(f => f.CreateListObjectsInBucketArg(
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<int>(), It.IsAny<string?>(), It.IsAny<bool>()))
+            .Returns(_fixture.Create<ListObjectsInBucketArg>());
+
+        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername, _testBearerToken);
+
+        // Act
+        await _function.Run(httpRequest, functionContext);
+
+        // Assert
+        _userBucketAccessServiceMock.Verify(
+            s => s.ResolveBucketAsync(_testBearerToken, null, null), Times.Once);
+        _caseMetadataServiceMock.Verify(s => s.GetCaseMetadataForCaseIdAsync(It.IsAny<int>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Run_WhenBucketNameSupplied_PassesItThroughForValidation()
+    {
+        // Arrange
+        var requestedBucket = "manchester-bucket";
+
+        var queryParams = new Dictionary<string, string>
+        {
+            [InputParameters.Take] = "50",
+            [InputParameters.Path] = "/some/path",
+            [InputParameters.BucketName] = requestedBucket
+        };
+        var httpRequest = HttpRequestStubHelper.CreateHttpRequestWithQueryParameters(queryParams);
+
+        _netAppArgFactoryMock
+            .Setup(f => f.CreateListObjectsInBucketArg(
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<int>(), It.IsAny<string?>(), It.IsAny<bool>()))
+            .Returns(_fixture.Create<ListObjectsInBucketArg>());
+
+        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername, _testBearerToken);
+
+        // Act
+        await _function.Run(httpRequest, functionContext);
+
+        // Assert
+        _userBucketAccessServiceMock.Verify(
+            s => s.ResolveBucketAsync(_testBearerToken, null, requestedBucket), Times.Once);
+    }
+
+    [Fact]
+    public async Task Run_WhenUserNotEntitledToRequestedBucket_ThrowsMissingSecurityGroupException()
+    {
+        // Arrange
+        var queryParams = new Dictionary<string, string>
+        {
+            [InputParameters.Take] = "50",
+            [InputParameters.Path] = "/some/path",
+            [InputParameters.BucketName] = "not-entitled-bucket"
+        };
+
+        _userBucketAccessServiceMock
+            .Setup(s => s.ResolveBucketAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>()))
+            .ThrowsAsync(new MissingSecurityGroupException("User is not entitled to bucket 'not-entitled-bucket'."));
+
+        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername, _testBearerToken);
+
+        // Act & Assert — the exception middleware maps this to a 403
+        await Assert.ThrowsAsync<MissingSecurityGroupException>(() =>
+            _function.Run(HttpRequestStubHelper.CreateHttpRequestWithQueryParameters(queryParams), functionContext));
+
+        _netAppClientMock.Verify(c => c.ListObjectsInBucketAsync(It.IsAny<ListObjectsInBucketArg>()), Times.Never);
     }
 }

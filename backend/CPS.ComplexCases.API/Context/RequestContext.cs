@@ -31,4 +31,3 @@ public class RequestContext(Guid correlationId, string? cmsAuthValues, string? u
             ?? throw new CpsAuthenticationException("Bearer token missing in RequestContext");
     }
 }
-

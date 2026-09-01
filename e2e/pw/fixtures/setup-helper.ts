@@ -86,6 +86,7 @@ export async function setupTestData(
     const uploadId = await uploadFile(
       config.egressBaseUrl,
       egressToken,
+      config.egressServiceAccountAuth,
       workspaceId,
       fileSizeBytes,
       fileName,
@@ -93,20 +94,21 @@ export async function setupTestData(
     uploadIds.push(uploadId);
   }
 
-  console.log ("  Getting the uploaded file ID(s)...")
+  console.log("  Getting the uploaded file ID(s)...");
   const files = await Promise.all(
-    uploadIds.map(uploadId =>
+    uploadIds.map((uploadId) =>
       getUploadedFile(
         config.egressBaseUrl,
         egressToken,
+        config.egressServiceAccountAuth,
         workspaceId,
         uploadId,
         {
           timeoutMs: Math.max(30000, fileSizeMb * 15000),
-          retryDelay: Math.min(10000,Math.max(2000, fileSizeMb * 5)),
-        }
-      )
-    )
+          retryDelay: Math.min(10000, Math.max(2000, fileSizeMb * 5)),
+        },
+      ),
+    ),
   );
 
   console.log("=== Workspace Setup Complete ===\n");

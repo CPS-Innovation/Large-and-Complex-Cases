@@ -31,15 +31,15 @@ jobs:
       - task: UseNode@1
         displayName: "Use Node.js"
         inputs:
-          version: "20.x"
+          version: "24.x"
 
       - script: |
-          if command -v pwsh &> /dev/null; then 
+          if command -v pwsh &> /dev/null; then
             echo "PowerShell already installed. Skipping installation."
-          else 
+          else
             echo "Installing PowerShell..."
             bash '$(System.DefaultWorkingDirectory)/devops-pipelines/scripts/installPowershell.sh'
-            echo "Powershel version: $(pwsh -v)"
+            echo "PowerShell version: $(pwsh -v)"
           fi
         displayName: "Install PowerShell"
 
@@ -49,7 +49,7 @@ jobs:
           workingDirectory: "$(System.DefaultWorkingDirectory)/e2e/postman"
           filePath: "$(System.DefaultWorkingDirectory)/e2e/postman/Run-E2E-Tests.ps1"
           arguments: >
-            -SizeMB 7 
+            -SizeMB 7
             -StopOnFailure
         env:
           LCC_BASE_URL: $(LccApiBaseUrl)
@@ -94,5 +94,5 @@ jobs:
         condition: succeededOrFailed()
 
       - publish: "$(Build.ArtifactStagingDirectory)/html-reports"
-        artifact: "${{parameters.environment}}-NewmanReportsHTML"
+        artifact: "$(System.JobId)-NewmanReportsHTML-${{parameters.environment}}"
         condition: succeededOrFailed()

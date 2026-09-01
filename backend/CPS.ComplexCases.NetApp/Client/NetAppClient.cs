@@ -1,6 +1,4 @@
 using System.Net;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Amazon.S3;
 using Amazon.S3.Model;
 using CPS.ComplexCases.Common.Extensions;
@@ -12,8 +10,10 @@ using CPS.ComplexCases.NetApp.Models;
 using CPS.ComplexCases.NetApp.Models.Args;
 using CPS.ComplexCases.NetApp.Models.Dto;
 using CPS.ComplexCases.NetApp.Wrappers;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Polly;
-using Polly.Contrib.WaitAndRetry;
+using Polly.Retry;
 
 namespace CPS.ComplexCases.NetApp.Client;
 
@@ -367,10 +367,10 @@ public class NetAppClient(
 
     public async Task<UploadPartResponse?> UploadPartAsync(UploadPartArg arg)
     {
-        var retryPolicy = GetUploadPartRetryPolicy(arg.PartNumber, arg.ObjectKey);
+        var pipeline = GetUploadPartRetryPolicy(arg.PartNumber, arg.ObjectKey);
         try
         {
-            return await retryPolicy.ExecuteAsync(async () =>
+            return await pipeline.ExecuteAsync(async ct =>
             {
                 // Re-resolve the S3 client on every attempt so that a credential
                 // rotation triggered by a sibling task or another environment is picked up.
@@ -388,7 +388,7 @@ public class NetAppClient(
                     DisablePayloadSigning = true
                 };
                 return await s3Client.UploadPartAsync(request);
-            });
+            }, CancellationToken.None);
         }
         catch (AmazonS3Exception ex) when (ex.ErrorCode == S3ErrorCodes.AccessDenied)
         {
@@ -406,10 +406,10 @@ public class NetAppClient(
     public async Task<CompleteMultipartUploadResponse?> CompleteMultipartUploadAsync(CompleteMultipartUploadArg arg,
         CancellationToken cancellationToken = default)
     {
-        var retryPolicy = GetCompleteMultipartUploadRetryPolicy(arg.UploadId, arg.ObjectKey);
+        var pipeline = GetCompleteMultipartUploadRetryPolicy(arg.UploadId, arg.ObjectKey);
         try
         {
-            return await retryPolicy.ExecuteAsync(async ct =>
+            return await pipeline.ExecuteAsync(async ct =>
             {
                 var s3Client = await _s3ClientFactory.GetS3ClientAsync(arg.BearerToken);
                 return await s3Client.CompleteMultipartUploadAsync(
@@ -423,8 +423,8 @@ public class NetAppClient(
         catch (AmazonS3Exception ex)
         {
             _logger.LogError(ex,
-                "Failed to complete multipart upload {UploadId} for file {ObjectKey} after all retry attempts.",
-                arg.UploadId, arg.ObjectKey);
+                "Failed to complete multipart upload {UploadId} for file {ObjectKey} after all retry attempts. StatusCode={StatusCode}, ErrorCode={ErrorCode}",
+                arg.UploadId, arg.ObjectKey, ex.StatusCode, ex.ErrorCode);
             throw;
         }
     }
@@ -984,77 +984,107 @@ public class NetAppClient(
         return false;
     }
 
-    private Polly.Retry.AsyncRetryPolicy<DeleteObjectResponse> GetDeleteFileRetryPolicy(string objectKey,
-        string bucketName)
+    private ResiliencePipeline<DeleteObjectResponse> GetDeleteFileRetryPolicy(string objectKey, string bucketName)
     {
-        return Policy
-            .HandleResult<DeleteObjectResponse>(r => r.HttpStatusCode != HttpStatusCode.NoContent)
-            .WaitAndRetryAsync(
-                Backoff.DecorrelatedJitterBackoffV2(
-                    medianFirstRetryDelay: TimeSpan.FromSeconds(1),
-                    retryCount: 3),
-                onRetry: (outcome, timespan, retryCount, context) =>
+        return new ResiliencePipelineBuilder<DeleteObjectResponse>()
+            .AddRetry(new RetryStrategyOptions<DeleteObjectResponse>
+            {
+                MaxRetryAttempts = 3,
+                Delay = TimeSpan.FromSeconds(1),
+                BackoffType = DelayBackoffType.Exponential,
+                UseJitter = true,
+                ShouldHandle = static args =>
+                    ValueTask.FromResult(args.Outcome.Result?.HttpStatusCode != HttpStatusCode.NoContent),
+                OnRetry = args =>
                 {
                     _logger.LogWarning(
                         "Delete object retry attempt {RetryCount} for key {ObjectKey} in bucket {BucketName}. Status: {StatusCode}. Waiting {DelayMs}ms before next retry.",
-                        retryCount,
+                        args.AttemptNumber + 1,
                         objectKey,
                         bucketName,
-                        outcome.Result?.HttpStatusCode,
-                        timespan.TotalMilliseconds);
-                });
+                        args.Outcome.Result?.HttpStatusCode,
+                        args.RetryDelay.TotalMilliseconds);
+                    return ValueTask.CompletedTask;
+                }
+            })
+            .Build();
     }
 
-    private Polly.Retry.AsyncRetryPolicy<UploadPartResponse?> GetUploadPartRetryPolicy(int partNumber, string objectKey)
+    private ResiliencePipeline<UploadPartResponse?> GetUploadPartRetryPolicy(int partNumber, string objectKey)
     {
         // Retry when NetApp rejects the access key because credentials were rotated
         // by a concurrently running part upload or another environment sharing the same Key Vault.
         // On retry, InvalidateClientAsync + GetS3ClientAsync will force-regenerate fresh credentials.
-        return Policy
-            .HandleResult<UploadPartResponse?>(r => false)
-            .Or<AmazonS3Exception>(IsCredentialError)
-            .WaitAndRetryAsync(
-                retryCount: 2,
-                sleepDurationProvider: retryAttempt => TimeSpan.FromSeconds(retryAttempt * 3),
-                onRetryAsync: async (outcome, timespan, retryCount, context) =>
+        return new ResiliencePipelineBuilder<UploadPartResponse?>()
+            .AddRetry(new RetryStrategyOptions<UploadPartResponse?>
+            {
+                MaxRetryAttempts = 2,
+                Delay = TimeSpan.FromSeconds(3),
+                BackoffType = DelayBackoffType.Linear,
+                ShouldHandle = new PredicateBuilder<UploadPartResponse?>()
+                    .Handle<AmazonS3Exception>(IsCredentialError),
+                OnRetry = async args =>
                 {
-                    _logger.LogWarning(outcome.Exception,
+                    _logger.LogWarning(args.Outcome.Exception,
                         "Credential error uploading part {PartNumber} for {ObjectKey} - credentials likely rotated mid-transfer (StatusCode={StatusCode}, ErrorCode={ErrorCode}). Refreshing and retrying (attempt {RetryCount}/2). Waiting {DelayMs}ms.",
                         partNumber, objectKey,
-                        (outcome.Exception as AmazonS3Exception)?.StatusCode,
-                        (outcome.Exception as AmazonS3Exception)?.ErrorCode,
-                        retryCount, timespan.TotalMilliseconds);
+                        (args.Outcome.Exception as AmazonS3Exception)?.StatusCode,
+                        (args.Outcome.Exception as AmazonS3Exception)?.ErrorCode,
+                        args.AttemptNumber + 1,
+                        args.RetryDelay.TotalMilliseconds);
 
                     // Invalidate the cached client ONLY on retry (not the first attempt)
                     // so that GetS3ClientAsync regenerates credentials on the next call.
                     await _s3ClientFactory.InvalidateClientAsync();
-                });
+                }
+            })
+            .Build();
     }
 
-    private Polly.Retry.AsyncRetryPolicy GetCompleteMultipartUploadRetryPolicy(string uploadId, string objectKey)
+    private ResiliencePipeline<CompleteMultipartUploadResponse?> GetCompleteMultipartUploadRetryPolicy(
+        string uploadId, string objectKey)
     {
-        return Policy
-            .Handle<AmazonS3Exception>(ex => (int)ex.StatusCode >= 500
-                                             || ex.StatusCode == HttpStatusCode.RequestTimeout
-                                             || IsCredentialError(ex))
-            .WaitAndRetryAsync(
-                Backoff.DecorrelatedJitterBackoffV2(
-                    medianFirstRetryDelay: TimeSpan.FromSeconds(3),
-                    retryCount: 5),
-                onRetryAsync: async (exception, timespan, retryCount, context) =>
+        return new ResiliencePipelineBuilder<CompleteMultipartUploadResponse?>()
+            .AddRetry(new RetryStrategyOptions<CompleteMultipartUploadResponse?>
+            {
+                MaxRetryAttempts = 5,
+                Delay = TimeSpan.FromSeconds(3),
+                BackoffType = DelayBackoffType.Exponential,
+                UseJitter = true,
+                ShouldHandle = new PredicateBuilder<CompleteMultipartUploadResponse?>()
+                    .Handle<AmazonS3Exception>(IsRetryableCompleteMultipartUploadError),
+                OnRetry = async args =>
                 {
-                    _logger.LogWarning(exception,
-                        "CompleteMultipartUpload retry attempt {RetryCount} for upload {UploadId} ({ObjectKey}). Waiting {DelayMs}ms.",
-                        retryCount, uploadId, objectKey, timespan.TotalMilliseconds);
+                    var s3Exception = args.Outcome.Exception as AmazonS3Exception;
+                    _logger.LogWarning(args.Outcome.Exception,
+                        "CompleteMultipartUpload retry attempt {RetryCount} for upload {UploadId} ({ObjectKey}). StatusCode={StatusCode}, ErrorCode={ErrorCode}. Waiting {DelayMs}ms.",
+                        args.AttemptNumber + 1, uploadId, objectKey, s3Exception?.StatusCode, s3Exception?.ErrorCode,
+                        args.RetryDelay.TotalMilliseconds);
 
                     // Force credential regeneration on retry so the next attempt
                     // gets fresh keys from NetApp instead of reusing the dead cache.
-                    if (exception is AmazonS3Exception s3Ex && IsCredentialError(s3Ex))
+                    if (s3Exception != null && IsCredentialError(s3Exception))
                     {
                         await _s3ClientFactory.InvalidateClientAsync();
                     }
-                });
+                }
+            })
+            .Build();
     }
+
+    // Retry CompleteMultipartUpload against the existing uploadId rather than restarting the
+    // whole multipart upload. Amazon S3 documents InternalError as retryable; NetApp's S3 API
+    // intermittently returns that error as HTTP 404 after every part has already uploaded.
+    // A genuine NoSuchUpload (upload completed or aborted) is not retried here.
+    private static bool IsRetryableCompleteMultipartUploadError(AmazonS3Exception ex) =>
+        (int)ex.StatusCode >= 500
+        || ex.StatusCode == HttpStatusCode.RequestTimeout
+        || IsCredentialError(ex)
+        || IsInternalError(ex);
+
+    private static bool IsInternalError(AmazonS3Exception ex) =>
+        string.Equals(ex.ErrorCode, S3ErrorCodes.InternalError, StringComparison.OrdinalIgnoreCase)
+        || ex.Message.Contains("We encountered an internal error", StringComparison.OrdinalIgnoreCase);
 
     private static bool IsCredentialError(AmazonS3Exception ex)
         => ex.ErrorCode is S3ErrorCodes.InvalidAccessKeyId or S3ErrorCodes.ExpiredToken

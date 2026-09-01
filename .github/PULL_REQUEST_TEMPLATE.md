@@ -14,6 +14,9 @@ Tick what applies before you raise. Delete anything that doesn't.
 - [ ] No more complex or slower than it needs to be
 - [ ] No leftover debug logging or commented-out code
 
+## Code Quality
+- [ ] Pre-commit hooks were run for all commits in this PR
+
 ## Easy to miss (a green pipeline won't flag these)
 - [ ] One logical change, not a pile of unrelated stuff
 
@@ -23,7 +26,6 @@ Tick what applies before you raise. Delete anything that doesn't.
 - [ ] Secrets use Key Vault references, not plain text
 - [ ] New outbound HTTP clients go through the shared resilience handler (AddResiliencePolicyHandler), rather than hand-rolling retries
 - [ ] New calls to an external service (DDEI, Egress, NetApp) have client tests against a WireMock stub (for the serialisation, auth and error handling) and are covered by the integration tests that run against the real dev services
-- [ ] Ran dotnet format, since CI builds and tests but doesn't check formatting
 
 ### If you touched the UI
 - [ ] Ran the e2e/ suite locally (the PR build only runs the mocked tests; the full suite runs post-merge and gates the deploy)

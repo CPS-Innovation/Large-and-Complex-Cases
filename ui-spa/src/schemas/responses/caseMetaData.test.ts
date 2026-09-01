@@ -5,6 +5,7 @@ describe("caseMetaDataResponseSchema", () => {
   const base = {
     caseId: 123,
     egressWorkspaceId: "egress-1",
+    egressWorkspaceName: "Workspace A",
     netappFolderPath: "\\\netapp\\folder",
     operationName: "Operation A",
     leadDefendantName: "John Doe",

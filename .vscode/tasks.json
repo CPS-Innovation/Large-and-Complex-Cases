@@ -4,7 +4,7 @@
     {
       "label": "run-azurite",
       "type": "shell",
-      "command": "azurite --inMemoryPersistence",
+      "command": "azurite --inMemoryPersistence --skipApiVersionCheck",
       "options": {
         "cwd": "${workspaceFolder}/.vscode"
       },
@@ -58,7 +58,7 @@
       "label": "run-backend",
       "type": "shell",
       "options": {
-        "cwd": "${workspaceFolder}/backend/CPS.ComplexCases.API/bin/Debug/net8.0",
+        "cwd": "${workspaceFolder}/backend/CPS.ComplexCases.API/bin/Debug/net10.0",
         "env": {
           "DDEIOptions__MockBaseUrl": "http://localhost:7081"
         }
@@ -71,7 +71,7 @@
       "label": "run-backend-file-transfer",
       "type": "shell",
       "options": {
-        "cwd": "${workspaceFolder}/backend/CPS.ComplexCases.FileTransfer.API/bin/Debug/net8.0",
+        "cwd": "${workspaceFolder}/backend/CPS.ComplexCases.FileTransfer.API/bin/Debug/net10.0"
       },
       "command": "func start --no-build --verbose --password CPS.ComplexCases.FileTransfer.API",
       "isBackground": true,
@@ -138,7 +138,7 @@
       "options": {
         "cwd": "${workspaceFolder}/backend/CPS.ComplexCases.WireMock"
       },
-      "command": "dotnet bin/Debug/net8.0/CPS.ComplexCases.WireMock.dll",
+      "command": "dotnet bin/Debug/net10.0/CPS.ComplexCases.WireMock.dll",
       "isBackground": true,
       "problemMatcher": {
         "fileLocation": "absolute",
@@ -274,7 +274,7 @@
       "type": "func",
       "dependsOn": "build (functions)",
       "options": {
-        "cwd": "${workspaceFolder}/backend\\CPS.ComplexCases.FileTransfer.API/bin/Debug/net8.0"
+        "cwd": "${workspaceFolder}/backend\\CPS.ComplexCases.FileTransfer.API/bin/Debug/net10.0"
       },
       "command": "host start",
       "isBackground": true,

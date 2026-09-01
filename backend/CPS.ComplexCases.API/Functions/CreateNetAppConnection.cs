@@ -1,10 +1,4 @@
 using System.Net;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Azure.Functions.Worker;
-using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Attributes;
-using Microsoft.Extensions.Logging;
-using Microsoft.OpenApi.Models;
 using CPS.ComplexCases.ActivityLog.Services;
 using CPS.ComplexCases.API.Constants;
 using CPS.ComplexCases.API.Context;
@@ -17,6 +11,12 @@ using CPS.ComplexCases.Common.Services;
 using CPS.ComplexCases.Data.Models.Requests;
 using CPS.ComplexCases.NetApp.Client;
 using CPS.ComplexCases.NetApp.Factories;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Azure.Functions.Worker;
+using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Attributes;
+using Microsoft.Extensions.Logging;
+using Microsoft.OpenApi.Models;
 
 namespace CPS.ComplexCases.API.Functions;
 
@@ -26,7 +26,7 @@ public class CreateNetAppConnection(ILogger<CreateNetAppConnection> logger,
     INetAppArgFactory netAppArgFactory,
     IActivityLogService activityLogService,
     IRequestValidator requestValidator,
-    ISecurityGroupMetadataService securityGroupMetadataService,
+    IUserBucketAccessService userBucketAccessService,
     IInitializationHandler initializationHandler)
 {
     private readonly ILogger<CreateNetAppConnection> _logger = logger;
@@ -35,7 +35,7 @@ public class CreateNetAppConnection(ILogger<CreateNetAppConnection> logger,
     private readonly INetAppArgFactory _netAppArgFactory = netAppArgFactory;
     private readonly IActivityLogService _activityLogService = activityLogService;
     private readonly IRequestValidator _requestValidator = requestValidator;
-    private readonly ISecurityGroupMetadataService _securityGroupMetadataService = securityGroupMetadataService;
+    private readonly IUserBucketAccessService _userBucketAccessService = userBucketAccessService;
     private readonly IInitializationHandler _initializationHandler = initializationHandler;
 
     [Function(nameof(CreateNetAppConnection))]
@@ -47,6 +47,7 @@ public class CreateNetAppConnection(ILogger<CreateNetAppConnection> logger,
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.BadRequest, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.BadRequest)]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.Unauthorized, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.Unauthorized)]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.Forbidden, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.Forbidden)]
+    [OpenApiResponseWithBody(statusCode: HttpStatusCode.Conflict, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.Conflict)]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.InternalServerError, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.InternalServerError)]
     public async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "v1/netapp/connections")] HttpRequest req, FunctionContext functionContext)
     {
@@ -61,15 +62,32 @@ public class CreateNetAppConnection(ILogger<CreateNetAppConnection> logger,
 
         _initializationHandler.Initialize(context.Username, context.CorrelationId, netAppConnectionRequest.Value.CaseId);
 
-        var securityGroups = await _securityGroupMetadataService.GetUserSecurityGroupsAsync(context.BearerToken);
+        var bucketName = (await _userBucketAccessService.ResolveBucketAsync(
+            context.BearerToken, null, netAppConnectionRequest.Value.BucketName)).BucketName;
 
-        var netAppArg = _netAppArgFactory.CreateListFoldersInBucketArg(context.BearerToken, securityGroups.First().BucketName, netAppConnectionRequest.Value.OperationName, null, 1, null);
+        var netAppArg = _netAppArgFactory.CreateListFoldersInBucketArg(context.BearerToken, bucketName, netAppConnectionRequest.Value.OperationName, null, 1, null);
         var hasNetAppPermission = await _netAppClient.ListFoldersInBucketAsync(netAppArg);
 
         if (hasNetAppPermission == null)
         {
             return new UnauthorizedResult();
         }
+
+        var folderPath = netAppConnectionRequest.Value.NetAppFolderPath;
+        var lookupPaths = new[] { folderPath, $"{bucketName}:{folderPath}" };
+        var existingConnections = await _caseMetadataService.GetCaseMetadataForNetAppFolderPathsAsync(lookupPaths);
+        var existingConnection = existingConnections.FirstOrDefault();
+
+        if (existingConnection != null)
+        {
+            _logger.LogWarning(
+                "Duplicate NetApp connection attempt: folder path '{FolderPath}' is already connected to case {ExistingCaseId}. Requested by case {RequestedCaseId}.",
+                folderPath, existingConnection.CaseId, netAppConnectionRequest.Value.CaseId);
+            return new ConflictObjectResult($"Folder path '{folderPath}' is already connected to another case.");
+        }
+
+        // Persist the resolved bucket even when the client sent none, so every new row is populated.
+        netAppConnectionRequest.Value.BucketName = bucketName;
 
         await _caseMetadataService.CreateNetAppConnectionAsync(netAppConnectionRequest.Value);
 

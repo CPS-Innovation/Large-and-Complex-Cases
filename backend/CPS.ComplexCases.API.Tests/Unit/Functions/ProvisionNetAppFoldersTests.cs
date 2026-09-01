@@ -1,9 +1,6 @@
 using System.Net;
 using System.Text;
 using System.Text.Json;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 using AutoFixture;
 using CPS.ComplexCases.ActivityLog.Enums;
 using CPS.ComplexCases.ActivityLog.Services;
@@ -26,6 +23,9 @@ using CPS.ComplexCases.DDEI.Models.Args;
 using CPS.ComplexCases.DDEI.Models.Dto;
 using CPS.ComplexCases.DDEI.Services;
 using CPS.ComplexCases.NetApp.Models.Dto;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace CPS.ComplexCases.API.Tests.Unit.Functions;
@@ -38,7 +38,7 @@ public class ProvisionNetAppFoldersTests
     private readonly Mock<ICaseNamingService> _caseNamingServiceMock;
     private readonly Mock<IFileTransferClient> _fileTransferClientMock;
     private readonly Mock<IRequestValidator> _requestValidatorMock;
-    private readonly Mock<ISecurityGroupMetadataService> _securityGroupMetadataServiceMock;
+    private readonly Mock<IUserBucketAccessService> _userBucketAccessServiceMock;
     private readonly Mock<ICaseMetadataService> _caseMetadataServiceMock;
     private readonly Mock<IActivityLogService> _activityLogServiceMock;
     private readonly Mock<IInitializationHandler> _initializationHandlerMock;
@@ -64,7 +64,7 @@ public class ProvisionNetAppFoldersTests
         _caseNamingServiceMock = new Mock<ICaseNamingService>();
         _fileTransferClientMock = new Mock<IFileTransferClient>();
         _requestValidatorMock = new Mock<IRequestValidator>();
-        _securityGroupMetadataServiceMock = new Mock<ISecurityGroupMetadataService>();
+        _userBucketAccessServiceMock = new Mock<IUserBucketAccessService>();
         _caseMetadataServiceMock = new Mock<ICaseMetadataService>();
         _activityLogServiceMock = new Mock<IActivityLogService>();
         _initializationHandlerMock = new Mock<IInitializationHandler>();
@@ -79,17 +79,15 @@ public class ProvisionNetAppFoldersTests
         _operationName = _fixture.Create<string>();
         _caseNameDto = new CaseNameDto { CaseName = _caseName, OperationName = _operationName };
 
-        _securityGroupMetadataServiceMock
-            .Setup(s => s.GetUserSecurityGroupsAsync(It.IsAny<string>()))
-            .ReturnsAsync([
-                new SecurityGroup
-                {
-                    Id = _fixture.Create<Guid>(),
-                    BucketName = _bucketName,
-                    VolumeUuid = _fixture.Create<Guid>(),
-                    DisplayName = "Test Security Group"
-                }
-            ]);
+        _userBucketAccessServiceMock
+            .Setup(s => s.ResolveBucketAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>()))
+            .ReturnsAsync(new SecurityGroup
+            {
+                Id = _fixture.Create<Guid>(),
+                BucketName = _bucketName,
+                VolumeUuid = _fixture.Create<Guid>(),
+                DisplayName = "Test Security Group"
+            });
 
         _function = new ProvisionNetAppFolders(
             _loggerMock.Object,
@@ -98,7 +96,7 @@ public class ProvisionNetAppFoldersTests
             _caseNamingServiceMock.Object,
             _fileTransferClientMock.Object,
             _requestValidatorMock.Object,
-            _securityGroupMetadataServiceMock.Object,
+            _userBucketAccessServiceMock.Object,
             _caseMetadataServiceMock.Object,
             _activityLogServiceMock.Object,
             _initializationHandlerMock.Object);

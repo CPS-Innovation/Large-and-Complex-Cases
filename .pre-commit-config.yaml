@@ -1,0 +1,44 @@
+# .pre-commit-config.yaml
+default_stages: [pre-commit]
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: mixed-line-ending
+        name: fix line endings
+        args: [--fix=lf]
+      - id: check-yaml
+      - id: check-json
+      - id: pretty-format-json
+        args: [
+          --autofix,
+          --no-sort-keys
+        ]
+
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.24.2
+    hooks:
+      - id: gitleaks
+        name: detect secrets
+
+  - repo: local
+    hooks:
+      - id: run-dotnet-format
+        name: run dotnet format
+        language: unsupported
+        entry: powershell ./scripts/pre-commit-dotnet-format.ps1
+        files: ^backend/.*\.cs$
+
+      - id: run-eslint
+        name: run eslint
+        language: unsupported
+        entry: powershell ./scripts/pre-commit-npm-eslint.ps1
+        files: \.(ts|tsx|js|jsx|json)$
+
+      - id: pretty-format-ts
+        name: pretty format typescript
+        language: unsupported
+        entry: powershell ./scripts/pre-commit-npm-prettier.ps1
+        files: \.(ts|tsx)$

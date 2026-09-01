@@ -1,8 +1,5 @@
 using System.Net;
 using AutoFixture;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Azure.Functions.Worker;
-using Microsoft.Extensions.Logging;
 using CPS.ComplexCases.API.Clients.FileTransfer;
 using CPS.ComplexCases.API.Domain.Models;
 using CPS.ComplexCases.API.Functions;
@@ -15,6 +12,9 @@ using CPS.ComplexCases.Common.Models.Requests;
 using CPS.ComplexCases.Common.Services;
 using CPS.ComplexCases.Data.Entities;
 using CPS.ComplexCases.Data.Models.Requests;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Azure.Functions.Worker;
+using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace CPS.ComplexCases.API.Tests.Unit.Functions;
@@ -24,7 +24,7 @@ public class InitiateBatchCopyTests
     private readonly Mock<ILogger<InitiateBatchCopy>> _loggerMock;
     private readonly Mock<IFileTransferClient> _fileTransferClientMock;
     private readonly Mock<IRequestValidator> _requestValidatorMock;
-    private readonly Mock<ISecurityGroupMetadataService> _securityGroupMetadataServiceMock;
+    private readonly Mock<IUserBucketAccessService> _userBucketAccessServiceMock;
     private readonly Mock<ICaseMetadataService> _caseMetadataServiceMock;
     private readonly Mock<IInitializationHandler> _initializationHandlerMock;
     private readonly InitiateBatchCopy _function;
@@ -44,7 +44,7 @@ public class InitiateBatchCopyTests
         _loggerMock = new Mock<ILogger<InitiateBatchCopy>>();
         _fileTransferClientMock = new Mock<IFileTransferClient>();
         _requestValidatorMock = new Mock<IRequestValidator>();
-        _securityGroupMetadataServiceMock = new Mock<ISecurityGroupMetadataService>();
+        _userBucketAccessServiceMock = new Mock<IUserBucketAccessService>();
         _caseMetadataServiceMock = new Mock<ICaseMetadataService>();
         _initializationHandlerMock = new Mock<IInitializationHandler>();
 
@@ -57,9 +57,9 @@ public class InitiateBatchCopyTests
 
         _defaultSecurityGroups = [new() { Id = _fixture.Create<Guid>(), BucketName = _testBucketName, VolumeUuid = _fixture.Create<Guid>(), DisplayName = "Test" }];
 
-        _securityGroupMetadataServiceMock
-            .Setup(s => s.GetUserSecurityGroupsAsync(It.IsAny<string>()))
-            .ReturnsAsync(_defaultSecurityGroups);
+        _userBucketAccessServiceMock
+            .Setup(s => s.ResolveBucketAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>()))
+            .ReturnsAsync(_defaultSecurityGroups[0]);
 
         _caseMetadataServiceMock
             .Setup(s => s.GetCaseMetadataForCaseIdAsync(It.IsAny<int>()))
@@ -73,7 +73,7 @@ public class InitiateBatchCopyTests
             _loggerMock.Object,
             _fileTransferClientMock.Object,
             _requestValidatorMock.Object,
-            _securityGroupMetadataServiceMock.Object,
+            _userBucketAccessServiceMock.Object,
             _caseMetadataServiceMock.Object,
             _initializationHandlerMock.Object);
     }

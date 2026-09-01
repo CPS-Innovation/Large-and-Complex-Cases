@@ -16,7 +16,7 @@ async function runTransferScenario(page: Page, transferType: "copy" | "move") {
     "egress",
     false,
   );
-  await transferMaterialsSourcePage.verifyFolderPath(["Egress: Thunderstruck"]);
+  await transferMaterialsSourcePage.verifyFolderPath(["Egress: Workspace-Alpha"]);
   await transferMaterialsSourcePage.validateTableColumnHeaders();
 
   const folderRows = [
@@ -38,7 +38,7 @@ async function runTransferScenario(page: Page, transferType: "copy" | "move") {
     false,
   );
   await transferMaterialsSourcePage.verifyFolderPath([
-    "Egress: Thunderstruck",
+    "Egress: Workspace-Alpha",
     "folder-1-0",
   ]);
   await transferMaterialsSourcePage.validateTableRowValues([
@@ -71,23 +71,23 @@ async function runTransferScenario(page: Page, transferType: "copy" | "move") {
     transferType,
   );
   await transferMaterialsDestinationPage.verifyFolderExpanded(
-    "Shared Drive: Thunderstruck",
+    "Shared Drive: netapp",
     true,
     ["folder-1-0", "folder-1-1"],
   );
   await transferMaterialsDestinationPage.clickMinimizeFolder(
-    "Shared Drive: Thunderstruck",
+    "Shared Drive: netapp",
   );
   await transferMaterialsDestinationPage.verifyFolderExpanded(
-    "Shared Drive: Thunderstruck",
+    "Shared Drive: netapp",
     false,
     [],
   );
   await transferMaterialsDestinationPage.clickExpandFolder(
-    "Shared Drive: Thunderstruck",
+    "Shared Drive: netapp",
   );
   await transferMaterialsDestinationPage.verifyFolderExpanded(
-    "Shared Drive: Thunderstruck",
+    "Shared Drive: netapp",
     true,
     ["folder-1-0", "folder-1-1"],
   );
@@ -193,6 +193,7 @@ test.describe("transfer material egress netapp transfer", () => {
         return HttpResponse.json({
           caseId: 12,
           egressWorkspaceId: "egress_1",
+          egressWorkspaceName: "Workspace-Alpha",
           netappFolderPath: "netapp/",
           operationName: "Thunderstruck",
           leadDefendantName: "John Doe",
@@ -356,6 +357,7 @@ test.describe("transfer material egress netapp transfer", () => {
         return HttpResponse.json({
           caseId: 12,
           egressWorkspaceId: "egress_1",
+          egressWorkspaceName: "Workspace-Alpha",
           netappFolderPath: "netapp/",
           operationName: "Thunderstruck",
           leadDefendantName: "John Doe",
@@ -466,7 +468,7 @@ test.describe("transfer material egress netapp transfer", () => {
     const transferMaterialsSourcePage = new TransferMaterialsSourcePage(page);
     await transferMaterialsSourcePage.verifyPageElements();
     await transferMaterialsSourcePage.verifyEgressTransferSourceElements();
-    await transferMaterialsSourcePage.verifyMoveBtnEnabled(false);
+    await transferMaterialsSourcePage.verifyMoveBtnHidden();
   });
 
   test("Should show the egress connection error screen, if user who does not have access to egress come to the application when there is an active transfer Id", async ({
@@ -488,6 +490,7 @@ test.describe("transfer material egress netapp transfer", () => {
         return HttpResponse.json({
           caseId: 12,
           egressWorkspaceId: "egress_1",
+          egressWorkspaceName: "Workspace-Alpha",
           netappFolderPath: "netapp/",
           operationName: "Thunderstruck",
           leadDefendantName: "John Doe",

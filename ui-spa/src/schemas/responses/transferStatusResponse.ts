@@ -10,6 +10,12 @@ export const transferFailedItemSchema = z.object({
   ]),
 });
 
+export const transferSkippedItemSchema = z.object({
+  sourcePath: z.string(),
+  size: z.number().optional(),
+  reason: z.string().optional(),
+});
+
 export const transferStatusResponseSchema = z.object({
   id: z.string().uuid(),
   status: z.enum([
@@ -29,11 +35,13 @@ export const transferStatusResponseSchema = z.object({
   processedFiles: z.number(),
   successfulFiles: z.number(),
   failedFiles: z.number(),
+  skippedFiles: z.number().optional(),
   successfulItems: z.array(
     z.object({
       sourcePath: z.string(),
     }),
   ),
+  skippedItems: z.array(transferSkippedItemSchema).optional(),
   destinationPath: z.string(),
 });
 

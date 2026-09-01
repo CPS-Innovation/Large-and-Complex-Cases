@@ -18,7 +18,7 @@ namespace CPS.ComplexCases.Data.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.5")
+                .HasAnnotation("ProductVersion", "10.0.5")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -163,6 +163,11 @@ namespace CPS.ComplexCases.Data.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)")
                         .HasColumnName("egress_workspace_name");
+
+                    b.Property<string>("NetappBucketName")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("netapp_bucket_name");
 
                     b.Property<string>("NetappFolderPath")
                         .HasMaxLength(260)

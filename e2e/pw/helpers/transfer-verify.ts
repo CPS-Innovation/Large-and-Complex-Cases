@@ -7,38 +7,72 @@ import {
 import { getAzureADToken } from "./auth-api";
 import { expect } from "@playwright/test";
 
-const config =loadEnvConfig()
+// These verify helpers run once per file. Fetching a fresh token on every call
+// hammers the auth endpoints — over a long soak run the AAD ROPC endpoint
+// returns transient 400s (throttling). Cache each token at module scope and
+// reuse it; the AAD token is refreshed once on a 401 so a run that outlives the
+// token still recovers.
+let cachedAadToken: string | undefined;
 
-export async function verifyNetAppFileSizeByName(
-  filePath: string,
-  caseId: number,
-  expectedSizeBytes: number,
-  netAppOperationName: string = config.netAppOperationName,
-  accessToken?: string | undefined,
-): Promise<void> {
-  if (!accessToken) {
-    accessToken = await getAzureADToken(
+async function getVerifyAadToken(
+  config: ReturnType<typeof loadEnvConfig>,
+  forceRefresh = false,
+): Promise<string> {
+  if (forceRefresh || !cachedAadToken) {
+    cachedAadToken = await getAzureADToken(
       config.tenantId,
       config.lccApiClientId,
       config.e2eAdUser,
       config.e2eAdPassword,
     );
   }
+  return cachedAadToken;
+}
 
-  const response = await fetch(
-    `${config.lccApiBaseUrl}/api/v1/netapp/search?case-id=${caseId}&query=${encodeURIComponent(filePath)}`,
-    {
+// Mutable ref rather than a plain string: it is handed to
+// listEgressWorkspaceFilesByFolderId, which writes a refreshed token back into
+// it after a 401. Without that, every call on a long run would start from the
+// same expired token and pay a wasted 401 before refreshing.
+const verifyEgressTokenRef = { value: "" };
+
+async function getVerifyEgressTokenRef(
+  config: ReturnType<typeof loadEnvConfig>,
+): Promise<{ value: string }> {
+  if (!verifyEgressTokenRef.value) {
+    verifyEgressTokenRef.value = await authenticateEgress(
+      config.egressBaseUrl,
+      config.egressServiceAccountAuth,
+    );
+  }
+  return verifyEgressTokenRef;
+}
+
+export async function verifyNetAppFileSizeByName(
+  filePath: string,
+  caseId: number,
+  expectedSizeBytes: number,
+  accessToken?: string | undefined,
+): Promise<void> {
+  const config = loadEnvConfig();
+  const url = `${config.lccApiBaseUrl}/api/v1/netapp/search?case-id=${caseId}&query=${encodeURIComponent(filePath)}`;
+  const search = (token: string) =>
+    fetch(url, {
       method: "GET",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      }
-    }
-  );
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+  // Use the caller's token if provided; otherwise the shared cached one.
+  let response = await search(accessToken ?? (await getVerifyAadToken(config)));
+
+  // A cached token can expire on a long run — refresh once on 401 and retry.
+  if (response.status === 401 && !accessToken) {
+    response = await search(await getVerifyAadToken(config, true));
+  }
 
   if (!response.ok) {
     const text = await response.text();
     throw new Error(
-      `NetApp search failed (${response.status}) for '${filePath}': ${text.slice(0, 200)}`
+      `NetApp search failed (${response.status}) for '${filePath}': ${text.slice(0, 200)}`,
     );
   }
 
@@ -57,26 +91,27 @@ export async function verifyNetAppFileSizeByName(
       file = data[0];
       break;
     default:
-      throw new Error(`Search response must not match more than a single file.`);
+      throw new Error(
+        `Search response must not match more than a single file.`,
+      );
   }
 
-  const folderPrefix = netAppOperationName.endsWith("/")
-    ? netAppOperationName
-    : `${netAppOperationName}/`;
+  const folderPrefix = config.netAppOperationName.endsWith("/")
+    ? config.netAppOperationName
+    : `${config.netAppOperationName}/`;
 
   const fullPath = `${folderPrefix}${filePath}`;
 
   if (file.key !== fullPath) {
     throw new Error(
       `The file path returned does not match '${fullPath}'.\n` +
-      `Returned: '${file.key}'.`
+        `Returned: '${file.key}'.`,
     );
   }
 
-  expect(
-    file.size,
-    `NetApp file '${filePath}' has unexpected size`
-  ).toBe(expectedSizeBytes);
+  expect(file.size, `NetApp file '${filePath}' has unexpected size`).toBe(
+    expectedSizeBytes,
+  );
 }
 
 export async function isFileInEgress(
@@ -85,22 +120,21 @@ export async function isFileInEgress(
   fileName: string,
   egressToken?: string | undefined,
 ): Promise<boolean> {
-  if (!egressToken) {
-    egressToken = await authenticateEgress(
-      config.egressBaseUrl,
-      config.egressServiceAccountAuth,
-    )
-  }
+  const config = loadEnvConfig();
 
   const files = await listEgressWorkspaceFilesByFolderId(
     config.egressBaseUrl,
-    egressToken,
+    egressToken ?? (await getVerifyEgressTokenRef(config)),
     workspaceId,
     folderId,
-    true,
+    false,
+    // Enables the 401 -> re-authenticate -> retry path. Long runs (the soak
+    // scenarios take ~an hour) outlive an Egress token, and without this a
+    // 401 returns an empty listing that reads as "the file is gone".
+    config.egressServiceAccountAuth,
   );
 
-  return files.some(f => f.fileName === fileName);
+  return files.some((f) => f.fileName === fileName);
 }
 
 /**
@@ -117,17 +151,48 @@ export async function isFileInEgressById(
   fileId: string,
   egressToken?: string | undefined,
 ): Promise<boolean> {
-  if (!egressToken) {
-    egressToken = await authenticateEgress(
-      config.egressBaseUrl,
-      config.egressServiceAccountAuth,
-    );
-  }
+  const config = loadEnvConfig();
 
   return egressFileExistsById(
     config.egressBaseUrl,
-    egressToken,
+    egressToken ?? (await getVerifyEgressTokenRef(config)),
     workspaceId,
     fileId,
   );
+}
+
+// Poll the Egress folder listing (API, no browser) until the file appears.
+// A large file is present via the uploads endpoint before Egress finishes
+// processing it into the workspace listing the UI reads, so gate the UI wait
+// on this cheap API check rather than burning the browser timeout reloading a
+// panel that can't show the file yet.
+export async function waitForFileInEgress(
+  workspaceId: string,
+  folderId: string,
+  fileName: string,
+  options: {
+    timeoutMs?: number;
+    pollIntervalMs?: number;
+    egressToken?: string;
+  } = {},
+): Promise<void> {
+  const {
+    timeoutMs = 15 * 60 * 1000,
+    pollIntervalMs = 10_000,
+    egressToken,
+  } = options;
+  const start = Date.now();
+
+  for (;;) {
+    if (await isFileInEgress(workspaceId, folderId, fileName, egressToken)) {
+      return;
+    }
+    if (Date.now() - start > timeoutMs) {
+      throw new Error(
+        `Timed out after ${Math.round(timeoutMs / 1000)}s waiting for '${fileName}' ` +
+          `to appear in the Egress folder listing (folder id: ${folderId}).`,
+      );
+    }
+    await new Promise((r) => setTimeout(r, pollIntervalMs));
+  }
 }

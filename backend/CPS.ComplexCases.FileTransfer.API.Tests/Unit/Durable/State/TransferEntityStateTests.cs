@@ -81,6 +81,61 @@ public class TransferEntityStateTests
     }
 
     [Fact]
+    public void AddSkippedItem_UpdatesStateCorrectly()
+    {
+        // Arrange
+        var state = new TransferEntityState();
+        state.Initialize(new TransferEntity { DestinationPath = "dest", BearerToken = "fakeBearerToken" });
+
+        var item = new TransferItem
+        {
+            SourcePath = "empty.txt",
+            Size = 0,
+            Status = TransferItemStatus.Skipped,
+            IsRenamed = false
+        };
+
+        // Act
+        state.AddSkippedItem(item);
+
+        // Assert
+        Assert.Single(state.CurrentState.SkippedItems);
+        Assert.Equal(1, state.CurrentState.SkippedFiles);
+        Assert.Equal(1, state.CurrentState.ProcessedFiles);
+        Assert.Equal(0, state.CurrentState.FailedFiles);
+        Assert.Contains(item, state.CurrentState.SkippedItems);
+    }
+
+    [Fact]
+    public void FinalizeTransfer_WithOnlySkippedItems_SetsStatusToCompleted()
+    {
+        // Arrange
+        var state = new TransferEntityState();
+        state.Initialize(new TransferEntity
+        {
+            DestinationPath = "dest",
+            BearerToken = "fakeBearerToken",
+            SkippedItems =
+            [
+                new TransferItem
+                {
+                    SourcePath = "empty.txt",
+                    Status = TransferItemStatus.Skipped,
+                    IsRenamed = false,
+                    Size = 0
+                }
+            ],
+            FailedItems = []
+        });
+
+        // Act
+        state.FinalizeTransfer();
+
+        // Assert — skips alone must not mark the batch failed / partially completed.
+        Assert.Equal(TransferStatus.Completed, state.CurrentState.Status);
+    }
+
+    [Fact]
     public void FinalizeTransfer_WithOnlySuccessfulItems_SetsStatusToCompleted()
     {
         // Arrange
@@ -276,5 +331,95 @@ public class TransferEntityStateTests
         Assert.Equal(1, state.CurrentState.FailedFiles);
         Assert.Single(state.CurrentState.FailedItems);
         Assert.Equal(TransferErrorCode.GeneralError, state.CurrentState.FailedItems[0].ErrorCode);
+    }
+
+    [Fact]
+    public void UpdateRetryState_StoresRetryMetadataAndRefreshesUpdatedAt()
+    {
+        // Arrange
+        var state = new TransferEntityState();
+        state.Initialize(new TransferEntity
+        {
+            DestinationPath = "dest",
+            BearerToken = "fakeBearerToken",
+            UpdatedAt = DateTime.UtcNow.AddMinutes(-5)
+        });
+
+        var previousUpdatedAt = state.CurrentState.UpdatedAt;
+        var nextRetryAt = DateTime.UtcNow.AddSeconds(60);
+
+        // Act
+        state.UpdateRetryState(new TransferRetryState
+        {
+            RetryAttempt = 1,
+            MaxRetryAttempts = 3,
+            RetryingFileCount = 3,
+            RetryDelaySeconds = 60,
+            NextRetryAt = nextRetryAt
+        });
+
+        // Assert
+        Assert.NotNull(state.CurrentState.RetryState);
+        Assert.Equal(1, state.CurrentState.RetryState!.RetryAttempt);
+        Assert.Equal(3, state.CurrentState.RetryState.MaxRetryAttempts);
+        Assert.Equal(3, state.CurrentState.RetryState.RetryingFileCount);
+        Assert.Equal(60, state.CurrentState.RetryState.RetryDelaySeconds);
+        Assert.Equal(nextRetryAt, state.CurrentState.RetryState.NextRetryAt);
+        Assert.True(state.CurrentState.UpdatedAt > previousUpdatedAt);
+    }
+
+    [Fact]
+    public void ClearRetryState_RemovesRetryMetadataAndRefreshesUpdatedAt()
+    {
+        // Arrange
+        var state = new TransferEntityState();
+        state.Initialize(new TransferEntity
+        {
+            DestinationPath = "dest",
+            BearerToken = "fakeBearerToken",
+            UpdatedAt = DateTime.UtcNow.AddMinutes(-5)
+        });
+
+        state.UpdateRetryState(new TransferRetryState { RetryAttempt = 2, MaxRetryAttempts = 3, RetryingFileCount = 1 });
+        var previousUpdatedAt = state.CurrentState.UpdatedAt;
+
+        // Act
+        state.ClearRetryState();
+
+        // Assert
+        Assert.Null(state.CurrentState.RetryState);
+        Assert.True(state.CurrentState.UpdatedAt >= previousUpdatedAt);
+    }
+
+    [Fact]
+    public void UpdateRetryState_WithNullNextRetryAt_IndicatesRetryIsExecuting()
+    {
+        // Arrange
+        var state = new TransferEntityState();
+        state.Initialize(new TransferEntity { DestinationPath = "dest", BearerToken = "fakeBearerToken" });
+
+        state.UpdateRetryState(new TransferRetryState
+        {
+            RetryAttempt = 1,
+            MaxRetryAttempts = 3,
+            RetryingFileCount = 2,
+            RetryDelaySeconds = 60,
+            NextRetryAt = DateTime.UtcNow.AddSeconds(60)
+        });
+
+        // Act -- timer fired, attempt now executing
+        state.UpdateRetryState(new TransferRetryState
+        {
+            RetryAttempt = 1,
+            MaxRetryAttempts = 3,
+            RetryingFileCount = 2,
+            RetryDelaySeconds = 60,
+            NextRetryAt = null
+        });
+
+        // Assert
+        Assert.NotNull(state.CurrentState.RetryState);
+        Assert.Null(state.CurrentState.RetryState!.NextRetryAt);
+        Assert.Equal(1, state.CurrentState.RetryState.RetryAttempt);
     }
 }

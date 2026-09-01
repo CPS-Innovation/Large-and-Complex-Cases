@@ -712,6 +712,144 @@ public class CaseMetadataServiceTests
     }
 
     [Fact]
+    public async Task ClearNetAppFolderPathAsync_WhenSuccessful_AlsoClearsBucketName()
+    {
+        // Arrange
+        var caseId = _fixture.Create<int>();
+        var existingMetadata = new CaseMetadata
+        {
+            CaseId = caseId,
+            ActiveTransferId = null,
+            NetappFolderPath = "/existing/netapp/path",
+            NetappBucketName = "manchester-bucket"
+        };
+
+        _repositoryMock
+            .Setup(r => r.GetByCaseIdAsync(caseId))
+            .ReturnsAsync(existingMetadata);
+
+        _repositoryMock
+            .Setup(r => r.UpdateAsync(It.IsAny<CaseMetadata>()))
+            .ReturnsAsync(existingMetadata);
+
+        // Act
+        await _service.ClearNetAppFolderPathAsync(caseId);
+
+        // Assert
+        _repositoryMock.Verify(
+            r => r.UpdateAsync(It.Is<CaseMetadata>(m =>
+                m.CaseId == caseId &&
+                m.NetappFolderPath == null &&
+                m.NetappBucketName == null)),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task CreateNetAppConnectionAsync_WhenNoMetadataExists_PersistsBucketName()
+    {
+        // Arrange
+        var caseId = _fixture.Create<int>();
+        var dto = new CreateNetAppConnectionDto
+        {
+            CaseId = caseId,
+            NetAppFolderPath = "/netapp/path",
+            OperationName = _fixture.Create<string>(),
+            BucketName = "manchester-bucket"
+        };
+
+        _repositoryMock
+            .Setup(r => r.GetByCaseIdAsync(caseId))
+            .ReturnsAsync((CaseMetadata?)null);
+
+        // Act
+        await _service.CreateNetAppConnectionAsync(dto);
+
+        // Assert
+        _repositoryMock.Verify(
+            r => r.AddAsync(It.Is<CaseMetadata>(m =>
+                m.CaseId == caseId &&
+                m.NetappFolderPath == "/netapp/path" &&
+                m.NetappBucketName == "manchester-bucket")),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task CreateNetAppConnectionAsync_WhenMetadataExists_UpdatesBucketName()
+    {
+        // Arrange
+        var caseId = _fixture.Create<int>();
+        var existingMetadata = new CaseMetadata
+        {
+            CaseId = caseId,
+            NetappFolderPath = "/old/path",
+            NetappBucketName = "york-bucket"
+        };
+
+        var dto = new CreateNetAppConnectionDto
+        {
+            CaseId = caseId,
+            NetAppFolderPath = "/netapp/path",
+            OperationName = _fixture.Create<string>(),
+            BucketName = "manchester-bucket"
+        };
+
+        _repositoryMock
+            .Setup(r => r.GetByCaseIdAsync(caseId))
+            .ReturnsAsync(existingMetadata);
+
+        _repositoryMock
+            .Setup(r => r.UpdateAsync(It.IsAny<CaseMetadata>()))
+            .ReturnsAsync(existingMetadata);
+
+        // Act
+        await _service.CreateNetAppConnectionAsync(dto);
+
+        // Assert
+        _repositoryMock.Verify(
+            r => r.UpdateAsync(It.Is<CaseMetadata>(m =>
+                m.NetappFolderPath == "/netapp/path" &&
+                m.NetappBucketName == "manchester-bucket")),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task CreateNetAppConnectionAsync_WhenNoBucketSupplied_LeavesExistingBucketIntact()
+    {
+        // Arrange
+        var caseId = _fixture.Create<int>();
+        var existingMetadata = new CaseMetadata
+        {
+            CaseId = caseId,
+            NetappFolderPath = "/old/path",
+            NetappBucketName = "york-bucket"
+        };
+
+        var dto = new CreateNetAppConnectionDto
+        {
+            CaseId = caseId,
+            NetAppFolderPath = "/netapp/path",
+            OperationName = _fixture.Create<string>(),
+            BucketName = null
+        };
+
+        _repositoryMock
+            .Setup(r => r.GetByCaseIdAsync(caseId))
+            .ReturnsAsync(existingMetadata);
+
+        _repositoryMock
+            .Setup(r => r.UpdateAsync(It.IsAny<CaseMetadata>()))
+            .ReturnsAsync(existingMetadata);
+
+        // Act
+        await _service.CreateNetAppConnectionAsync(dto);
+
+        // Assert
+        _repositoryMock.Verify(
+            r => r.UpdateAsync(It.Is<CaseMetadata>(m => m.NetappBucketName == "york-bucket")),
+            Times.Once);
+    }
+
+    [Fact]
     public async Task ClearNetAppFolderPathAsync_WhenRepositoryThrowsException_LogsAndRethrows()
     {
         // Arrange

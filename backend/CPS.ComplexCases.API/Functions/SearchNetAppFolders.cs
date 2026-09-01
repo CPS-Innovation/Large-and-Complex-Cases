@@ -25,7 +25,7 @@ public class SearchNetAppFolders(
     INetAppClient netAppClient,
     INetAppArgFactory netAppArgFactory,
     ICaseMetadataService caseMetadataService,
-    ISecurityGroupMetadataService securityGroupMetadataService,
+    IUserBucketAccessService userBucketAccessService,
     IInitializationHandler initializationHandler,
     IValidator<SearchNetAppFoldersDto> validator)
 {
@@ -33,7 +33,7 @@ public class SearchNetAppFolders(
     private readonly INetAppClient _netAppClient = netAppClient;
     private readonly INetAppArgFactory _netAppArgFactory = netAppArgFactory;
     private readonly ICaseMetadataService _caseMetadataService = caseMetadataService;
-    private readonly ISecurityGroupMetadataService _securityGroupMetadataService = securityGroupMetadataService;
+    private readonly IUserBucketAccessService _userBucketAccessService = userBucketAccessService;
     private readonly IValidator<SearchNetAppFoldersDto> _validator = validator;
     private readonly IInitializationHandler _initializationHandler = initializationHandler;
 
@@ -78,9 +78,10 @@ public class SearchNetAppFolders(
             return new BadRequestObjectResult("Case metadata or NetApp folder path is missing.");
         }
 
-        var securityGroups = await _securityGroupMetadataService.GetUserSecurityGroupsAsync(context.BearerToken);
+        var bucket = await _userBucketAccessService.ResolveBucketAsync(
+            context.BearerToken, caseMetadata.NetappBucketName, null);
 
-        var arg = _netAppArgFactory.CreateSearchArg(context.BearerToken, securityGroups.First().BucketName, caseMetadata.NetappFolderPath!, request.Query, request.MaxResults, request.Mode);
+        var arg = _netAppArgFactory.CreateSearchArg(context.BearerToken, bucket.BucketName, caseMetadata.NetappFolderPath!, request.Query, request.MaxResults, request.Mode);
         var response = await _netAppClient.SearchObjectsInBucketAsync(arg);
 
         return new OkObjectResult(response);

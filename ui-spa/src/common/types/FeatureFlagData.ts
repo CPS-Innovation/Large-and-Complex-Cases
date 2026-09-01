@@ -4,4 +4,5 @@ export type FeatureFlagData = {
   globalNav: boolean;
   disconnectSharedDrive: boolean;
   transferMaterialsV1: boolean;
+  maintenanceMode: boolean;
 };

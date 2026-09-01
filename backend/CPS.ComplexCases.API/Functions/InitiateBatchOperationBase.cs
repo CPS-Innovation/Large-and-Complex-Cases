@@ -1,8 +1,3 @@
-using FluentValidation;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Azure.Functions.Worker;
-using Microsoft.Extensions.Logging;
 using CPS.ComplexCases.API.Clients.FileTransfer;
 using CPS.ComplexCases.API.Context;
 using CPS.ComplexCases.API.Extensions;
@@ -11,6 +6,11 @@ using CPS.ComplexCases.Common.Handlers;
 using CPS.ComplexCases.Common.Helpers;
 using CPS.ComplexCases.Common.Services;
 using CPS.ComplexCases.Data.Models.Requests;
+using FluentValidation;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Azure.Functions.Worker;
+using Microsoft.Extensions.Logging;
 
 namespace CPS.ComplexCases.API.Functions;
 
@@ -18,14 +18,14 @@ public abstract class InitiateBatchOperationBase(
     ILogger logger,
     IFileTransferClient transferClient,
     IRequestValidator requestValidator,
-    ISecurityGroupMetadataService securityGroupMetadataService,
+    IUserBucketAccessService userBucketAccessService,
     ICaseMetadataService caseMetadataService,
     IInitializationHandler initializationHandler)
 {
     private readonly ILogger _logger = logger;
     protected readonly IFileTransferClient _transferClient = transferClient;
     private readonly IRequestValidator _requestValidator = requestValidator;
-    private readonly ISecurityGroupMetadataService _securityGroupMetadataService = securityGroupMetadataService;
+    private readonly IUserBucketAccessService _userBucketAccessService = userBucketAccessService;
     private readonly ICaseMetadataService _caseMetadataService = caseMetadataService;
     private readonly IInitializationHandler _initializationHandler = initializationHandler;
 
@@ -84,12 +84,13 @@ public abstract class InitiateBatchOperationBase(
             return new BadRequestObjectResult(new[] { "The destination prefix is not within the case's NetApp folder." });
         }
 
-        var securityGroups = await _securityGroupMetadataService.GetUserSecurityGroupsAsync(context.BearerToken);
+        var bucket = await _userBucketAccessService.ResolveBucketAsync(
+            context.BearerToken, caseMetadata.NetappBucketName, null);
 
         var response = await executeAsync(
             batchRequest.Value,
             context.BearerToken,
-            securityGroups.First().BucketName,
+            bucket.BucketName,
             context.Username,
             context.CorrelationId);
 

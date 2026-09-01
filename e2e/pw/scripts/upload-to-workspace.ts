@@ -70,10 +70,11 @@ async function main() {
     const uploadId = await uploadFile(
       config.egressBaseUrl,
       token,
+      config.egressServiceAccountAuth,
       workspaceId,
       fileSizeBytes,
       fileName,
-      uploadPath
+      { folderPath: uploadPath },
     );
     uploaded.push({ id: uploadId, fileName });
   }

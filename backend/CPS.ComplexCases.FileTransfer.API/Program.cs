@@ -1,12 +1,5 @@
-using Microsoft.ApplicationInsights.Extensibility;
-using Microsoft.ApplicationInsights.WorkerService;
-using Microsoft.Azure.Functions.Worker;
-using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Abstractions;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.ApplicationInsights;
 using CPS.ComplexCases.ActivityLog.Extensions;
+using CPS.ComplexCases.Common.Handlers;
 using CPS.ComplexCases.Common.Helpers;
 using CPS.ComplexCases.Common.OpenApi;
 using CPS.ComplexCases.Common.Services;
@@ -20,7 +13,14 @@ using CPS.ComplexCases.FileTransfer.API.Middleware;
 using CPS.ComplexCases.FileTransfer.API.Models.Configuration;
 using CPS.ComplexCases.FileTransfer.API.Telemetry;
 using CPS.ComplexCases.NetApp.Extensions;
-using CPS.ComplexCases.Common.Handlers;
+using Microsoft.ApplicationInsights.Extensibility;
+using Microsoft.ApplicationInsights.WorkerService;
+using Microsoft.Azure.Functions.Worker;
+using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Abstractions;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.ApplicationInsights;
 
 // Create a temporary logger for configuration phase
 using var loggerFactory = LoggerFactory.Create(configure => configure.AddConsole());
@@ -44,6 +44,7 @@ var host = new HostBuilder()
             })
             .ConfigureFunctionsApplicationInsights();
         services.AddApplicationInsightsTelemetryProcessor<AzureSdkTraceFilter>();
+        services.AddApplicationInsightsTelemetryProcessor<HealthCheckTelemetryFilter>();
         services.Configure<LoggerFilterOptions>(options =>
         {
             // See: https://learn.microsoft.com/en-us/azure/azure-functions/dotnet-isolated-process-guide?tabs=windows#managing-log-levels

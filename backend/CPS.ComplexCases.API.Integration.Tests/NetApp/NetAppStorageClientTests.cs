@@ -1,13 +1,13 @@
 using System.Text;
 using Amazon.S3;
-using Moq;
 using CPS.ComplexCases.API.Integration.Tests.Fixtures;
 using CPS.ComplexCases.API.Integration.Tests.Helpers;
+using CPS.ComplexCases.Common.Models.Domain;
 using CPS.ComplexCases.Common.Models.Domain.Dtos;
 using CPS.ComplexCases.Common.Services;
 using CPS.ComplexCases.Data.Entities;
 using CPS.ComplexCases.NetApp.Client;
-using CPS.ComplexCases.Common.Models.Domain;
+using Moq;
 
 namespace CPS.ComplexCases.API.Integration.Tests.NetApp;
 
@@ -207,10 +207,9 @@ public class NetAppStorageClientTests : IClassFixture<IntegrationTestFixture>, I
         var sourcePath = $"multipart-storage-{Guid.NewGuid():N}.bin";
         var totalSize = part1Data.Length + part2Data.Length;
 
-        // In production (TransferFile.cs) the orchestrator retries the entire activity when
-        // CompleteMultipartUpload returns a transient 500, because the error also internally aborts
-        // the multipart upload and invalidates the upload ID. We mirror that here by restarting the
-        // full flow (initiate → upload parts → complete) on each attempt.
+        // CompleteMultipartUploadAsync already retries InternalError (including NetApp's HTTP 404
+        // InternalError) against the same uploadId. If those retries are exhausted the upload ID
+        // may no longer be valid, so this test restarts initiate → upload parts → complete.
         UploadSession? completedSession = null;
         for (var attempt = 1; attempt <= 3; attempt++)
         {
@@ -258,8 +257,8 @@ public class NetAppStorageClientTests : IClassFixture<IntegrationTestFixture>, I
             }
             catch (AmazonS3Exception) when (attempt < 3)
             {
-                // StorageGRID aborted the upload alongside the internal error;
-                // the upload ID is now invalid so the full flow must be restarted.
+                // Complete retries were exhausted; restart the full multipart flow
+                // in case the upload ID is no longer valid.
             }
         }
 

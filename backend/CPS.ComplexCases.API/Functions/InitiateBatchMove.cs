@@ -1,10 +1,5 @@
 using System.Net;
 using System.Text.Json;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Azure.Functions.Worker;
-using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Attributes;
-using Microsoft.Extensions.Logging;
 using CPS.ComplexCases.ActivityLog.Extensions;
 using CPS.ComplexCases.ActivityLog.Services;
 using CPS.ComplexCases.API.Constants;
@@ -13,6 +8,7 @@ using CPS.ComplexCases.API.Domain.Response;
 using CPS.ComplexCases.API.Services;
 using CPS.ComplexCases.API.Validators.Requests;
 using CPS.ComplexCases.Common.Attributes;
+using CPS.ComplexCases.Common.Extensions;
 using CPS.ComplexCases.Common.Handlers;
 using CPS.ComplexCases.Common.Helpers;
 using CPS.ComplexCases.Common.Services;
@@ -23,6 +19,11 @@ using CPS.ComplexCases.NetApp.Constants;
 using CPS.ComplexCases.NetApp.Exceptions;
 using CPS.ComplexCases.NetApp.Factories;
 using CPS.ComplexCases.NetApp.Models;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Azure.Functions.Worker;
+using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Attributes;
+using Microsoft.Extensions.Logging;
 
 namespace CPS.ComplexCases.API.Functions;
 
@@ -83,7 +84,7 @@ public class InitiateBatchMove(
             return pathError;
         }
 
-        var destinationPrefix = EnsureTrailingSlash(request.DestinationPrefix);
+        var destinationPrefix = request.DestinationPrefix.EnsureTrailingSlash();
         var securityGroups = await _securityGroupMetadataService.GetUserSecurityGroupsAsync(context.BearerToken);
         var volumeUuid = securityGroups[0].VolumeUuid;
 
@@ -142,8 +143,8 @@ public class InitiateBatchMove(
                 "A case-wide file transfer is in progress. Please wait for it to complete before starting a move operation.");
         }
 
-        var casePrefix = EnsureTrailingSlash(caseMetadata.NetappFolderPath);
-        var destinationPrefix = EnsureTrailingSlash(request.DestinationPrefix);
+        var casePrefix = caseMetadata.NetappFolderPath.EnsureTrailingSlash();
+        var destinationPrefix = request.DestinationPrefix.EnsureTrailingSlash();
 
         if (!destinationPrefix.StartsWith(casePrefix, StringComparison.OrdinalIgnoreCase))
         {
@@ -349,9 +350,6 @@ public class InitiateBatchMove(
     private static bool IsAuthException(Exception ex) =>
         ex is OntapUnauthorizedException
             or OntapClientException { StatusCode: HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden };
-
-    private static string EnsureTrailingSlash(string path) =>
-        path.EndsWith('/') ? path : path + "/";
 
     private static string BuildDestinationPath(string sourcePath, string destinationPrefix, bool isFolder)
     {

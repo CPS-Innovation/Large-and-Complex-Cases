@@ -1,13 +1,12 @@
 using System.IdentityModel.Tokens.Jwt;
-using System.Net;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Amazon;
 using Amazon.Runtime;
 using Amazon.S3;
 using CPS.ComplexCases.NetApp.Models;
 using CPS.ComplexCases.NetApp.Services;
 using CPS.ComplexCases.NetApp.Telemetry;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace CPS.ComplexCases.NetApp.Factories;
 
@@ -152,9 +151,7 @@ public class S3ClientFactory(
         }
         else if (isDevelopment)
         {
-            // In Development, bypass all SSL validation
-            ServicePointManager.ServerCertificateValidationCallback = (sender, certificate, chain, sslPolicyErrors) => true;
-
+            // In Development, bypass all SSL validation via HttpClientHandler
             var handler = new HttpClientHandler
             {
                 ServerCertificateCustomValidationCallback = (sender, certificate, chain, sslPolicyErrors) => true
@@ -168,8 +165,6 @@ public class S3ClientFactory(
                 "No trusted CA certificates were loaded. SSL certificate validation cannot be bypassed in non-development environments. " +
                 "Please ensure that the Root CA and Issuing CA certificates are correctly configured in Key Vault.");
         }
-
-        ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | SecurityProtocolType.Tls13;
 
         var s3Client = new AmazonS3Client(credentials, s3Config);
 

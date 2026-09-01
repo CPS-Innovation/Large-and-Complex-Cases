@@ -1,8 +1,3 @@
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.DurableTask.Client.Entities;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Primitives;
 using AutoFixture;
 using AutoFixture.AutoMoq;
 using CPS.ComplexCases.Common.Constants;
@@ -13,6 +8,11 @@ using CPS.ComplexCases.FileTransfer.API.Durable.Payloads.Domain;
 using CPS.ComplexCases.FileTransfer.API.Functions;
 using CPS.ComplexCases.FileTransfer.API.Models.Domain.Enums;
 using CPS.ComplexCases.FileTransfer.API.Tests.Unit.Stubs;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.DurableTask.Client.Entities;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Primitives;
 using Moq;
 
 namespace CPS.ComplexCases.FileTransfer.API.Tests.Unit.Functions;
@@ -353,6 +353,65 @@ public class GetTransferStatusTests
                 Assert.Equal("/path/file-2.txt", second.SourcePath);
                 Assert.Equal(222, second.Size);
             });
+    }
+
+    [Fact]
+    public async Task Run_WhenTransferIsWaitingToRetry_ReturnsRetryStateAlongsideInProgressStatus()
+    {
+        // Arrange
+        var nextRetryAt = new DateTime(2026, 8, 25, 10, 1, 0, DateTimeKind.Utc);
+        var transferEntity = CreateValidTransferEntity();
+        transferEntity.Status = TransferStatus.InProgress;
+        transferEntity.RetryState = new TransferRetryState
+        {
+            RetryAttempt = 2,
+            MaxRetryAttempts = 3,
+            RetryingFileCount = 3,
+            RetryDelaySeconds = 120,
+            NextRetryAt = nextRetryAt
+        };
+
+        var stub = new DurableEntityClientStub("FileTransferEntities")
+        {
+            OnGetEntityAsync = (id, _) => Task.FromResult<EntityMetadata<TransferEntity>?>(new EntityMetadata<TransferEntity>(id, transferEntity))
+        };
+        var durableTaskClientStub = new DurableTaskClientStub(stub);
+
+        // Act
+        var result = await _function.Run(_httpRequestMock.Object, durableTaskClientStub, _transferId);
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result);
+        var dto = Assert.IsType<TransferStatusDto>(okResult.Value);
+
+        Assert.Equal(TransferStatus.InProgress, dto.Status);
+        Assert.NotNull(dto.RetryState);
+        Assert.Equal(2, dto.RetryState!.RetryAttempt);
+        Assert.Equal(3, dto.RetryState.MaxRetryAttempts);
+        Assert.Equal(3, dto.RetryState.RetryingFileCount);
+        Assert.Equal(120, dto.RetryState.RetryDelaySeconds);
+        Assert.Equal(nextRetryAt, dto.RetryState.NextRetryAt);
+    }
+
+    [Fact]
+    public async Task Run_WhenTransferHasNoRetryState_ReturnsNullRetryState()
+    {
+        // Arrange
+        var transferEntity = CreateValidTransferEntity();
+
+        var stub = new DurableEntityClientStub("FileTransferEntities")
+        {
+            OnGetEntityAsync = (id, _) => Task.FromResult<EntityMetadata<TransferEntity>?>(new EntityMetadata<TransferEntity>(id, transferEntity))
+        };
+        var durableTaskClientStub = new DurableTaskClientStub(stub);
+
+        // Act
+        var result = await _function.Run(_httpRequestMock.Object, durableTaskClientStub, _transferId);
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result);
+        var dto = Assert.IsType<TransferStatusDto>(okResult.Value);
+        Assert.Null(dto.RetryState);
     }
 
     private TransferEntity CreateValidTransferEntity()

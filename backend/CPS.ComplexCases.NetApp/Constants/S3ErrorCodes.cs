@@ -6,4 +6,6 @@ public static class S3ErrorCodes
     public const string InvalidAccessKeyId = "InvalidAccessKeyId";
     public const string ExpiredToken = "ExpiredToken";
     public const string InvalidClientTokenId = "InvalidClientTokenId";
+    public const string InternalError = "InternalError";
+    public const string NoSuchUpload = "NoSuchUpload";
 }

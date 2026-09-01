@@ -1,9 +1,4 @@
 using System.Net;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Azure.Functions.Worker;
-using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Attributes;
-using Microsoft.Extensions.Logging;
 using CPS.ComplexCases.API.Clients.FileTransfer;
 using CPS.ComplexCases.API.Constants;
 using CPS.ComplexCases.API.Services;
@@ -14,6 +9,11 @@ using CPS.ComplexCases.Common.Helpers;
 using CPS.ComplexCases.Common.Models.Requests;
 using CPS.ComplexCases.Common.Services;
 using CPS.ComplexCases.Data.Models.Requests;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Azure.Functions.Worker;
+using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Attributes;
+using Microsoft.Extensions.Logging;
 
 namespace CPS.ComplexCases.API.Functions;
 
@@ -21,10 +21,10 @@ public class InitiateBatchCopy(
     ILogger<InitiateBatchCopy> logger,
     IFileTransferClient transferClient,
     IRequestValidator requestValidator,
-    ISecurityGroupMetadataService securityGroupMetadataService,
+    IUserBucketAccessService userBucketAccessService,
     ICaseMetadataService caseMetadataService,
     IInitializationHandler initializationHandler)
-    : InitiateBatchOperationBase(logger, transferClient, requestValidator, securityGroupMetadataService, caseMetadataService, initializationHandler)
+    : InitiateBatchOperationBase(logger, transferClient, requestValidator, userBucketAccessService, caseMetadataService, initializationHandler)
 {
     [Function(nameof(InitiateBatchCopy))]
     [OpenApiOperation(operationId: nameof(InitiateBatchCopy), tags: ["NetApp"], Description = "Initiates an asynchronous batch copy of files and folders within NetApp. Returns a transferId that can be polled for status.")]

@@ -13,9 +13,9 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   workers: 1,
   reporter: [
-    ["list"], 
+    ["list"],
     ["html", { outputFolder: "./playwright-report" }],
-    ["junit", { outputFile: "./playwright-report/e2e-test-report.xml" }]
+    ["junit", { outputFile: "./playwright-report/e2e-test-report.xml" }],
   ],
   timeout: 120_000,
   expect: { timeout: 120_000 },
@@ -67,7 +67,13 @@ export default defineConfig({
     {
       name: "default-mode-tests",
       testMatch: "**/*-default.spec.ts",
-      testIgnore: "egress-to-netapp-move-large-default.spec.ts",
+      testIgnore: "**/egress-to-netapp-move-large-default.spec.ts",
+      use: { ...devices["Desktop Chrome"] },
+    },
+
+    {
+      name: "move-large-test",
+      testMatch: "**/egress-to-netapp-move-large-default.spec.ts",
       use: { ...devices["Desktop Chrome"] },
     },
 

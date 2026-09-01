@@ -3,7 +3,7 @@ import type { UploadedFile } from "./types";
 
 export async function authenticateEgress(
   baseUrl: string,
-  serviceAccountAuth: string
+  serviceAccountAuth: string,
 ): Promise<string> {
   const response = await fetch(`${baseUrl}/api/v1/user/auth/`, {
     method: "GET",
@@ -18,6 +18,38 @@ export async function authenticateEgress(
   const data = await response.json();
   // Egress API expects the token to be Base64-encoded and sent as Basic auth
   return Buffer.from(data.token, "utf-8").toString("base64");
+}
+
+async function fetchWithTokenRefresh(
+  baseUrl: string,
+  serviceAccountAuth: string,
+  tokenRef: { value: string },
+  url: string,
+  init: RequestInit,
+): Promise<Response> {
+  let response = await fetch(url, {
+    ...init,
+    headers: {
+      ...init.headers,
+      Authorization: `Basic ${tokenRef.value}`,
+    },
+  });
+
+  if (response.status === 401) {
+    console.log("Token expired, obtaining a new Egress token...");
+
+    tokenRef.value = await authenticateEgress(baseUrl, serviceAccountAuth);
+
+    response = await fetch(url, {
+      ...init,
+      headers: {
+        ...init.headers,
+        Authorization: `Basic ${tokenRef.value}`,
+      },
+    });
+  }
+
+  return response;
 }
 
 export interface EgressWorkspaceInfo {
@@ -36,7 +68,7 @@ export interface EgressWorkspaceInfo {
  */
 export async function listAutomationWorkspaces(
   baseUrl: string,
-  token: string
+  token: string,
 ): Promise<EgressWorkspaceInfo[]> {
   const pageSize = 50;
   const maxPages = 50;
@@ -45,12 +77,12 @@ export async function listAutomationWorkspaces(
   for (let page = 1; page <= maxPages; page++) {
     const response = await fetch(
       `${baseUrl}/api/v1/workspaces/?page=${page}&page_size=${pageSize}&view=full`,
-      { headers: { Authorization: `Basic ${token}` } }
+      { headers: { Authorization: `Basic ${token}` } },
     );
     if (!response.ok) {
       const text = await response.text();
       throw new Error(
-        `Egress workspace list failed (page ${page}, status ${response.status}): ${text}`
+        `Egress workspace list failed (page ${page}, status ${response.status}): ${text}`,
       );
     }
 
@@ -78,7 +110,7 @@ export async function listAutomationWorkspaces(
 
 export async function findNextWorkspaceName(
   baseUrl: string,
-  token: string
+  token: string,
 ): Promise<string> {
   const pageSize = 50;
   const maxPages = 50;
@@ -87,13 +119,13 @@ export async function findNextWorkspaceName(
   for (let page = 1; page <= maxPages; page++) {
     const response = await fetch(
       `${baseUrl}/api/v1/workspaces/?page=${page}&page_size=${pageSize}`,
-      { headers: { Authorization: `Basic ${token}` } }
+      { headers: { Authorization: `Basic ${token}` } },
     );
 
     if (!response.ok) {
       const text = await response.text();
       throw new Error(
-        `Egress workspace list failed (page ${page}, status ${response.status}): ${text}`
+        `Egress workspace list failed (page ${page}, status ${response.status}): ${text}`,
       );
     }
 
@@ -124,7 +156,7 @@ export async function createWorkspace(
   baseUrl: string,
   token: string,
   name: string,
-  templateId: string
+  templateId: string,
 ): Promise<string> {
   const response = await fetch(`${baseUrl}/api/v1/workspaces/`, {
     method: "POST",
@@ -142,7 +174,7 @@ export async function createWorkspace(
   if (!response.ok) {
     const text = await response.text();
     throw new Error(
-      `Egress workspace creation failed (${response.status}): ${text}`
+      `Egress workspace creation failed (${response.status}): ${text}`,
     );
   }
 
@@ -167,7 +199,7 @@ export async function createFolder(
   token: string,
   workspaceId: string,
   parentPath: string,
-  folderName: string
+  folderName: string,
 ): Promise<string | undefined> {
   const response = await fetch(
     `${baseUrl}/api/v1/workspaces/${workspaceId}/files?path=${encodeURIComponent(parentPath)}`,
@@ -178,7 +210,7 @@ export async function createFolder(
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ folder_name: folderName }),
-    }
+    },
   );
 
   if (response.ok) {
@@ -195,7 +227,7 @@ export async function createFolder(
     return undefined;
   }
   throw new Error(
-    `Egress folder creation failed (${response.status}): ${text}`
+    `Egress folder creation failed (${response.status}): ${text}`,
   );
 }
 
@@ -204,7 +236,7 @@ export async function addUserToWorkspace(
   token: string,
   workspaceId: string,
   email: string,
-  roleId: string
+  roleId: string,
 ): Promise<void> {
   const response = await fetch(
     `${baseUrl}/api/v1/workspaces/${workspaceId}/users/`,
@@ -215,13 +247,13 @@ export async function addUserToWorkspace(
         "Content-Type": "application/json",
       },
       body: JSON.stringify([{ switch_id: email, role_id: roleId }]),
-    }
+    },
   );
 
   if (!response.ok) {
     const text = await response.text();
     throw new Error(
-      `Failed to add user to workspace (${response.status}): ${text}`
+      `Failed to add user to workspace (${response.status}): ${text}`,
     );
   }
 }
@@ -229,19 +261,24 @@ export async function addUserToWorkspace(
 export async function uploadFile(
   baseUrl: string,
   token: string,
+  serviceAccountAuth: string,
   workspaceId: string,
   fileSizeBytes: number,
   fileName: string,
-  folderPath: string = "4. Served Evidence/",
-  chunkSizeMB: number = 5
+  options: { folderPath?: string; chunkSizeMB?: number } = {},
 ): Promise<string> {
+  const { folderPath = "4. Served Evidence/", chunkSizeMB = 5 } = options;
+  const tokenRef = { value: token };
+
   // Step 1: Initiate upload
-  const initiateResponse = await fetch(
+  const initiateResponse = await fetchWithTokenRefresh(
+    baseUrl,
+    serviceAccountAuth,
+    tokenRef,
     `${baseUrl}/api/v1/workspaces/${workspaceId}/uploads`,
     {
       method: "POST",
       headers: {
-        Authorization: `Basic ${token}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
@@ -249,12 +286,14 @@ export async function uploadFile(
         filesize: fileSizeBytes,
         folder_path: folderPath,
       }),
-    }
+    },
   );
 
   if (!initiateResponse.ok) {
     const text = await initiateResponse.text();
-    throw new Error(`Upload initiation failed (${initiateResponse.status}): ${text}`);
+    throw new Error(
+      `Upload initiation failed (${initiateResponse.status}): ${text}`,
+    );
   }
 
   const uploadData = await initiateResponse.json();
@@ -270,24 +309,22 @@ export async function uploadFile(
     const chunkData = Buffer.alloc(currentChunkSize, 0x41); // fill with 'A'
 
     const formData = new FormData();
-    formData.append(
-      "file_content",
-      new Blob([chunkData]),
-      fileName
-    );
+    formData.append("file_content", new Blob([chunkData]), fileName);
 
     let uploaded = false;
     for (let attempt = 0; attempt < 3; attempt++) {
-      const chunkResponse = await fetch(
+      const chunkResponse = await fetchWithTokenRefresh(
+        baseUrl,
+        serviceAccountAuth,
+        tokenRef,
         `${baseUrl}/api/v1/workspaces/${workspaceId}/uploads/${uploadId}/`,
         {
           method: "PATCH",
           headers: {
-            Authorization: `Basic ${token}`,
             "Content-Range": `bytes ${offset}-${end - 1}/${fileSizeBytes}`,
           },
           body: formData,
-        }
+        },
       );
 
       if (chunkResponse.ok) {
@@ -298,7 +335,7 @@ export async function uploadFile(
       if (attempt === 2) {
         const text = await chunkResponse.text();
         throw new Error(
-          `Chunk upload failed after 3 attempts (${chunkResponse.status}): ${text}`
+          `Chunk upload failed after 3 attempts (${chunkResponse.status}): ${text}`,
         );
       }
 
@@ -311,12 +348,15 @@ export async function uploadFile(
 
     offset = end;
     console.log(
-      `  Uploaded ${Math.round((offset / fileSizeBytes) * 100)}% of ${fileName}`
+      `  Uploaded ${Math.round((offset / fileSizeBytes) * 100)}% of ${fileName}`,
     );
   }
 
   // Step 3: Complete upload
-  const completeResponse = await fetch(
+  const completeResponse = await fetchWithTokenRefresh(
+    baseUrl,
+    serviceAccountAuth,
+    tokenRef,
     `${baseUrl}/api/v1/workspaces/${workspaceId}/uploads/${uploadId}/`,
     {
       method: "PUT",
@@ -325,13 +365,13 @@ export async function uploadFile(
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ done: true }),
-    }
+    },
   );
 
   if (!completeResponse.ok) {
     const text = await completeResponse.text();
     throw new Error(
-      `Upload completion failed (${completeResponse.status}): ${text}`
+      `Upload completion failed (${completeResponse.status}): ${text}`,
     );
   }
 
@@ -342,53 +382,54 @@ export async function uploadFile(
 export async function getUploadedFile(
   baseUrl: string,
   token: string,
+  serviceAccountAuth: string,
   workspaceId: string,
   uploadId: string,
   {
     timeoutMs = 60000,
-    retryDelay = 2000, 
+    retryDelay = 1000,
   }: {
-    timeoutMs?: number,
-    retryDelay?: number,
-  } = {}
-): Promise<UploadedFile>{
+    timeoutMs?: number;
+    retryDelay?: number;
+  } = {},
+): Promise<UploadedFile> {
+  const tokenRef = { value: token };
+
   const start = Date.now();
-  let i = 1
 
   while (Date.now() - start < timeoutMs) {
-    const response = await fetch(
+    const response = await fetchWithTokenRefresh(
+      baseUrl,
+      serviceAccountAuth,
+      tokenRef,
       `${baseUrl}/api/v1/workspaces/${workspaceId}/uploads/${uploadId}?view=full`,
       {
         headers: {
           Authorization: `Basic ${token}`,
         },
-      }
+      },
     );
 
     if (!response.ok) {
-      throw new Error(
-        ` Failed to get upload status (${response.status})`
-      );
+      throw new Error(` Failed to get upload status (${response.status})`);
     }
 
     const status = await response.json();
 
     if (status.file_id) {
-      console.log(` Upload complete. File ID found: ${status.file_id}`)
+      console.log(` Upload complete. File ID found: ${status.file_id}`);
       return {
         fileId: status.file_id,
         fileName: status.file_name,
         fileSize: status.file_size,
-        parentFolderId: status.parent_folder_id
+        parentFolderId: status.parent_folder_id,
       };
     }
 
-    await new Promise(r => setTimeout(r, retryDelay));
+    await new Promise((r) => setTimeout(r, retryDelay));
   }
 
-  throw new Error(
-    ` Timed out waiting for upload ${uploadId}`
-  );
+  throw new Error(` Timed out waiting for upload ${uploadId}`);
 }
 
 /**
@@ -411,55 +452,73 @@ export async function getUploadedFile(
  * Returns ids of leaf files only — folders are skipped. Best-effort: on
  * any HTTP failure logs a warning and returns [].
  */
+/**
+ * Lists files in a workspace folder.
+ *
+ * Egress tokens expire well inside a long run (the soak scenarios run for
+ * ~an hour), and an expired token here is particularly harmful: the 401 path
+ * below returns an empty list, which callers read as "the file is not there".
+ * Pass `serviceAccountAuth` to route the request through
+ * `fetchWithTokenRefresh` so a 401 re-authenticates and retries instead.
+ *
+ * `token` accepts a mutable `{ value }` ref as well as a plain string. Pass a
+ * ref and the refreshed token is written back, so a caller caching the token
+ * across many calls refreshes once rather than eating a 401 on every call.
+ */
 export async function listEgressWorkspaceFilesByFolderId(
   baseUrl: string,
-  token: string,
+  token: string | { value: string },
   workspaceId: string,
   folderId: string,
-  expectFile: boolean = false
+  expectFile: boolean = false,
+  serviceAccountAuth?: string,
 ): Promise<{ id: string; fileName: string }[]> {
   const pageSize = 50;
   const maxPages = 50;
   const maxAttempts = expectFile ? 10 : 1;
   const retryDelayMs = 3000;
+  const tokenRef = typeof token === "string" ? { value: token } : token;
 
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     const results: { id: string; fileName: string }[] = [];
-    try {
-      for (let page = 0; page < maxPages; page++) {
-        const skip = page * pageSize;
-        const url = `${baseUrl}/api/v1/workspaces/${workspaceId}/files?view=full&skip=${skip}&limit=${pageSize}&folder=${encodeURIComponent(folderId)}`;
-        const response = await fetch(url, {
-          headers: { Authorization: `Basic ${token}` },
-        });
-        if (!response.ok) {
-          const text = await response.text();
-          console.warn(
-            `  [teardown] listEgressWorkspaceFilesByFolderId ${folderId} failed (${response.status}): ${text}`
-          );
-          return results;
-        }
-
-        const body: {
-          data?: { id: string; filename: string; is_folder?: boolean }[];
-        } = await response.json();
-        const items = body.data ?? [];
-        if (items.length === 0) break;
-
-        for (const item of items) {
-          if (!item.is_folder) {
-            results.push({ id: item.id, fileName: item.filename });
-          }
-        }
-
-        if (items.length < pageSize) break;
+    for (let page = 0; page < maxPages; page++) {
+      const skip = page * pageSize;
+      const url = `${baseUrl}/api/v1/workspaces/${workspaceId}/files?view=full&skip=${skip}&limit=${pageSize}&folder=${encodeURIComponent(folderId)}`;
+      const response = serviceAccountAuth
+        ? await fetchWithTokenRefresh(
+            baseUrl,
+            serviceAccountAuth,
+            tokenRef,
+            url,
+            {},
+          )
+        : await fetch(url, {
+            headers: { Authorization: `Basic ${tokenRef.value}` },
+          });
+      if (!response.ok) {
+        const text = await response.text();
+        // Returning [] here would read as "file not in the folder", turning
+        // an auth failure into a passing deletion assertion. Teardown
+        // catches this itself.
+        throw new Error(
+          `listEgressWorkspaceFilesByFolderId failed for folder ${folderId} ` +
+            `(${response.status}): ${text.slice(0, 300)}`,
+        );
       }
-    } catch (err) {
-      console.warn(
-        `  [teardown] listEgressWorkspaceFilesByFolderId threw:`,
-        err
-      );
-      return results;
+
+      const body: {
+        data?: { id: string; filename: string; is_folder?: boolean }[];
+      } = await response.json();
+      const items = body.data ?? [];
+      if (items.length === 0) break;
+
+      for (const item of items) {
+        if (!item.is_folder) {
+          results.push({ id: item.id, fileName: item.filename });
+        }
+      }
+
+      if (items.length < pageSize) break;
     }
 
     if (results.length > 0 || !expectFile) return results;
@@ -485,20 +544,20 @@ export async function listEgressWorkspaceFilesByFolderId(
  */
 export async function egressFileExistsById(
   baseUrl: string,
-  token: string,
+  token: string | { value: string },
   workspaceId: string,
-  fileId: string
+  fileId: string,
 ): Promise<boolean> {
   const response = await fetch(
     `${baseUrl}/api/v1/workspaces/${workspaceId}/files/${fileId}`,
-    { headers: { Authorization: `Basic ${token}` } }
+    { headers: { Authorization: `Basic ${token}` } },
   );
   if (response.status === 404) return false;
   if (response.ok) return true;
 
   const text = await response.text();
   throw new Error(
-    `Egress file lookup failed (${response.status}) for '${fileId}': ${text.slice(0, 200)}`
+    `Egress file lookup failed (${response.status}) for '${fileId}': ${text.slice(0, 200)}`,
   );
 }
 
@@ -512,7 +571,7 @@ export async function deleteFiles(
   baseUrl: string,
   token: string,
   workspaceId: string,
-  fileIds: string[]
+  fileIds: string[],
 ): Promise<void> {
   if (fileIds.length === 0) return;
   try {
@@ -525,12 +584,12 @@ export async function deleteFiles(
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ file_ids: fileIds }),
-      }
+      },
     );
     if (!response.ok) {
       const text = await response.text();
       console.warn(
-        `  [teardown] deleteFiles [${fileIds.join(",")}] failed (${response.status}): ${text}`
+        `  [teardown] deleteFiles [${fileIds.join(",")}] failed (${response.status}): ${text}`,
       );
     }
   } catch (err) {
@@ -547,7 +606,7 @@ export async function deleteFiles(
 export async function deleteWorkspace(
   baseUrl: string,
   token: string,
-  workspaceId: string
+  workspaceId: string,
 ): Promise<void> {
   try {
     const response = await fetch(
@@ -555,18 +614,15 @@ export async function deleteWorkspace(
       {
         method: "DELETE",
         headers: { Authorization: `Basic ${token}` },
-      }
+      },
     );
     if (!response.ok) {
       const text = await response.text();
       console.warn(
-        `  [teardown] deleteWorkspace ${workspaceId} failed (${response.status}): ${text}`
+        `  [teardown] deleteWorkspace ${workspaceId} failed (${response.status}): ${text}`,
       );
     }
   } catch (err) {
-    console.warn(
-      `  [teardown] deleteWorkspace ${workspaceId} threw:`,
-      err
-    );
+    console.warn(`  [teardown] deleteWorkspace ${workspaceId} threw:`, err);
   }
 }

@@ -16,7 +16,8 @@ import {
 import { Details, Tag, Button } from "../../govuk";
 import RelativePathFiles from "./RelativePathFiles";
 import { formatDate } from "../../../common/utils/formatDate";
-import { formatInTimeZone } from "date-fns-tz";
+import { format } from "date-fns";
+import { tz } from "@date-fns/tz";
 import { getCleanPath } from "../../../common/utils/getCleanPath";
 import { getTransferActivityStatusTagData } from "../../../common/utils/getTransferActivityStatusTagData";
 import { downloadActivityLog } from "../../../apis/gateway-api";
@@ -75,11 +76,10 @@ export const ActivityTimeline: React.FC<ActivityTimelineProps> = ({
   };
 
   const handleDownload = async (activityId: string, timestamp: string) => {
-    const formattedTime = formatInTimeZone(
-      timestamp,
-      "Europe/London",
-      "dd-MM-yyyy-h-mm-aa",
-    );
+    const londonTime = tz("Europe/London");
+    const formattedTime = format(timestamp, "dd-MM-yyyy-h-mm-aa", {
+      in: londonTime,
+    });
     try {
       const response = await downloadActivityLog(activityId);
       const blob = await response.blob();
@@ -119,13 +119,16 @@ export const ActivityTimeline: React.FC<ActivityTimelineProps> = ({
         </div>
       </div>
 
-      {(!!details.files.length || !!details.errors.length) && (
+      {(!!details.files.length ||
+        !!details.errors.length ||
+        !!details.skipped?.length) && (
         <div>
           <p>Below is a list of documents/folders copied:</p>
           <Details summaryChildren="View files">
             <RelativePathFiles
               successFiles={details.files}
               errorFiles={details.errors}
+              skippedFiles={details.skipped}
               sourcePath={details.sourcePath}
               name="activity"
             />

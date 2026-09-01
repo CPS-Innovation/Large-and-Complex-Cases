@@ -3,6 +3,7 @@ using CPS.ComplexCases.Common.Models.Domain.Enums;
 using CPS.ComplexCases.Common.Models.Requests;
 using CPS.ComplexCases.Common.Telemetry;
 using CPS.ComplexCases.FileTransfer.API.Durable.Activity;
+using CPS.ComplexCases.FileTransfer.API.Durable.Helpers;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads.Domain;
 using CPS.ComplexCases.FileTransfer.API.Durable.State;
@@ -195,7 +196,7 @@ public abstract class BatchOrchestratorBase<TPayload, TFileItem>(
             if (batch.Count >= batchSize)
             {
                 var batchResults = await Task.WhenAll(batch);
-                await ProcessTransferResults(context, entityId, batchResults, telemetryEvent);
+                await TransferResultProcessor.ProcessAsync(context, entityId, batchResults, telemetryEvent);
                 allResults.AddRange(batchResults);
                 batch.Clear();
             }
@@ -204,7 +205,7 @@ public abstract class BatchOrchestratorBase<TPayload, TFileItem>(
         if (batch.Count > 0)
         {
             var remainingResults = await Task.WhenAll(batch);
-            await ProcessTransferResults(context, entityId, remainingResults, telemetryEvent);
+            await TransferResultProcessor.ProcessAsync(context, entityId, remainingResults, telemetryEvent);
             allResults.AddRange(remainingResults);
         }
 
@@ -222,70 +223,57 @@ public abstract class BatchOrchestratorBase<TPayload, TFileItem>(
         string orchestratorName)
     {
         int maxOrchestratorRetries = _sizeConfig.MaxOrchestratorRetries;
-        for (int attempt = 0; attempt < maxOrchestratorRetries; attempt++)
+        var retryStateWritten = false;
+
+        try
         {
-            var retryableFailures = allResults
-                .Where(r => r != null && !r.IsSuccess && r.FailedItem?.ErrorCode == TransferErrorCode.Transient)
-                .ToList();
-
-            if (retryableFailures.Count == 0) break;
-
-            logger.LogWarning(
-                "{OrchestratorName} retry attempt {Attempt}/{MaxRetries}: re-attempting {Count} transiently failed files.",
-                orchestratorName, attempt + 1, maxOrchestratorRetries, retryableFailures.Count);
-
-            await context.CreateTimer(
-                context.CurrentUtcDateTime.Add(TimeSpan.FromSeconds(30 * (attempt + 1))),
-                CancellationToken.None);
-
-            var failedKeys = retryableFailures.Select(r => r.FailedItem!.SourcePath).ToHashSet();
-            var retryFileItems = files.Where(f => failedKeys.Contains(f.SourceKey)).ToList();
-
-            await context.Entities.CallEntityAsync(entityId, nameof(TransferEntityState.RemoveTransientFailures));
-
-            telemetryEvent.TotalFilesFailed -= retryableFailures.Count;
-
-            var retryBatch = retryFileItems
-                .Select(fileItem => context.CallActivityAsync<TransferResult>(nameof(TransferFile), buildPayload(fileItem)))
-                .ToList();
-
-            var retryResults = await Task.WhenAll(retryBatch);
-            await ProcessTransferResults(context, entityId, retryResults, telemetryEvent, isRetry: true);
-
-            allResults.RemoveAll(r => r != null && !r.IsSuccess && r.FailedItem?.ErrorCode == TransferErrorCode.Transient);
-            allResults.AddRange(retryResults);
-        }
-    }
-
-    protected static async Task ProcessTransferResults(
-        TaskOrchestrationContext context,
-        EntityInstanceId entityId,
-        TransferResult[] results,
-        TransferOrchestrationEvent telemetryEvent,
-        bool isRetry = false)
-    {
-        foreach (var result in results)
-        {
-            if (result != null && result.IsSuccess && result.SuccessfulItem != null)
+            for (int attempt = 0; attempt < maxOrchestratorRetries; attempt++)
             {
-                await context.Entities.CallEntityAsync(
-                    entityId,
-                    isRetry ? nameof(TransferEntityState.AddSuccessfulRetryItem)
-                            : nameof(TransferEntityState.AddSuccessfulItem),
-                    result.SuccessfulItem);
+                var retryableFailures = allResults
+                    .Where(r => r != null && !r.IsSuccess && r.FailedItem?.ErrorCode == TransferErrorCode.Transient)
+                    .ToList();
 
-                telemetryEvent.TotalFilesTransferred++;
-                telemetryEvent.TotalBytesTransferred += result.SuccessfulItem.Size;
+                if (retryableFailures.Count == 0) break;
+
+                logger.LogWarning(
+                    "{OrchestratorName} retry attempt {Attempt}/{MaxRetries}: re-attempting {Count} transiently failed files.",
+                    orchestratorName, attempt + 1, maxOrchestratorRetries, retryableFailures.Count);
+
+                var delaySeconds = 30 * (attempt + 1);
+                var nextRetryAt = context.CurrentUtcDateTime.AddSeconds(delaySeconds);
+
+                await TransferRetryStateNotifier.WaitingForRetryAsync(
+                    context, entityId, attempt + 1, maxOrchestratorRetries, retryableFailures.Count, delaySeconds, nextRetryAt);
+                retryStateWritten = true;
+
+                await context.CreateTimer(nextRetryAt, CancellationToken.None);
+
+                await TransferRetryStateNotifier.RetryInProgressAsync(
+                    context, entityId, attempt + 1, maxOrchestratorRetries, retryableFailures.Count, delaySeconds);
+
+                var failedKeys = retryableFailures.Select(r => r.FailedItem!.SourcePath).ToHashSet();
+                var retryFileItems = files.Where(f => failedKeys.Contains(f.SourceKey)).ToList();
+
+                await context.Entities.CallEntityAsync(entityId, nameof(TransferEntityState.RemoveTransientFailures));
+
+                telemetryEvent.TotalFilesFailed -= retryableFailures.Count;
+
+                var retryBatch = retryFileItems
+                    .Select(fileItem => context.CallActivityAsync<TransferResult>(nameof(TransferFile), buildPayload(fileItem)))
+                    .ToList();
+
+                var retryResults = await Task.WhenAll(retryBatch);
+                await TransferResultProcessor.ProcessAsync(context, entityId, retryResults, telemetryEvent, isRetry: true);
+
+                allResults.RemoveAll(r => r != null && !r.IsSuccess && r.FailedItem?.ErrorCode == TransferErrorCode.Transient);
+                allResults.AddRange(retryResults);
             }
-            else if (result != null && !result.IsSuccess && result.FailedItem != null)
+        }
+        finally
+        {
+            if (retryStateWritten)
             {
-                await context.Entities.CallEntityAsync(
-                    entityId,
-                    isRetry ? nameof(TransferEntityState.AddFailedRetryItem)
-                            : nameof(TransferEntityState.AddFailedItem),
-                    result.FailedItem);
-
-                telemetryEvent.TotalFilesFailed++;
+                await TransferRetryStateNotifier.ClearAsync(context, entityId);
             }
         }
     }

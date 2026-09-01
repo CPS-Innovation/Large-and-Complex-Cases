@@ -1,21 +1,23 @@
 using System.Net;
 using System.Text;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 using AutoFixture;
 using CPS.ComplexCases.API.Clients.FileTransfer;
+using CPS.ComplexCases.API.Domain.Models;
 using CPS.ComplexCases.API.Domain.Request;
 using CPS.ComplexCases.API.Functions.Transfer;
+using CPS.ComplexCases.API.Services;
 using CPS.ComplexCases.API.Tests.Unit.Helpers;
 using CPS.ComplexCases.API.Validators.Requests;
 using CPS.ComplexCases.Common.Helpers;
 using CPS.ComplexCases.Common.Models;
 using CPS.ComplexCases.Common.Models.Domain.Enums;
 using CPS.ComplexCases.Common.Models.Requests;
+using CPS.ComplexCases.Common.Services;
+using CPS.ComplexCases.Data.Entities;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using Moq;
-using CPS.ComplexCases.API.Services;
-using CPS.ComplexCases.API.Domain.Models;
 
 namespace CPS.ComplexCases.API.Tests.Unit.Functions.Transfer
 {
@@ -24,7 +26,8 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions.Transfer
         private readonly Mock<ILogger<InitiateTransfer>> _loggerMock;
         private readonly Mock<IFileTransferClient> _fileTransferClientMock;
         private readonly Mock<IRequestValidator> _requestValidatorMock;
-        private readonly Mock<ISecurityGroupMetadataService> _securityGroupMetadataServiceMock;
+        private readonly Mock<IUserBucketAccessService> _userBucketAccessServiceMock;
+        private readonly Mock<ICaseMetadataService> _caseMetadataServiceMock;
         private readonly InitiateTransfer _function;
         private readonly Fixture _fixture;
         private readonly Guid _testCorrelationId;
@@ -38,30 +41,30 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions.Transfer
             _loggerMock = new Mock<ILogger<InitiateTransfer>>();
             _fileTransferClientMock = new Mock<IFileTransferClient>();
             _requestValidatorMock = new Mock<IRequestValidator>();
-            _securityGroupMetadataServiceMock = new Mock<ISecurityGroupMetadataService>();
+            _userBucketAccessServiceMock = new Mock<IUserBucketAccessService>();
+            _caseMetadataServiceMock = new Mock<ICaseMetadataService>();
 
             _testCorrelationId = _fixture.Create<Guid>();
             _testUsername = _fixture.Create<string>();
             _testCmsAuthValues = _fixture.Create<string>();
             _testBearerToken = _fixture.Create<string>();
 
-            _securityGroupMetadataServiceMock
-                .Setup(s => s.GetUserSecurityGroupsAsync(It.IsAny<string>()))
-                .ReturnsAsync([
-                    new SecurityGroup
-                    {
-                        Id = _fixture.Create<Guid>(),
-                        BucketName = "test-bucket",
-                        VolumeUuid = _fixture.Create<Guid>(),
-                        DisplayName = "Test Security Group"
-                    }
-                ]);
+            _userBucketAccessServiceMock
+                .Setup(s => s.ResolveBucketAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>()))
+                .ReturnsAsync(new SecurityGroup
+                {
+                    Id = _fixture.Create<Guid>(),
+                    BucketName = "test-bucket",
+                    VolumeUuid = _fixture.Create<Guid>(),
+                    DisplayName = "Test Security Group"
+                });
 
             _function = new InitiateTransfer(
                 _loggerMock.Object,
                 _fileTransferClientMock.Object,
                 _requestValidatorMock.Object,
-                _securityGroupMetadataServiceMock.Object
+                _userBucketAccessServiceMock.Object,
+                _caseMetadataServiceMock.Object
             );
         }
 
@@ -146,6 +149,63 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions.Transfer
             ), It.IsAny<Guid>()), Times.Once);
 
             Assert.IsType<ContentResult>(result);
+        }
+
+        [Fact]
+        public async Task Run_SnapshotsPersistedBucketOntoTransferMetadata()
+        {
+            // Arrange
+            var caseId = 123;
+            var persistedBucket = "manchester-bucket";
+
+            var initiateRequest = new InitiateTransferRequest
+            {
+                TransferType = TransferType.Copy,
+                TransferDirection = TransferDirection.EgressToNetApp,
+                DestinationPath = "/destination",
+                CaseId = caseId,
+                WorkspaceId = "workspace-1",
+                SourcePaths = [new SourcePath { Path = "/source/file1.txt", FileId = "file1" }]
+            };
+
+            _requestValidatorMock
+                .Setup(v => v.GetJsonBody<InitiateTransferRequest, InitiateTransferRequestValidator>(It.IsAny<HttpRequest>()))
+                .ReturnsAsync(new ValidatableRequest<InitiateTransferRequest>
+                {
+                    IsValid = true,
+                    Value = initiateRequest
+                });
+
+            _caseMetadataServiceMock
+                .Setup(s => s.GetCaseMetadataForCaseIdAsync(caseId))
+                .ReturnsAsync(new CaseMetadata { CaseId = caseId, NetappBucketName = persistedBucket });
+
+            _userBucketAccessServiceMock
+                .Setup(s => s.ResolveBucketAsync(_testBearerToken, persistedBucket, null))
+                .ReturnsAsync(new SecurityGroup
+                {
+                    Id = _fixture.Create<Guid>(),
+                    BucketName = persistedBucket,
+                    VolumeUuid = _fixture.Create<Guid>(),
+                    DisplayName = "Manchester"
+                });
+
+            _fileTransferClientMock
+                .Setup(c => c.InitiateFileTransferAsync(It.IsAny<TransferRequest>(), It.IsAny<Guid>()))
+                .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent("Transfer initiated", Encoding.UTF8, "application/json")
+                });
+
+            var request = HttpRequestStubHelper.CreateHttpRequestFor(initiateRequest);
+            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername, _testBearerToken);
+
+            // Act
+            await _function.Run(request, functionContext);
+
+            // Assert
+            _fileTransferClientMock.Verify(c => c.InitiateFileTransferAsync(
+                It.Is<TransferRequest>(r => r.Metadata.BucketName == persistedBucket), It.IsAny<Guid>()), Times.Once);
         }
     }
 }

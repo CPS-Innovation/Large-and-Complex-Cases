@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo, useContext } from "react";
+import { useState, useEffect, useMemo, useContext } from "react";
 import { Tabs } from "../common/tabs/Tabs";
 import { TabId } from "../../common/types/CaseManagement";
 import { ItemProps } from "../common/tabs/types";
@@ -7,7 +7,7 @@ import TransferMaterialsV1Page from "./transfer-materials-v1";
 import TransferResolveFilePathPage from "./transfer-materials/TransferResolveFilePathPage";
 import ActivityLogPage from "./activity-log/index";
 import { getCaseMetaData } from "../../apis/gateway-api";
-import { useNavigate, useLocation, useParams } from "react-router-dom";
+import { useNavigate, useLocation, useParams } from "react-router";
 import { MainStateContext } from "../../providers/MainStateProvider";
 import { PageContentWrapper } from "../govuk/PageContentWrapper";
 import TransferTreeViewPage from "../case-management/transfer-materials/TransferTreeViewPage";
@@ -23,10 +23,7 @@ const CaseManagementPage = () => {
     state: routeState,
   }: {
     state?: {
-      transferId: string;
-      transferSource: "egress" | "netapp";
-      transferEgressFolderPathInitialValue?: string;
-      transferNetAppFolderPathInitialValue?: string;
+      transferId?: string;
     };
   } = location;
   const { caseId } = useParams() as { caseId: string };
@@ -34,9 +31,9 @@ const CaseManagementPage = () => {
 
   const [activeTabId, setActiveTabId] = useState<TabId>("transfer-materials");
 
-  const { state } = useContext(MainStateContext);
+  const { state, dispatch } = useContext(MainStateContext);
   const {
-    appData: { featureFlags },
+    appData: { featureFlags, transferPage },
   } = state;
   const handleTabSelection = (tabId: TabId) => {
     setActiveTabId(tabId);
@@ -57,6 +54,12 @@ const CaseManagementPage = () => {
 
   useEffect(() => {
     if (caseMetaData) {
+      dispatch({
+        type: "SET_CASE_META_DATA",
+        payload: {
+          caseMetaData,
+        },
+      });
       if (!caseMetaData.egressWorkspaceId && !caseMetaData.netappFolderPath) {
         navigate("/");
       }
@@ -81,26 +84,7 @@ const CaseManagementPage = () => {
         );
       }
     }
-  }, [caseMetaData, navigate, caseId, operationNameOrDefendantName]);
-
-  const validateRoute = useCallback(() => {
-    if (
-      location.pathname.endsWith("/transfer-resolve-file-path") &&
-      !location?.state?.isRouteValid
-    ) {
-      navigate(`/`);
-    }
-    if (
-      location.pathname.endsWith("/transfer-rename-file") &&
-      !location?.state?.isRouteValid
-    ) {
-      navigate(`/`);
-    }
-  }, [location, navigate]);
-
-  useEffect(() => {
-    validateRoute();
-  }, [location, validateRoute]);
+  }, [caseMetaData, navigate, caseId, operationNameOrDefendantName, dispatch]);
 
   const tabItems = useMemo(() => {
     const items: ItemProps<TabId>[] = [];
@@ -116,19 +100,22 @@ const CaseManagementPage = () => {
               caseId={caseId}
               operationName={operationNameOrDefendantName}
               egressWorkspaceId={caseMetaData.egressWorkspaceId}
+              egressWorkspaceName={
+                caseMetaData.egressWorkspaceName || operationNameOrDefendantName
+              }
               netAppPath={caseMetaData.netappFolderPath}
               activeTransferId={
-                routeState?.transferId ?? caseMetaData.activeTransferId
+                routeState?.transferId ?? caseMetaData.activeTransferId ?? ""
               }
               urn={caseMetaData.urn}
               transferSourceInitialValue={
-                routeState?.transferSource ?? "egress"
+                transferPage?.transferSource ?? "egress"
               }
               transferEgressFolderPathInitialValue={
-                routeState?.transferEgressFolderPathInitialValue ?? null
+                transferPage?.transferSourceEgressFolderPath ?? null
               }
               transferNetAppFolderPathInitialValue={
-                routeState?.transferNetAppFolderPathInitialValue ?? null
+                transferPage?.transferSourceNetAppFolderPath ?? null
               }
             />
           ) : (
@@ -151,7 +138,7 @@ const CaseManagementPage = () => {
               egressWorkspaceId={caseMetaData.egressWorkspaceId}
               netAppPath={caseMetaData.netappFolderPath}
               activeTransferId={
-                routeState?.transferId ?? caseMetaData.activeTransferId
+                routeState?.transferId ?? caseMetaData.activeTransferId ?? ""
               }
               urn={caseMetaData.urn}
             />
@@ -201,6 +188,7 @@ const CaseManagementPage = () => {
     caseMetaData,
     routeState,
     featureFlags,
+    transferPage,
     operationNameOrDefendantName,
   ]);
   if (isCaseMetaDataLoading) {

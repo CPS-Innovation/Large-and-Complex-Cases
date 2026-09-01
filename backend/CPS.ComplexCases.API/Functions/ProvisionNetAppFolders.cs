@@ -1,11 +1,5 @@
 using System.Net;
 using System.Text.Json;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Azure.Functions.Worker;
-using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Attributes;
-using Microsoft.Extensions.Logging;
-using Microsoft.OpenApi.Models;
 using CPS.ComplexCases.ActivityLog.Services;
 using CPS.ComplexCases.API.Clients.FileTransfer;
 using CPS.ComplexCases.API.Constants;
@@ -22,6 +16,12 @@ using CPS.ComplexCases.DDEI.Client;
 using CPS.ComplexCases.DDEI.Factories;
 using CPS.ComplexCases.DDEI.Services;
 using CPS.ComplexCases.NetApp.Models.Dto;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Azure.Functions.Worker;
+using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Attributes;
+using Microsoft.Extensions.Logging;
+using Microsoft.OpenApi.Models;
 
 namespace CPS.ComplexCases.Api.Functions;
 
@@ -31,7 +31,7 @@ public class ProvisionNetAppFolders(ILogger<ProvisionNetAppFolders> logger,
     ICaseNamingService caseNamingService,
     IFileTransferClient transferClient,
     IRequestValidator requestValidator,
-    ISecurityGroupMetadataService securityGroupMetadataService,
+    IUserBucketAccessService userBucketAccessService,
     ICaseMetadataService caseMetadataService,
     IActivityLogService activityLogService,
     IInitializationHandler initializationHandler)
@@ -42,7 +42,7 @@ public class ProvisionNetAppFolders(ILogger<ProvisionNetAppFolders> logger,
     private readonly ICaseNamingService _caseNamingService = caseNamingService;
     private readonly IFileTransferClient _transferClient = transferClient;
     private readonly IRequestValidator _requestValidator = requestValidator;
-    private readonly ISecurityGroupMetadataService _securityGroupMetadataService = securityGroupMetadataService;
+    private readonly IUserBucketAccessService _userBucketAccessService = userBucketAccessService;
     private readonly ICaseMetadataService _caseMetadataService = caseMetadataService;
     private readonly IActivityLogService _activityLogService = activityLogService;
     private readonly IInitializationHandler _initializationHandler = initializationHandler;
@@ -99,7 +99,8 @@ public class ProvisionNetAppFolders(ILogger<ProvisionNetAppFolders> logger,
         var caseNameDto = await _caseNamingService.GenerateCaseName(cmsResponse);
         var folderPathName = caseNameDto.CaseName.EnsureTrailingSlash();
 
-        var securityGroups = await _securityGroupMetadataService.GetUserSecurityGroupsAsync(context.BearerToken);
+        var bucketName = (await _userBucketAccessService.ResolveBucketAsync(
+            context.BearerToken, caseMetadata?.NetappBucketName, provisionFoldersRequest.Value.BucketName)).BucketName;
 
         var provisionNetAppFoldersRequest = new ProvisionNetAppFoldersRequest
         {
@@ -107,7 +108,7 @@ public class ProvisionNetAppFolders(ILogger<ProvisionNetAppFolders> logger,
             Urn = cmsResponse.Urn,
             TemplateName = provisionFoldersRequest.Value.TemplateFolderPath,
             DestinationFolderPath = folderPathName,
-            BucketName = securityGroups.First().BucketName,
+            BucketName = bucketName,
             BearerToken = context.BearerToken,
             CaseName = caseNameDto.CaseName,
             OperationName = caseNameDto.OperationName,
@@ -160,7 +161,8 @@ public class ProvisionNetAppFolders(ILogger<ProvisionNetAppFolders> logger,
         {
             CaseId = caseId,
             NetAppFolderPath = folderPathName,
-            OperationName = caseNameDto.OperationName
+            OperationName = caseNameDto.OperationName,
+            BucketName = bucketName
         });
 
         try

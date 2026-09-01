@@ -1,7 +1,7 @@
-using Microsoft.Azure.Functions.Worker;
-using Microsoft.DurableTask.Entities;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads.Domain;
 using CPS.ComplexCases.FileTransfer.API.Models.Domain.Enums;
+using Microsoft.Azure.Functions.Worker;
+using Microsoft.DurableTask.Entities;
 
 namespace CPS.ComplexCases.FileTransfer.API.Durable.State;
 
@@ -21,6 +21,18 @@ public class TransferEntityState : TaskEntity<TransferEntity>
     public void UpdateStatus(TransferStatus status)
     {
         State.Status = status;
+        State.UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void UpdateRetryState(TransferRetryState retryState)
+    {
+        State.RetryState = retryState;
+        State.UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void ClearRetryState()
+    {
+        State.RetryState = null;
         State.UpdatedAt = DateTime.UtcNow;
     }
 
@@ -46,6 +58,14 @@ public class TransferEntityState : TaskEntity<TransferEntity>
     {
         State.FailedItems.Add(failedItem);
         State.FailedFiles++;
+        State.ProcessedFiles++;
+        State.UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void AddSkippedItem(TransferItem skippedItem)
+    {
+        State.SkippedItems.Add(skippedItem);
+        State.SkippedFiles++;
         State.ProcessedFiles++;
         State.UpdatedAt = DateTime.UtcNow;
     }

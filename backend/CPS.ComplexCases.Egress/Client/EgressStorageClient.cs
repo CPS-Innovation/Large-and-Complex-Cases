@@ -1,6 +1,4 @@
 using System.Net;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using CPS.ComplexCases.Common.Extensions;
 using CPS.ComplexCases.Common.Models.Domain;
 using CPS.ComplexCases.Common.Models.Domain.Dtos;
@@ -11,6 +9,8 @@ using CPS.ComplexCases.Egress.Factories;
 using CPS.ComplexCases.Egress.Models;
 using CPS.ComplexCases.Egress.Models.Args;
 using CPS.ComplexCases.Egress.Models.Response;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace CPS.ComplexCases.Egress.Client;
 
@@ -23,7 +23,7 @@ public class EgressStorageClient(
 {
     private const string RootPathValue = ".";
 
-    public async Task<(Stream Stream, long ContentLength)> OpenReadStreamAsync(string path, string? workspaceId, string? fileId, string? BearerToken = null, string? bucketName = null)
+    public async Task<(Stream Stream, long ContentLength)> OpenReadStreamAsync(string path, string? workspaceId = null, string? fileId = null, string? bearerToken = null, string? bucketName = null)
     {
         var token = await GetWorkspaceToken();
 
@@ -41,7 +41,7 @@ public class EgressStorageClient(
         return (stream, contentLength);
     }
 
-    public async Task<UploadSession> InitiateUploadAsync(string destinationPath, long fileSize, string sourcePath, string? workspaceId = null, string? relativePath = null, string? sourceRootFolderPath = null, string? BearerToken = null, string? bucketName = null)
+    public async Task<UploadSession> InitiateUploadAsync(string destinationPath, long fileSize, string sourcePath, string? workspaceId = null, string? relativePath = null, string? sourceRootFolderPath = null, string? bearerToken = null, string? bucketName = null)
     {
         var token = await GetWorkspaceToken();
 
@@ -80,7 +80,7 @@ public class EgressStorageClient(
             // The newly created folder is not always immediately visible to create-upload, so retry
             // the create-upload a few times with a short settle delay rather than a single bare retry.
             var maxAttempts = Math.Max(1, _egressOptions.CreateUploadRetryAttempts);
-            for (var attempt = 1; ; attempt++)
+            for (var attempt = 1; attempt <= maxAttempts; attempt++)
             {
                 await Task.Delay(GetCreateUploadSettleDelay(attempt));
 
@@ -102,6 +102,9 @@ public class EgressStorageClient(
                         fullDestinationPath, attempt, maxAttempts);
                 }
             }
+
+            throw new InvalidOperationException(
+                $"Create-upload still returns 404 after folder creation for {fullDestinationPath} after {maxAttempts} attempts.");
         }
     }
 
@@ -120,7 +123,7 @@ public class EgressStorageClient(
         return TimeSpan.FromSeconds(baseSeconds * attempt);
     }
 
-    public async Task<UploadChunkResult> UploadChunkAsync(UploadSession session, int chunkNumber, byte[] chunkData, long? start = null, long? end = null, long? totalSize = null, string? BearerToken = null, string? bucketName = null)
+    public async Task<UploadChunkResult> UploadChunkAsync(UploadSession session, int chunkNumber, byte[] chunkData, long? start = null, long? end = null, long? totalSize = null, string? bearerToken = null, string? bucketName = null)
     {
         var token = await GetWorkspaceToken();
 
@@ -137,7 +140,7 @@ public class EgressStorageClient(
         var maxAttempts = Math.Max(1, _egressOptions.MaxChunkUploadAttempts);
         var transferTimeout = TimeSpan.FromSeconds(_egressOptions.TransferTimeoutSeconds);
 
-        for (var attempt = 1; ; attempt++)
+        for (var attempt = 1; attempt <= maxAttempts; attempt++)
         {
             try
             {
@@ -158,13 +161,18 @@ public class EgressStorageClient(
                 await Task.Delay(delay);
             }
         }
+
+        throw new InvalidOperationException(
+            $"Chunk {chunkNumber} upload for upload {session.UploadId} failed after {maxAttempts} attempts.");
     }
 
-    // Egress chunk PATCH's fail intermittently with 5xx/429 under load, and a slow link can trip the
-    // per-chunk timeout. All of these are worth a bounded retry before failing the whole file.
+    // Egress chunk PATCHes fail intermittently with 5xx/429 under load, a dropped connection has no
+    // status code, and a slow link can trip the per-chunk timeout. All of these are worth a bounded
+    // retry before failing the whole file. BrokenCircuitException is not retried: fail-fast while the
+    // circuit is open, and let the transfer orchestrator resume the file after the break.
     private static bool IsRetryableChunkError(Exception ex) =>
         (ex is HttpRequestException httpEx
-            && ((int?)httpEx.StatusCode >= 500 || httpEx.StatusCode == HttpStatusCode.TooManyRequests))
+            && httpEx.StatusCode is null or >= HttpStatusCode.InternalServerError or HttpStatusCode.TooManyRequests)
         || ex is OperationCanceledException
         || ex is TimeoutException;
 
@@ -177,7 +185,7 @@ public class EgressStorageClient(
         return TimeSpan.FromSeconds(exponentialSeconds) + TimeSpan.FromMilliseconds(jitterMs);
     }
 
-    public async Task<bool> CompleteUploadAsync(UploadSession session, string? md5hash = null, Dictionary<int, string>? etags = null, string? BearerToken = null, string? bucketName = null, string? filePath = null)
+    public async Task<bool> CompleteUploadAsync(UploadSession session, string? md5hash = null, Dictionary<int, string>? etags = null, string? bearerToken = null, string? bucketName = null, string? filePath = null)
     {
         var token = await GetWorkspaceToken();
 
@@ -192,7 +200,7 @@ public class EgressStorageClient(
         return response.StatusCode == HttpStatusCode.OK;
     }
 
-    public async Task<IEnumerable<FileTransferInfo>> ListFilesForTransferAsync(List<TransferEntityDto> selectedEntities, string? workspaceId = null, int? caseId = null, string? BearerToken = null, string? bucketName = null)
+    public async Task<IEnumerable<FileTransferInfo>> ListFilesForTransferAsync(List<TransferEntityDto> selectedEntities, string? workspaceId = null, int? caseId = null, string? bearerToken = null, string? bucketName = null)
     {
         if (selectedEntities == null || selectedEntities.Count == 0)
             throw new ArgumentException("Selected entities cannot be null or empty", nameof(selectedEntities));
@@ -228,7 +236,7 @@ public class EgressStorageClient(
         return results.SelectMany(files => files);
     }
 
-    public async Task<DeleteFilesResult> DeleteFilesAsync(List<DeletionEntityDto> filesToDelete, string? workspaceId = null, string? BearerToken = null, string? bucketName = null)
+    public async Task<DeleteFilesResult> DeleteFilesAsync(List<DeletionEntityDto> filesToDelete, string? workspaceId = null, string? bearerToken = null, string? bucketName = null)
     {
         if (filesToDelete == null || filesToDelete.Count == 0)
             throw new ArgumentException("Selected entities cannot be null or empty", nameof(filesToDelete));

@@ -8,22 +8,22 @@ namespace CPS.ComplexCases.FileTransfer.API.Middleware;
 
 public sealed partial class RequestValidationMiddleware() : IFunctionsWorkerMiddleware
 {
-  public async Task Invoke(FunctionContext context, FunctionExecutionDelegate next)
-  {
-    var httpRequestData = await context.GetHttpRequestDataAsync();
-
-    if (httpRequestData != null)
+    public async Task Invoke(FunctionContext context, FunctionExecutionDelegate next)
     {
-      // Block requests to certain routes in production
-      if (RouteBlockerHelper.ShouldBlockRoute(httpRequestData.Url.AbsolutePath))
-      {
-        var response = httpRequestData.CreateResponse(HttpStatusCode.NotFound);
-        await response.WriteStringAsync("Not Found");
-        context.GetInvocationResult().Value = response;
-        return;
-      }
-    }
+        var httpRequestData = await context.GetHttpRequestDataAsync();
 
-    await next(context);
-  }
+        if (httpRequestData != null)
+        {
+            // Block requests to certain routes in production
+            if (RouteBlockerHelper.ShouldBlockRoute(httpRequestData.Url.AbsolutePath))
+            {
+                var response = httpRequestData.CreateResponse(HttpStatusCode.NotFound);
+                await response.WriteStringAsync("Not Found");
+                context.GetInvocationResult().Value = response;
+                return;
+            }
+        }
+
+        await next(context);
+    }
 }

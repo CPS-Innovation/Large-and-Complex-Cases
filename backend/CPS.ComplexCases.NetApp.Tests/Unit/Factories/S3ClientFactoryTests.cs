@@ -1,9 +1,8 @@
 using System.Diagnostics;
 using System.IdentityModel.Tokens.Jwt;
+using System.Net.Security;
 using System.Security.Claims;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using Microsoft.IdentityModel.Tokens;
+using System.Security.Cryptography.X509Certificates;
 using AutoFixture;
 using AutoFixture.AutoMoq;
 using CPS.ComplexCases.NetApp.Factories;
@@ -11,9 +10,10 @@ using CPS.ComplexCases.NetApp.Models;
 using CPS.ComplexCases.NetApp.Models.S3.Credentials;
 using CPS.ComplexCases.NetApp.Services;
 using CPS.ComplexCases.NetApp.Telemetry;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
 using Moq;
-using System.Security.Cryptography.X509Certificates;
-using System.Net.Security;
 
 namespace CPS.ComplexCases.NetApp.Tests.Unit.Factories;
 
@@ -49,7 +49,7 @@ public class S3ClientFactoryTests
         _telemetryHandlerMock = new Mock<IS3TelemetryHandler>();
         _netAppCertFactoryMock = new Mock<INetAppCertFactory>();
 
-        var testCert = new X509Certificate2([]);
+        var testCert = GenerateSelfSignedCertificate("CN=TestCA");
         var testCertCollection = new X509Certificate2Collection { testCert };
 
         _netAppCertFactoryMock
@@ -677,7 +677,7 @@ public class S3ClientFactoryTests
             Times.Once);
     }
 
- [Fact]
+    [Fact]
     public async Task GetS3ClientAsync_WhenCalledConcurrently_RotatesCredentialsOnlyOnce()
     {
         // Arrange

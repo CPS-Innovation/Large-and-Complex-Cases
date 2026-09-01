@@ -1,7 +1,4 @@
 using System.Text.Json;
-using Microsoft.DurableTask.Client.Entities;
-using Microsoft.DurableTask.Entities;
-using Microsoft.Extensions.Logging;
 using AutoFixture;
 using AutoFixture.AutoMoq;
 using CPS.ComplexCases.ActivityLog.Enums;
@@ -16,6 +13,9 @@ using CPS.ComplexCases.FileTransfer.API.Durable.Payloads;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads.Domain;
 using CPS.ComplexCases.FileTransfer.API.Models.Domain.Enums;
 using CPS.ComplexCases.FileTransfer.API.Tests.Unit.Stubs;
+using Microsoft.DurableTask.Client.Entities;
+using Microsoft.DurableTask.Entities;
+using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace CPS.ComplexCases.FileTransfer.API.Tests.Unit.Durable.Activity;

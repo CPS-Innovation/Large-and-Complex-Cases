@@ -11,7 +11,7 @@ variables:
   - group: lacc-automated-testing-${{ parameters.environment }}
   - group: lacc-backend-config-${{ parameters.environment }}
   - name: nodeVersion
-    value: "20.x"
+    value: "24.x"
   - name: workingDir
     value: "ui-spa"
 
@@ -49,6 +49,6 @@ steps:
       CMS_BASE_URL: $(DDEIOptionsBaseUrl)
 
   - publish: "$(workingDir)/playwright/test-results/lh-report.html"
-    artifact: "lighthouse-report"
+    artifact: "$(System.JobId)-lighthouse-report"
     displayName: "Publish Lighthouse Report"
     condition: succeededOrFailed()

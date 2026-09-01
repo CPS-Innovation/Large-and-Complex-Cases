@@ -1,5 +1,6 @@
 import { expect, Locator } from "@playwright/test";
 import { TransferMaterialsTabApi } from "./TransferMaterialsTabApi";
+import { TransferDestinationPage } from "./TransferDestinationPage";
 import { BaseTransferMaterialsTab } from "./BaseTransferMaterialsTab";
 
 // The new screen navigates to one of these routes on a failed or
@@ -10,11 +11,11 @@ const TRANSFER_ERROR_ROUTE =
 /**
  * New-screen (v1) Transfer Materials page object, selected by
  * `getTransferMaterialsTab` when `TRANSFER_MATERIALS_V1` is on. Differs from the
- * old screen: NetApp table renamed "shared drive"; direction toggles via a
- * `View Shared Drive` / `View Egress` link; errors use the routes above.
- * Copy/Move is driven from the destination panel's inline inset button
- * (`<action> to <folder>`) and confirmed via the "Transfer confirmation alert
- * modal" ("Continue"). Egress-side helpers come from `BaseTransferMaterialsTab`.
+ * old screen: NetApp table renamed "shared drive"; Copy/Move are
+ * `Copy selected` / `Move selected` buttons; direction toggles via a
+ * `View Shared Drive` / `View Egress` link; no confirm modal (Copy/Move navigate
+ * to a destination-tree page, driven by `TransferDestinationPage`); errors use
+ * the routes above. Egress-side helpers come from `BaseTransferMaterialsTab`.
  */
 export class TransferMaterialsTabV1
   extends BaseTransferMaterialsTab
@@ -29,22 +30,28 @@ export class TransferMaterialsTabV1
       .first();
   }
 
-  /** Click the inline Copy/Move control in the destination panel's inset. Each
-   * panel carries its own inset: the shared-drive (netapp) inset drives
-   * Egress -> Shared Drive, the egress inset drives Shared Drive -> Egress. The
-   * button's accessible name is `<action> to <folderName>` (e.g.
-   * "Move to Automation-Testing"), so match on the `<action> to ` prefix. */
-  private async clickTransferControl(
-    action: "Copy" | "Move",
-    direction: "egressToNetApp" | "netAppToEgress",
-  ): Promise<void> {
-    const inset =
-      direction === "egressToNetApp" ? "netapp-inset-text" : "egress-inset-text";
-    await this.page
-      .getByTestId(inset)
+  // Two V1 layouts exist during the rollout. The older build (currently on
+  // staging) shows a "<action> selected" button in the source bar that advances
+  // to a separate destination-tree page. The newer build (currently on dev)
+  // shows source and destination together with an inline "<action> to <folder>"
+  // button and no "selected" step. selectAction/confirmTransfer detect which is
+  // present so the specs work against either.
+
+  /** Source-bar control on the older layout ("Copy selected" / "Move selected").
+   * Renders in a top and bottom bar; target the first. */
+  private selectedControl(action: "Copy" | "Move"): Locator {
+    return this.page
+      .getByRole("button", { name: `${action} selected` })
+      .first();
+  }
+
+  /** Inline confirm control ("<action> to <folder>"), used by the newer layout
+   * directly and by the older layout's destination-tree page after a folder is
+   * picked. */
+  private inlineTransferControl(action: "Copy" | "Move"): Locator {
+    return this.page
       .getByRole("button", { name: new RegExp(`^${action} to `) })
-      .first()
-      .click();
+      .first();
   }
 
   /**
@@ -124,29 +131,56 @@ export class TransferMaterialsTabV1
 
   async selectAction(
     action: "Copy" | "Move",
-    direction: "egressToNetApp" | "netAppToEgress" = "egressToNetApp",
+    _direction?: "egressToNetApp" | "netAppToEgress",
   ): Promise<void> {
-    // The transfer target is the folder currently shown in the destination
-    // panel (its inset reads "<action> to <folder>"); the direction selects
-    // which panel's inset holds the control.
-    await this.clickTransferControl(action, direction);
+    // Direction is implied by the current source (Move renders only when Egress
+    // is the source). On the older layout, click "<action> selected" to advance
+    // to the destination-tree page (confirmTransfer finishes the choice). On the
+    // newer layout there is no such button — the inline "<action> to <folder>"
+    // control is clicked in confirmTransfer instead, so this is a no-op.
+    const selected = this.selectedControl(action);
+    const hasSelected = await selected
+      .waitFor({ state: "visible", timeout: 15_000 })
+      .then(() => true)
+      .catch(() => false);
+    if (hasSelected) {
+      await selected.click();
+    }
   }
 
   /**
-   * Confirm the transfer. Clicking Copy/Move opens a "Transfer confirmation
-   * alert modal" (dialog, named via aria-labelledby) — there is no
-   * destination-tree page. "Continue" stays disabled until the "I want to
-   * <copy|move> N file(s) to <folder>" acknowledgement checkbox is ticked
-   * (present on every transfer, not just duplicates), so check it first, then
-   * Continue.
+   * Confirm the transfer. No confirm modal on either V1 layout. On the older
+   * layout, selectAction advanced to a destination-tree page — pick the first
+   * selectable folder (the connected root) and click "<action> to <folder>". On
+   * the newer layout, the "<action> to <folder>" button is already inline, so
+   * click it directly. Detected by whether the destination tree appears.
+   * `action` must match the Copy/Move just initiated (the label depends on it).
    */
-  async confirmTransfer(_action: "Copy" | "Move"): Promise<void> {
-    const modal = this.page.getByRole("dialog", {
-      name: "Transfer confirmation alert modal",
-    });
-    await modal.waitFor({ state: "visible", timeout: 30_000 });
-    await modal.getByRole("checkbox").check();
-    await modal.getByRole("button", { name: "Continue" }).click();
+  async confirmTransfer(action: "Copy" | "Move"): Promise<void> {
+    const tree = this.page.getByRole("tree", { name: "Folders" });
+    const onDestinationPage = await tree
+      .waitFor({ state: "visible", timeout: 15_000 })
+      .then(() => true)
+      .catch(() => false);
+
+    if (onDestinationPage) {
+      const destination = new TransferDestinationPage(this.page);
+      await destination.waitForLoaded();
+      await destination.selectFirstSelectableFolder();
+      await destination.confirm(action);
+    } else {
+      await this.inlineTransferControl(action).click();
+      // The newer layout raises a confirmation modal after the inline control:
+      // tick "I want to move/copy ..." to enable Continue, then confirm.
+      const modal = this.page.getByRole("dialog", {
+        name: /Transfer confirmation/,
+      });
+      await modal.waitFor({ state: "visible", timeout: 30_000 });
+      await modal
+        .getByRole("checkbox", { name: /I want to (move|copy)/i })
+        .check();
+      await modal.getByRole("button", { name: "Continue" }).click();
+    }
   }
 
   /**

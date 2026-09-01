@@ -23,7 +23,7 @@ export interface DefaultSetupOptions {
  */
 export async function setupDefaultTestData(
   page: Page,
-  options: DefaultSetupOptions = {}
+  options: DefaultSetupOptions = {},
 ): Promise<TestSetupResult> {
   const config = loadEnvConfig();
   const fileSizeMb = options.fileSizeMb ?? config.testFileSizeMb;
@@ -45,7 +45,7 @@ export async function setupDefaultTestData(
 
   if (!workspaceId) {
     throw new Error(
-      "DEFAULT_WORKSPACE_ID is required for default mode. Set it in your .env file."
+      "DEFAULT_WORKSPACE_ID is required for default mode. Set it in your .env file.",
     );
   }
 
@@ -55,7 +55,7 @@ export async function setupDefaultTestData(
   console.log("[1/3] Authenticating with Egress...");
   const egressToken = await authenticateEgress(
     config.egressBaseUrl,
-    config.egressServiceAccountAuth
+    config.egressServiceAccountAuth,
   );
 
   // Per-run timestamped subfolder reused on both sides of the transfer
@@ -74,7 +74,7 @@ export async function setupDefaultTestData(
   const uploadPath = `${sourceParent}/${uploadSubfolder}/`;
 
   console.log(
-    `[2/3] Ensuring subfolder ${uploadSubfolder} exists in source + destination...`
+    `[2/3] Ensuring subfolder ${uploadSubfolder} exists in source + destination...`,
   );
   // Capture the source folder id for Move test verification
   const sourceSubfolderId = await createFolder(
@@ -82,7 +82,7 @@ export async function setupDefaultTestData(
     egressToken,
     workspaceId,
     sourceParent,
-    uploadSubfolder
+    uploadSubfolder,
   );
   // Capture the destination folder id so per-test teardown can list and
   // delete the file the LCC backend wrote there during NetApp->Egress
@@ -93,11 +93,11 @@ export async function setupDefaultTestData(
     egressToken,
     workspaceId,
     destinationParent,
-    uploadSubfolder
+    uploadSubfolder,
   );
 
   console.log(
-    `[3/3] Uploading ${fileCount} test file(s) of ${fileSizeMb}MB to ${workspaceName} (${workspaceId}) at ${uploadPath}...`
+    `[3/3] Uploading ${fileCount} test file(s) of ${fileSizeMb}MB to ${workspaceName} (${workspaceId}) at ${uploadPath}...`,
   );
   const fileSizeBytes = fileSizeMb * 1024 * 1024;
   const uploadIds: string[] = [];
@@ -112,34 +112,36 @@ export async function setupDefaultTestData(
     const uploadId = await uploadFile(
       config.egressBaseUrl,
       egressToken,
+      config.egressServiceAccountAuth,
       workspaceId,
       fileSizeBytes,
       fileName,
-      uploadPath
+      { folderPath: uploadPath },
     );
     uploadIds.push(uploadId);
   }
 
-  console.log ("  Getting the uploaded file ID(s)...")
+  console.log("  Getting the uploaded file ID(s)...");
   const files = await Promise.all(
-    uploadIds.map(uploadId =>
+    uploadIds.map((uploadId) =>
       getUploadedFile(
         config.egressBaseUrl,
         egressToken,
+        config.egressServiceAccountAuth,
         workspaceId,
         uploadId,
         {
           timeoutMs: Math.max(30000, fileSizeMb * 15000),
-          retryDelay: Math.min(10000,Math.max(2000, fileSizeMb * 5)),
-        }
-      )
-    )
+          retryDelay: Math.min(10000, Math.max(1000, fileSizeMb * 5)),
+        },
+      ),
+    ),
   );
 
   console.log("=== Upload Complete ===\n");
 
   console.log(
-    `  Using existing case: ${caseUrn} (ID: ${caseId}), workspace: ${workspaceName}`
+    `  Using existing case: ${caseUrn} (ID: ${caseId}), workspace: ${workspaceName}`,
   );
   console.log("  Skipping case registration (already connected)\n");
 
@@ -189,6 +191,15 @@ export async function setupDefaultTestData(
   // DEFAULT_CASE_ID isn't configured (NetApp teardown silently skips then).
   const caseIdNum = caseId ? Number.parseInt(caseId, 10) : undefined;
 
+  // Re-authenticate before returning: the token from step 1 was obtained
+  // before the upload, and a large upload + move + verification can outlast its
+  // lifetime. The specs use this token for the post-move Egress verification,
+  // so return a fresh one rather than the stale step-1 token.
+  const verificationEgressToken = await authenticateEgress(
+    config.egressBaseUrl,
+    config.egressServiceAccountAuth,
+  );
+
   return {
     workspace: { id: workspaceId, name: workspaceName },
     files,
@@ -198,6 +209,6 @@ export async function setupDefaultTestData(
     uploadPath,
     sourceSubfolderId,
     destinationSubfolderId,
-    egressToken,
+    egressToken: verificationEgressToken,
   };
 }

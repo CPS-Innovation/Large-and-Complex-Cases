@@ -1,6 +1,6 @@
+using CPS.ComplexCases.Common.Models.Domain.Enums;
 using CPS.ComplexCases.Common.Models.Requests;
 using CPS.ComplexCases.FileTransfer.API.Validators;
-using CPS.ComplexCases.Common.Models.Domain.Enums;
 using FluentValidation.TestHelper;
 
 namespace CPS.ComplexCases.FileTransfer.API.Tests.Unit.Validators;

@@ -33,9 +33,10 @@ function slugify(title: string): string {
     .slice(0, 40);
 }
 
-export const test = base.extend<
-  { testOptions: RegisterCaseTestOptions; testData: TestSetupResult }
->({
+export const test = base.extend<{
+  testOptions: RegisterCaseTestOptions;
+  testData: TestSetupResult;
+}>({
   testOptions: [{ fileSizeMb: 100, fileCount: 1 }, { option: true }],
 
   // Fixture timeout bumped to 5 min to cover up to 200MB / 3x50MB uploads
@@ -43,119 +44,135 @@ export const test = base.extend<
   // calls inside specs only kick in after this fixture finishes, so setup
   // would otherwise be capped at the project-level 120s. Mirrors the same
   // timeout the default-mode fixtures use.
-  testData: [async ({ testOptions, page }, use, testInfo) => {
-    if (!fs.existsSync(STATE_FILE)) {
-      throw new Error(
-        `Shared register-case state missing at ${STATE_FILE}. ` +
-          "Ensure the register-case-setup project ran first."
+  testData: [
+    async ({ testOptions, page }, use, testInfo) => {
+      if (!fs.existsSync(STATE_FILE)) {
+        throw new Error(
+          `Shared register-case state missing at ${STATE_FILE}. ` +
+            "Ensure the register-case-setup project ran first.",
+        );
+      }
+      const shared: RegisterCaseSharedState = JSON.parse(
+        fs.readFileSync(STATE_FILE, "utf-8"),
       );
-    }
-    const shared: RegisterCaseSharedState = JSON.parse(
-      fs.readFileSync(STATE_FILE, "utf-8")
-    );
 
-    const config = loadEnvConfig();
-    const token = await authenticateEgress(
-      config.egressBaseUrl,
-      config.egressServiceAccountAuth
-    );
+      const config = loadEnvConfig();
+      const token = await authenticateEgress(
+        config.egressBaseUrl,
+        config.egressServiceAccountAuth,
+      );
 
-    // Per-test subfolder isolates each spec's file list and destination
-    // from its siblings inside the shared workspace. Same pattern used in
-    // default mode; see README "Cleanup / Test Data Hygiene".
-    const rand = randomInt(0, 10_000);
-    const uploadSubfolder = `e2e-${slugify(testInfo.title)}-${rand}`;
-    const uploadPath = `${SOURCE_PARENT}/${uploadSubfolder}/`;
+      // Per-test subfolder isolates each spec's file list and destination
+      // from its siblings inside the shared workspace. Same pattern used in
+      // default mode; see README "Cleanup / Test Data Hygiene".
+      const rand = randomInt(0, 10_000);
+      const uploadSubfolder = `e2e-${slugify(testInfo.title)}-${rand}`;
+      const uploadPath = `${SOURCE_PARENT}/${uploadSubfolder}/`;
 
-    console.log(
-      `  Ensuring per-test subfolder ${uploadSubfolder} exists in source + destination...`
-    );
-    await createFolder(
-      config.egressBaseUrl,
-      token,
-      shared.workspace.id,
-      SOURCE_PARENT,
-      uploadSubfolder
-    );
-    // Capture destination folder id for per-test teardown of any file the
-    // LCC backend wrote there during NetApp->Egress copy specs.
-    const destinationSubfolderId = await createFolder(
-      config.egressBaseUrl,
-      token,
-      shared.workspace.id,
-      DESTINATION_PARENT,
-      uploadSubfolder
-    );
-
-    console.log(
-      `  Uploading ${testOptions.fileCount} x ${testOptions.fileSizeMb}MB file(s) to ${uploadPath}...`
-    );
-    const fileSizeBytes = testOptions.fileSizeMb * 1024 * 1024;
-    const uploadIds: string[] = [];
-
-    for (let i = 1; i <= testOptions.fileCount; i++) {
-      const timestamp = new Date()
-        .toISOString()
-        .replace(/[:.]/g, "-")
-        .slice(0, 19);
-      const fileName = `generated-${testOptions.fileSizeMb}MB-${timestamp}-file${i}.txt`;
-      const uploadId = await uploadFile(
+      console.log(
+        `  Ensuring per-test subfolder ${uploadSubfolder} exists in source + destination...`,
+      );
+      await createFolder(
         config.egressBaseUrl,
         token,
         shared.workspace.id,
-        fileSizeBytes,
-        fileName,
-        uploadPath
+        SOURCE_PARENT,
+        uploadSubfolder,
       );
-      uploadIds.push(uploadId);
-    }
+      // Capture destination folder id for per-test teardown of any file the
+      // LCC backend wrote there during NetApp->Egress copy specs.
+      const destinationSubfolderId = await createFolder(
+        config.egressBaseUrl,
+        token,
+        shared.workspace.id,
+        DESTINATION_PARENT,
+        uploadSubfolder,
+      );
 
-    console.log ("  Getting the uploaded file ID(s)...\n")
+      console.log(
+        `  Uploading ${testOptions.fileCount} x ${testOptions.fileSizeMb}MB file(s) to ${uploadPath}...`,
+      );
+      const fileSizeBytes = testOptions.fileSizeMb * 1024 * 1024;
+      const uploadIds: string[] = [];
+
+      for (let i = 1; i <= testOptions.fileCount; i++) {
+        const timestamp = new Date()
+          .toISOString()
+          .replace(/[:.]/g, "-")
+          .slice(0, 19);
+        const fileName = `generated-${testOptions.fileSizeMb}MB-${timestamp}-file${i}.txt`;
+        const uploadId = await uploadFile(
+          config.egressBaseUrl,
+          token,
+          config.egressServiceAccountAuth,
+          shared.workspace.id,
+          fileSizeBytes,
+          fileName,
+          { folderPath: uploadPath },
+        );
+        uploadIds.push(uploadId);
+      }
+
+      console.log("  Getting the uploaded file ID(s)...\n");
       const files = await Promise.all(
-        uploadIds.map(uploadId =>
+        uploadIds.map((uploadId) =>
           getUploadedFile(
             config.egressBaseUrl,
             token,
+            config.egressServiceAccountAuth,
             shared.workspace.id,
             uploadId,
             {
               timeoutMs: Math.max(30000, testOptions.fileSizeMb * 15000),
-              retryDelay: Math.min(10000,Math.max(2000, testOptions.fileSizeMb * 5)),
+              retryDelay: Math.min(
+                10000,
+                Math.max(1000, testOptions.fileSizeMb * 5),
+              ),
             },
-          )
-        )
+          ),
+        ),
       );
 
-    // Refresh the tactical + AD session per test and wait for the search
-    // radios to be enabled before handing control to the spec. This mirrors
-    // the manual flow and avoids HTTP 400 on /api/v1/case-search when
-    // tactical cookies saved by the setup project have aged.
-    await browserLogin(page);
+      // Refresh the tactical + AD session per test and wait for the search
+      // radios to be enabled before handing control to the spec. This mirrors
+      // the manual flow and avoids HTTP 400 on /api/v1/case-search when
+      // tactical cookies saved by the setup project have aged.
+      await browserLogin(page);
 
-    await use({
-      workspace: shared.workspace,
-      caseUrn: shared.caseUrn,
-      files,
-      uploadSubfolder,
-      caseId: shared.caseId,
-    });
+      await use({
+        workspace: shared.workspace,
+        caseUrn: shared.caseUrn,
+        files,
+        uploadSubfolder,
+        caseId: shared.caseId,
+      });
 
-    // Per-test teardown. On failure we leave the uploaded files in the
-    // dated subfolder so they can be inspected in the Egress UI or via the
-    // Playwright trace. The shared workspace itself is torn down by the
-    // register-case-teardown project at end of run.
-    await teardownTestData({
-      workspaceId: shared.workspace.id,
-      files,
-      destinationSubfolderId,
-      uploadSubfolder,
-      destinationParentLabel: DESTINATION_PARENT,
-      netAppFolder: REGISTER_CASE_NETAPP_FOLDER,
-      caseId: shared.caseId,
-      testInfo,
-      egressToken: token
-    });
-  }, { timeout: 300_000 }],
+      // Per-test teardown. On failure we leave the uploaded files in the
+      // dated subfolder so they can be inspected in the Egress UI or via the
+      // Playwright trace. The shared workspace itself is torn down by the
+      // register-case-teardown project at end of run.
+      //
+      // Re-authenticate first: `token` was obtained before the upload, and a
+      // large upload + move can outlast its lifetime, so teardown's Egress
+      // cleanup needs a fresh token rather than the stale one.
+      const teardownEgressToken = await authenticateEgress(
+        config.egressBaseUrl,
+        config.egressServiceAccountAuth,
+      );
+      await teardownTestData({
+        workspaceId: shared.workspace.id,
+        files,
+        destinationSubfolderId,
+        uploadSubfolder,
+        destinationParentLabel: DESTINATION_PARENT,
+        netAppFolder: REGISTER_CASE_NETAPP_FOLDER,
+        caseId: shared.caseId,
+        testInfo,
+        egressToken: teardownEgressToken,
+      });
+    },
+    { timeout: 300_000 },
+  ],
 });
 
 export { expect };

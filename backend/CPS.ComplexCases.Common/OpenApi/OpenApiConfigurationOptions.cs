@@ -1,7 +1,7 @@
+using CPS.ComplexCases.Common.OpenApi.Filters;
 using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Abstractions;
 using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Enums;
 using Microsoft.OpenApi.Models;
-using CPS.ComplexCases.Common.OpenApi.Filters;
 
 namespace CPS.ComplexCases.Common.OpenApi;
 

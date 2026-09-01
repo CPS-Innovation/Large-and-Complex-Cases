@@ -1,6 +1,6 @@
 using System.Reflection;
-using Microsoft.AspNetCore.Mvc;
 using CPS.ComplexCases.Common.Extensions;
+using Microsoft.AspNetCore.Mvc;
 
 namespace CPS.ComplexCases.Common.Functions;
 

@@ -7,12 +7,12 @@ namespace CPS.ComplexCases.DDEI.Tactical.Mappers;
 
 public class AuthenticationResponseMapper : IAuthenticationResponseMapper
 {
-  public Domain.AuthenticationResponse Map(Dto.AuthenticationResponse response)
-  {
-    return new Domain.AuthenticationResponse
+    public Domain.AuthenticationResponse Map(Dto.AuthenticationResponse response)
     {
-      Cookies = response.Cookies,
-      Token = response.Token
-    };
-  }
+        return new Domain.AuthenticationResponse
+        {
+            Cookies = response.Cookies,
+            Token = response.Token
+        };
+    }
 }

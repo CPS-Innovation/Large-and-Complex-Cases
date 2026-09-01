@@ -1,8 +1,4 @@
 using System.Net;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Azure.Functions.Worker;
-using Microsoft.Extensions.Logging;
 using Amazon.S3;
 using AutoFixture;
 using CPS.ComplexCases.ActivityLog.Enums;
@@ -19,13 +15,17 @@ using CPS.ComplexCases.Common.Helpers;
 using CPS.ComplexCases.Common.Models;
 using CPS.ComplexCases.Common.Services;
 using CPS.ComplexCases.Data.Entities;
+using CPS.ComplexCases.Data.Enums;
 using CPS.ComplexCases.Data.Models.Requests;
 using CPS.ComplexCases.NetApp.Client;
 using CPS.ComplexCases.NetApp.Factories;
 using CPS.ComplexCases.NetApp.Models;
 using CPS.ComplexCases.NetApp.Models.Args;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Azure.Functions.Worker;
+using Microsoft.Extensions.Logging;
 using Moq;
-using CPS.ComplexCases.Data.Enums;
 
 namespace CPS.ComplexCases.API.Tests.Unit.Functions;
 
@@ -36,7 +36,7 @@ public class DeleteNetAppBatchTests
     private readonly Mock<INetAppArgFactory> _netAppArgFactoryMock;
     private readonly Mock<IActivityLogService> _activityLogServiceMock;
     private readonly Mock<IRequestValidator> _requestValidatorMock;
-    private readonly Mock<ISecurityGroupMetadataService> _securityGroupMetadataServiceMock;
+    private readonly Mock<IUserBucketAccessService> _userBucketAccessServiceMock;
     private readonly Mock<ICaseMetadataService> _caseMetadataServiceMock;
     private readonly Mock<IInitializationHandler> _initializationHandlerMock;
     private readonly DeleteNetAppBatch _function;
@@ -55,7 +55,7 @@ public class DeleteNetAppBatchTests
         _netAppArgFactoryMock = new Mock<INetAppArgFactory>();
         _activityLogServiceMock = new Mock<IActivityLogService>();
         _requestValidatorMock = new Mock<IRequestValidator>();
-        _securityGroupMetadataServiceMock = new Mock<ISecurityGroupMetadataService>();
+        _userBucketAccessServiceMock = new Mock<IUserBucketAccessService>();
         _caseMetadataServiceMock = new Mock<ICaseMetadataService>();
         _initializationHandlerMock = new Mock<IInitializationHandler>();
 
@@ -92,7 +92,7 @@ public class DeleteNetAppBatchTests
             _netAppArgFactoryMock.Object,
             _activityLogServiceMock.Object,
             _requestValidatorMock.Object,
-            _securityGroupMetadataServiceMock.Object,
+            _userBucketAccessServiceMock.Object,
             _caseMetadataServiceMock.Object,
             _initializationHandlerMock.Object);
     }
@@ -115,7 +115,7 @@ public class DeleteNetAppBatchTests
         Assert.Equal(validationErrors, errors);
 
         _caseMetadataServiceMock.Verify(s => s.GetCaseMetadataForCaseIdAsync(It.IsAny<int>()), Times.Never);
-        _securityGroupMetadataServiceMock.Verify(s => s.GetUserSecurityGroupsAsync(It.IsAny<string>()), Times.Never);
+        _userBucketAccessServiceMock.Verify(s => s.ResolveBucketAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>()), Times.Never);
         _netAppClientMock.Verify(c => c.DeleteFileOrFolderAsync(It.IsAny<DeleteFileOrFolderArg>()), Times.Never);
     }
 
@@ -787,24 +787,25 @@ public class DeleteNetAppBatchTests
     }
 
     [Fact]
-    public async Task Run_UsesFirstSecurityGroupBucketName()
+    public async Task Run_WhenCaseHasNoPersistedBucket_FallsBackToResolvedBucket()
     {
-        // Arrange
+        // Arrange — covers cases connected before the bucket was persisted on CaseMetadata
         const string path = "CaseRoot/evidence.pdf";
-        const string firstBucket = "first-bucket";
-        const string secondBucket = "second-bucket";
+        const string fallbackBucket = "first-bucket";
         var dto = MakeBatchDto(1, [MaterialOp(path)]);
 
         SetupRequestValidator(dto, isValid: true);
         SetupCaseMetadata();
 
-        _securityGroupMetadataServiceMock
-            .Setup(s => s.GetUserSecurityGroupsAsync(_testBearerToken))
-            .ReturnsAsync(
-            [
-                new() { Id = _fixture.Create<Guid>(), BucketName = firstBucket, VolumeUuid = _fixture.Create<Guid>(), DisplayName = "First" },
-                new() { Id = _fixture.Create<Guid>(), BucketName = secondBucket, VolumeUuid = _fixture.Create<Guid>(), DisplayName = "Second" }
-            ]);
+        _userBucketAccessServiceMock
+            .Setup(s => s.ResolveBucketAsync(_testBearerToken, null, null))
+            .ReturnsAsync(new SecurityGroup
+            {
+                Id = _fixture.Create<Guid>(),
+                BucketName = fallbackBucket,
+                VolumeUuid = _fixture.Create<Guid>(),
+                DisplayName = "First"
+            });
 
         _netAppClientMock
             .Setup(c => c.DeleteFileOrFolderAsync(It.IsAny<DeleteFileOrFolderArg>()))
@@ -817,7 +818,47 @@ public class DeleteNetAppBatchTests
 
         // Assert
         _netAppArgFactoryMock.Verify(
-            f => f.CreateDeleteFileOrFolderArg(_testBearerToken, firstBucket, string.Empty, path, false),
+            f => f.CreateDeleteFileOrFolderArg(_testBearerToken, fallbackBucket, string.Empty, path, false),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task Run_WhenCaseHasPersistedBucket_UsesPersistedBucket()
+    {
+        // Arrange
+        const string path = "CaseRoot/evidence.pdf";
+        const string persistedBucket = "manchester-bucket";
+        var dto = MakeBatchDto(1, [MaterialOp(path)]);
+
+        SetupRequestValidator(dto, isValid: true);
+
+        _caseMetadataServiceMock
+            .Setup(s => s.GetCaseMetadataForCaseIdAsync(It.IsAny<int>()))
+            .ReturnsAsync(new CaseMetadata { CaseId = 1, NetappFolderPath = "CaseRoot/", NetappBucketName = persistedBucket });
+
+        _userBucketAccessServiceMock
+            .Setup(s => s.ResolveBucketAsync(_testBearerToken, persistedBucket, null))
+            .ReturnsAsync(new SecurityGroup
+            {
+                Id = _fixture.Create<Guid>(),
+                BucketName = persistedBucket,
+                VolumeUuid = _fixture.Create<Guid>(),
+                DisplayName = "Manchester"
+            });
+
+        _netAppClientMock
+            .Setup(c => c.DeleteFileOrFolderAsync(It.IsAny<DeleteFileOrFolderArg>()))
+            .ReturnsAsync(new DeleteNetAppResult(true, true, 1, null, null));
+
+        var (req, ctx) = CreateRequestAndContext();
+
+        // Act
+        await _function.Run(req, ctx);
+
+        // Assert
+        _userBucketAccessServiceMock.Verify(s => s.ResolveBucketAsync(_testBearerToken, persistedBucket, null), Times.Once);
+        _netAppArgFactoryMock.Verify(
+            f => f.CreateDeleteFileOrFolderArg(_testBearerToken, persistedBucket, string.Empty, path, false),
             Times.Once);
     }
 
@@ -829,8 +870,8 @@ public class DeleteNetAppBatchTests
         SetupRequestValidator(dto, isValid: true);
         SetupCaseMetadata();
 
-        _securityGroupMetadataServiceMock
-            .Setup(s => s.GetUserSecurityGroupsAsync(_testBearerToken))
+        _userBucketAccessServiceMock
+            .Setup(s => s.ResolveBucketAsync(_testBearerToken, It.IsAny<string?>(), It.IsAny<string?>()))
             .ThrowsAsync(new MissingSecurityGroupException("No security groups found."));
 
         var (req, ctx) = CreateRequestAndContext();
@@ -1003,9 +1044,9 @@ public class DeleteNetAppBatchTests
 
     private void SetupSecurityGroups()
     {
-        _securityGroupMetadataServiceMock
-            .Setup(s => s.GetUserSecurityGroupsAsync(_testBearerToken))
-            .ReturnsAsync(_defaultSecurityGroups);
+        _userBucketAccessServiceMock
+            .Setup(s => s.ResolveBucketAsync(_testBearerToken, It.IsAny<string?>(), It.IsAny<string?>()))
+            .ReturnsAsync(_defaultSecurityGroups[0]);
     }
 
     private void SetupClientSuccess(string path, bool isFolder, int keysDeleted)

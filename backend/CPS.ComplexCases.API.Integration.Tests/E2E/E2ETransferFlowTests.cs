@@ -123,10 +123,9 @@ public class E2ETransferFlowTests : IClassFixture<IntegrationTestFixture>, IAsyn
 
         var netAppDestinationPath = $"{_netAppTestFolderPrefix}/{testFileName}";
 
-        // In production (TransferFile.cs) the orchestrator retries the entire activity when
-        // CompleteMultipartUpload returns a transient 500, because the error also internally aborts
-        // the multipart upload and invalidates the upload ID. We mirror that here by restarting the
-        // full flow (initiate → upload parts → complete) on each attempt.
+        // CompleteMultipartUploadAsync already retries InternalError (including NetApp's HTTP 404
+        // InternalError) against the same uploadId. If those retries are exhausted the upload ID
+        // may no longer be valid, so this test restarts initiate → upload parts → complete.
         var chunks = TestDataHelper.SplitIntoChunks(testContent, partSize).ToList();
         string? completedETag = null;
         for (var attempt = 1; attempt <= 3; attempt++)
@@ -166,8 +165,8 @@ public class E2ETransferFlowTests : IClassFixture<IntegrationTestFixture>, IAsyn
             }
             catch (AmazonS3Exception) when (attempt < 3)
             {
-                // StorageGRID aborted the upload alongside the internal error;
-                // the upload ID is now invalid so the full flow must be restarted.
+                // Complete retries were exhausted; restart the full multipart flow
+                // in case the upload ID is no longer valid.
             }
         }
 
@@ -977,8 +976,8 @@ public class E2ETransferFlowTests : IClassFixture<IntegrationTestFixture>, IAsyn
             }
             catch (AmazonS3Exception) when (attempt < 3)
             {
-                // StorageGRID aborted the upload alongside the internal error;
-                // the upload ID is now invalid so the full flow must be restarted.
+                // Complete retries were exhausted; restart the full multipart flow
+                // in case the upload ID is no longer valid.
             }
         }
 
