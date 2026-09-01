@@ -293,15 +293,17 @@ public class EgressStorageClient(
                 fileId);
         }
 
+        var resolvedWorkspaceId = workspaceId ?? throw new ArgumentNullException(nameof(workspaceId), "Workspace ID cannot be null.");
         var token = await GetWorkspaceToken();
+        var parentFolderPath = Path.GetDirectoryName(path)?.Replace('\\', '/') ?? string.Empty;
 
-        var existingFiles = await GetAllFilesFromFolderParallel(
-            workspaceId ?? throw new ArgumentNullException(nameof(workspaceId), "Workspace ID cannot be null."),
-            "",
-            "",
-            token);
+        // List only the file's parent folder (not the workspace root) so a missing fileId does not
+        // trigger a recursive scan of every folder in the workspace.
+        var filesInParentFolder = await GetAllPagesInParallel(resolvedWorkspaceId, folderId: null, token, parentFolderPath);
 
-        return existingFiles.Any(f => !string.IsNullOrEmpty(f.FullFilePath) && f.FullFilePath.Equals(path, StringComparison.OrdinalIgnoreCase));
+        return filesInParentFolder.Any(f =>
+            !f.IsFolder &&
+            (f.Path.EnsureTrailingSlash() + f.FileName).Equals(path, StringComparison.OrdinalIgnoreCase));
     }
 
     private async Task<bool> FileExistsByIdAsync(string workspaceId, string fileId)
@@ -494,7 +496,7 @@ public class EgressStorageClient(
         }
     }
 
-    private async Task<List<ListCaseMaterialDataResponse>> GetAllPagesInParallel(string workspaceId, string? folderId, string token)
+    private async Task<List<ListCaseMaterialDataResponse>> GetAllPagesInParallel(string workspaceId, string? folderId, string token, string? path = null)
     {
         const int take = 100;
 
@@ -502,6 +504,7 @@ public class EgressStorageClient(
         {
             WorkspaceId = workspaceId,
             FolderId = folderId,
+            Path = path,
             Take = take,
             Skip = 0,
             RecurseSubFolders = false
@@ -525,6 +528,7 @@ public class EgressStorageClient(
                 {
                     WorkspaceId = workspaceId,
                     FolderId = folderId,
+                    Path = path,
                     Take = take,
                     Skip = i * take,
                     RecurseSubFolders = false,

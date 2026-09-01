@@ -175,7 +175,7 @@ public class TransferOrchestrator(IOptions<SizeConfig> sizeConfig, ITelemetryCli
         var available = new List<TransferSourcePath>();
         var remaining = cleanFiles;
         var maxAttempts = Math.Max(1, _sizeConfig.SourceValidationRetryAttempts);
-        var intervalSeconds = Math.Max(0, _sizeConfig.SourceValidationRetryIntervalSeconds);
+        var intervalSeconds = Math.Max(1, _sizeConfig.SourceValidationRetryIntervalSeconds);
 
         for (var attempt = 0; attempt < maxAttempts; attempt++)
         {
@@ -191,7 +191,11 @@ public class TransferOrchestrator(IOptions<SizeConfig> sizeConfig, ITelemetryCli
                     CaseId = input.CaseId,
                     UserName = input.UserName,
                     CorrelationId = input.CorrelationId
-                }) ?? new ValidateSourceFilesResult();
+                },
+                new TaskOptions(TaskRetryOptions.FromRetryPolicy(new RetryPolicy(
+                    maxNumberOfAttempts: _sizeConfig.FolderPreCreateRetryAttempts,
+                    firstRetryInterval: TimeSpan.FromSeconds(_sizeConfig.FolderPreCreateFirstRetryIntervalSeconds),
+                    backoffCoefficient: _sizeConfig.FolderPreCreateBackoffCoefficient)))) ?? new ValidateSourceFilesResult();
 
             available.AddRange(result.Available ?? []);
 

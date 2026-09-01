@@ -226,6 +226,120 @@ public class EgressStorageClientTests : IDisposable
     }
 
     [Fact]
+    public async Task FileExistsAsync_WithoutFileId_ListsParentFolderAndReturnsTrue_WhenFileExists()
+    {
+        var workspaceId = _fixture.Create<string>();
+        var token = _fixture.Create<string>();
+        var path = "folder/sub/file.txt";
+        var parentFolderPath = "folder/sub";
+
+        SetupTokenRequest(token);
+        SetupListMaterialRequestWithPath(workspaceId, parentFolderPath, token);
+        SetupHttpMockResponses(
+            ("token", new GetWorkspaceTokenResponse { Token = token }),
+            ("list", new ListCaseMaterialResponse
+            {
+                Data =
+                [
+                    new ListCaseMaterialDataResponse
+                    {
+                        Id = _fixture.Create<string>(),
+                        FileName = "other.txt",
+                        Path = parentFolderPath,
+                        IsFolder = false,
+                        Version = 1
+                    },
+                    new ListCaseMaterialDataResponse
+                    {
+                        Id = _fixture.Create<string>(),
+                        FileName = "file.txt",
+                        Path = parentFolderPath,
+                        IsFolder = false,
+                        Version = 1
+                    }
+                ],
+                DataInfo = new DataInfoResponse
+                {
+                    TotalResults = 2,
+                    NumReturned = 2,
+                    Limit = 100,
+                    Skip = 0
+                }
+            }));
+
+        var exists = await _client.FileExistsAsync(path, workspaceId);
+
+        Assert.True(exists);
+        VerifyListMaterialRequestWithPath(workspaceId, parentFolderPath, token);
+        _requestFactoryMock.Verify(
+            f => f.ListEgressMaterialRequest(
+                It.Is<ListWorkspaceMaterialArg>(arg =>
+                    arg.WorkspaceId == workspaceId && string.IsNullOrEmpty(arg.FolderId) && string.IsNullOrEmpty(arg.Path)),
+                token),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task FileExistsAsync_WithoutFileId_ReturnsFalse_WhenFileNotInParentFolder()
+    {
+        var workspaceId = _fixture.Create<string>();
+        var token = _fixture.Create<string>();
+        var path = "folder/sub/missing.txt";
+        var parentFolderPath = "folder/sub";
+
+        SetupTokenRequest(token);
+        SetupListMaterialRequestWithPath(workspaceId, parentFolderPath, token);
+        SetupHttpMockResponses(
+            ("token", new GetWorkspaceTokenResponse { Token = token }),
+            ("list", new ListCaseMaterialResponse
+            {
+                Data =
+                [
+                    new ListCaseMaterialDataResponse
+                    {
+                        Id = _fixture.Create<string>(),
+                        FileName = "file.txt",
+                        Path = parentFolderPath,
+                        IsFolder = false,
+                        Version = 1
+                    },
+                    new ListCaseMaterialDataResponse
+                    {
+                        Id = _fixture.Create<string>(),
+                        FileName = "nested",
+                        Path = $"{parentFolderPath}/nested",
+                        IsFolder = true,
+                        Version = 1
+                    }
+                ],
+                DataInfo = new DataInfoResponse
+                {
+                    TotalResults = 2,
+                    NumReturned = 2,
+                    Limit = 100,
+                    Skip = 0
+                }
+            }));
+
+        var exists = await _client.FileExistsAsync(path, workspaceId);
+
+        Assert.False(exists);
+        VerifyListMaterialRequestWithPath(workspaceId, parentFolderPath, token);
+        _requestFactoryMock.Verify(
+            f => f.ListEgressMaterialRequest(
+                It.Is<ListWorkspaceMaterialArg>(arg => arg.FolderId == "nested" || arg.Path == $"{parentFolderPath}/nested"),
+                It.IsAny<string>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task FileExistsAsync_WithoutFileId_Throws_WhenWorkspaceIdIsNull()
+    {
+        await Assert.ThrowsAsync<ArgumentNullException>(
+            () => _client.FileExistsAsync("folder/file.txt", workspaceId: null));
+    }
+
+    [Fact]
     public async Task UploadChunkAsync_WithValidParameters_ReturnsUploadChunkResult()
     {
         // Arrange
@@ -1188,6 +1302,21 @@ public class EgressStorageClientTests : IDisposable
             .Returns(() => new HttpRequestMessage(HttpMethod.Get, $"{TestUrl}/api/v1/workspaces/{workspaceId}/materials"));
     }
 
+    private void SetupListMaterialRequestWithPath(string workspaceId, string path, string token)
+    {
+        _requestFactoryMock
+            .Setup(f => f.ListEgressMaterialRequest(
+                It.Is<ListWorkspaceMaterialArg>(arg =>
+                    arg.WorkspaceId == workspaceId &&
+                    string.IsNullOrEmpty(arg.FolderId) &&
+                    arg.Path == path &&
+                    arg.Take == 100 &&
+                    arg.Skip == 0 &&
+                    arg.RecurseSubFolders == false),
+                token))
+            .Returns(() => new HttpRequestMessage(HttpMethod.Get, $"{TestUrl}/api/v1/workspaces/{workspaceId}/materials"));
+    }
+
     private void SetupCreateFolderRequest(string workspaceId, string token)
     {
         _requestFactoryMock
@@ -1263,6 +1392,19 @@ public class EgressStorageClientTests : IDisposable
                 It.Is<ListWorkspaceMaterialArg>(arg =>
                     arg.WorkspaceId == workspaceId &&
                     arg.FolderId == folderId &&
+                    arg.RecurseSubFolders == false),
+                token),
+            Times.Once);
+    }
+
+    private void VerifyListMaterialRequestWithPath(string workspaceId, string path, string token)
+    {
+        _requestFactoryMock.Verify(
+            f => f.ListEgressMaterialRequest(
+                It.Is<ListWorkspaceMaterialArg>(arg =>
+                    arg.WorkspaceId == workspaceId &&
+                    string.IsNullOrEmpty(arg.FolderId) &&
+                    arg.Path == path &&
                     arg.RecurseSubFolders == false),
                 token),
             Times.Once);

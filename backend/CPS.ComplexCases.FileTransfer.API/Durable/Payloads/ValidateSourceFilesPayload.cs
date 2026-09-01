@@ -7,9 +7,9 @@ public class ValidateSourceFilesPayload
 {
     public required TransferDirection TransferDirection { get; set; }
     public required List<TransferSourcePath> SourcePaths { get; set; }
-    public required string WorkspaceId { get; set; }
-    public required string BearerToken { get; set; }
-    public required string BucketName { get; set; }
+    public string? WorkspaceId { get; set; }
+    public string? BearerToken { get; set; }
+    public string? BucketName { get; set; }
     public int CaseId { get; set; }
     public string? UserName { get; set; }
     public Guid? CorrelationId { get; set; }
