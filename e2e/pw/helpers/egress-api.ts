@@ -547,11 +547,22 @@ export async function egressFileExistsById(
   token: string | { value: string },
   workspaceId: string,
   fileId: string,
+  serviceAccountAuth?: string,
 ): Promise<boolean> {
-  const response = await fetch(
-    `${baseUrl}/api/v1/workspaces/${workspaceId}/files/${fileId}`,
-    { headers: { Authorization: `Basic ${token}` } },
-  );
+  const tokenRef = typeof token === "string" ? { value: token } : token;
+  const url = `${baseUrl}/api/v1/workspaces/${workspaceId}/files/${fileId}`;
+
+  const response = serviceAccountAuth
+    ? await fetchWithTokenRefresh(
+        baseUrl,
+        serviceAccountAuth,
+        tokenRef,
+        url,
+        {},
+      )
+    : await fetch(url, {
+        headers: { Authorization: `Basic ${tokenRef.value}` },
+      });
   if (response.status === 404) return false;
   if (response.ok) return true;
 

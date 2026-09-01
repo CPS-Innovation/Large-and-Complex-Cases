@@ -4,7 +4,7 @@ import { MoveSoakHarness } from "../helpers/harness";
 import { moveSoakScenarios } from "./move-soak.scenarios";
 import {
   verifyNetAppFileSizeByName,
-  isFileInEgress,
+  isFileInEgressById,
 } from "../../helpers/transfer-verify";
 
 test.describe("Move Soak Tests", () => {
@@ -40,10 +40,7 @@ test.describe("Move Soak Tests", () => {
       await harness.validateTransfer(files);
 
       // Calculate transfer size before starting
-      const totalBytes = files.reduce(
-        (sum, file) => sum + file.fileSize,
-        0
-      );
+      const totalBytes = files.reduce((sum, file) => sum + file.fileSize, 0);
 
       // 2. Start transfer
       const transferStart = Date.now();
@@ -61,7 +58,7 @@ test.describe("Move Soak Tests", () => {
 
         console.log(
           "Transfer status response:\n",
-          JSON.stringify(status, null, 2)
+          JSON.stringify(status, null, 2),
         );
 
         if (status?.status === "Completed") break;
@@ -83,9 +80,7 @@ test.describe("Move Soak Tests", () => {
       const transferDurationMinutes = transferDurationSeconds / 60;
 
       const throughputMBps =
-        totalBytes /
-        (1024 * 1024) /
-        Math.max(transferDurationSeconds, 1);
+        totalBytes / (1024 * 1024) / Math.max(transferDurationSeconds, 1);
 
       test.info().annotations.push({
         type: "Transfer Duration",
@@ -105,10 +100,7 @@ test.describe("Move Soak Tests", () => {
             status: status?.status,
             fileCount: files.length,
             totalBytes,
-            totalMB: (
-              totalBytes /
-              (1024 * 1024)
-            ).toFixed(2),
+            totalMB: (totalBytes / (1024 * 1024)).toFixed(2),
             durationMs: transferDurationMs,
             durationSeconds: transferDurationSeconds.toFixed(2),
             durationMinutes: transferDurationMinutes.toFixed(2),
@@ -117,7 +109,7 @@ test.describe("Move Soak Tests", () => {
             failedFiles: status?.failedFiles,
           },
           null,
-          2
+          2,
         ),
         contentType: "application/json",
       });
@@ -127,25 +119,16 @@ test.describe("Move Soak Tests", () => {
         contentType: "application/json",
       });
 
-      await test.step(
-        `Transfer Performance: ${transferDurationSeconds.toFixed(
-          2
-        )}s (${throughputMBps.toFixed(2)} MB/s)`,
-        async () => {}
-      );
+      await test.step(`Transfer Performance: ${transferDurationSeconds.toFixed(
+        2,
+      )}s (${throughputMBps.toFixed(2)} MB/s)`, async () => {});
 
       console.log("\n=== TRANSFER PERFORMANCE ===");
       console.log(`Transfer ID: ${transfer.id}`);
       console.log(`Files: ${files.length}`);
-      console.log(
-        `Total Size: ${(totalBytes / (1024 * 1024)).toFixed(2)} MB`
-      );
-      console.log(
-        `Duration: ${transferDurationSeconds.toFixed(2)}s`
-      );
-      console.log(
-        `Throughput: ${throughputMBps.toFixed(2)} MB/s`
-      );
+      console.log(`Total Size: ${(totalBytes / (1024 * 1024)).toFixed(2)} MB`);
+      console.log(`Duration: ${transferDurationSeconds.toFixed(2)}s`);
+      console.log(`Throughput: ${throughputMBps.toFixed(2)} MB/s`);
       console.log("===========================\n");
 
       // 4. Cleanup transfer
@@ -158,7 +141,7 @@ test.describe("Move Soak Tests", () => {
         status,
         `Transfer ${transfer.id} finished as ${status?.status}, ` +
           `${status?.failedFiles}/${status?.totalFiles} file(s) failed: ` +
-          `${(status?.failedItems ?? []).join(", ")}`
+          `${(status?.failedItems ?? []).join(", ")}`,
       ).toMatchObject({
         status: "Completed",
         failedFiles: 0,
@@ -166,44 +149,37 @@ test.describe("Move Soak Tests", () => {
 
       await test.step("Verify files exist in NetApp", async () => {
         for (const file of files) {
-          await test.step(
-            `Verify '${file.fileName}' exists in NetApp`,
-            async () => {
-              console.log(
-                `Verifying '${file.fileName}' exists in NetApp (${file.fileSize} bytes)`
-              );
+          await test.step(`Verify '${file.fileName}' exists in NetApp`, async () => {
+            console.log(
+              `Verifying '${file.fileName}' exists in NetApp (${file.fileSize} bytes)`,
+            );
 
-              await verifyNetAppFileSizeByName(
-                file.fileName,
-                caseId,
-                file.fileSize,
-              );
-            }
-          );
+            await verifyNetAppFileSizeByName(
+              file.fileName,
+              caseId,
+              file.fileSize,
+            );
+          });
         }
       });
 
       await test.step("Verify files removed from Egress", async () => {
         for (const file of files) {
-          await test.step(
-            `Verify '${file.fileName}' no longer exists in Egress`,
-            async () => {
-              console.log(
-                `Verifying '${file.fileName}' has been deleted from '${egressSourceFolder}'`
-              );
+          await test.step(`Verify '${file.fileName}' no longer exists in Egress`, async () => {
+            console.log(
+              `Verifying '${file.fileName}' has been deleted from '${egressSourceFolder}'`,
+            );
 
-              const exists = await isFileInEgress(
-                config.defaultWorkspaceId!,
-                file.parentFolderId,
-                file.fileName
-              );
+            const exists = await isFileInEgressById(
+              config.defaultWorkspaceId!,
+              file.fileId,
+            );
 
-              expect(
-                exists,
-                `File '${file.fileName}' still exists in Egress`
-              ).toBeFalsy();
-            }
-          );
+            expect(
+              exists,
+              `File '${file.fileName}' still exists in Egress`,
+            ).toBeFalsy();
+          });
         }
       });
     });
