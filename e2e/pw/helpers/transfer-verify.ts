@@ -127,7 +127,7 @@ export async function isFileInEgress(
     egressToken ?? (await getVerifyEgressTokenRef(config)),
     workspaceId,
     folderId,
-    false,
+    true,
     // Enables the 401 -> re-authenticate -> retry path. Long runs (the soak
     // scenarios take ~an hour) outlive an Egress token, and without this a
     // 401 returns an empty listing that reads as "the file is gone".
