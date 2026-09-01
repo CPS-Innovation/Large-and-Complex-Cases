@@ -6,7 +6,6 @@ import {
   GLOBAL_NAV_SCRIPT_URL,
   FEATURE_FLAG_DISCONNECT_SHARED_DRIVE,
   PRIVATE_BETA_FEATURE_USER_GROUP2,
-  FEATURE_FLAG_TRANSFER_MATERIALS_V1,
   FEATURE_FLAG_MAINTENANCE_MODE,
 } from "../../config";
 import { useUserDetails } from "../../auth";
@@ -84,11 +83,7 @@ export const useUserGroupsFeatureFlag = (): FeatureFlagData | null => {
         FEATURE_FLAG_DISCONNECT_SHARED_DRIVE,
         searchParams?.get("disconnect-shared-drive"),
       ),
-      transferMaterialsV1: shouldShowFeature(
-        userDetails.username,
-        FEATURE_FLAG_TRANSFER_MATERIALS_V1,
-        searchParams?.get("transfer-materials-v1"),
-      ),
+
       maintenanceMode: shouldShowFeature(
         userDetails.username,
         FEATURE_FLAG_MAINTENANCE_MODE,
