@@ -3,6 +3,10 @@ param(
     [string[]]$Files
 )
 
+if (-not $Files -or $Files.Count -eq 0) {
+    exit 0
+}
+
 $projectGroups = $Files |
     Group-Object { ($_ -split '[\\/]', 2)[0] }
 
@@ -13,14 +17,24 @@ foreach ($group in $projectGroups) {
         continue
     }
 
-    Write-Host "Linting $projectDir"
+    $projectFiles = $group.Group | ForEach-Object {
+        $_ -replace "^$projectDir[\\/]", ""
+    }
 
-    npx eslint `
-        --config "$projectDir/eslint.config.js" `
-        --fix `
-        $group.Group
+    Push-Location $projectDir
 
-    if ($LASTEXITCODE -ne 0) {
-        exit $LASTEXITCODE
+    try {
+        npx --no eslint -- `
+            --fix `
+            $projectFiles
+
+        $exitCode = $LASTEXITCODE
+    }
+    finally {
+        Pop-Location
+    }
+
+    if ($exitCode -ne 0) {
+        exit $exitCode
     }
 }
