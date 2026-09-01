@@ -23,8 +23,14 @@ const TransferErrorPage: React.FC = () => {
     (item) => item.errorCode === "FileExists",
   );
 
+  const sourceFileNotFoundItems = failedItems.filter(
+    (item) => item.errorCode === "SourceFileNotFound",
+  );
+
   const otherFailedItems = failedItems.filter(
-    (item) => item.errorCode !== "FileExists",
+    (item) =>
+      item.errorCode !== "FileExists" &&
+      item.errorCode !== "SourceFileNotFound",
   );
 
   return (
@@ -45,6 +51,31 @@ const TransferErrorPage: React.FC = () => {
                   data-testid="already-exist-files-list"
                 >
                   {fileExistsFailedItems.map((item) => (
+                    <li key={item.sourcePath} className={styles.failedFileItem}>
+                      <>
+                        <FileIcon />
+                        <span className="govuk-visually-hidden">File</span>
+                        <span>{item.sourcePath}</span>
+                      </>
+                    </li>
+                  ))}
+                </ul>
+              </Details>
+            </div>
+          )}
+          {sourceFileNotFoundItems.length > 0 && (
+            <div data-testid="source-not-found-error-wrapper">
+              <h2>Some source files could not be found</h2>
+              <p>
+                The files may have been moved, deleted, or are not yet available
+                to transfer.
+              </p>
+              <Details summaryChildren="View files">
+                <ul
+                  className={styles.failedFilesList}
+                  data-testid="source-not-found-files-list"
+                >
+                  {sourceFileNotFoundItems.map((item) => (
                     <li key={item.sourcePath} className={styles.failedFileItem}>
                       <>
                         <FileIcon />
@@ -85,7 +116,14 @@ const TransferErrorPage: React.FC = () => {
               {fileExistsFailedItems.length > 0 && (
                 <li>remove or rename any duplicate files, then try again</li>
               )}
-              {!fileExistsFailedItems.length && <li> try again</li>}
+              {sourceFileNotFoundItems.length > 0 && (
+                <li>
+                  check that the source files exist and are accessible, then try
+                  again
+                </li>
+              )}
+              {!fileExistsFailedItems.length &&
+                !sourceFileNotFoundItems.length && <li> try again</li>}
 
               <li>
                 check the activity log to see if any files transferred

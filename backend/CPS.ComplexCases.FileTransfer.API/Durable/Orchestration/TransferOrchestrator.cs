@@ -56,6 +56,8 @@ public class TransferOrchestrator(IOptions<SizeConfig> sizeConfig, ITelemetryCli
 
             var cleanFiles = await FilterDuplicateDestinationFilesAsync(context, input, entityId);
 
+            cleanFiles = await ValidateSourceFilesAsync(context, input, entityId, cleanFiles, logger);
+
             await PreCreateEgressDestinationFoldersAsync(context, input, cleanFiles, logger);
 
             var allResults = await FanOutTransferFilesAsync(
@@ -156,6 +158,82 @@ public class TransferOrchestrator(IOptions<SizeConfig> sizeConfig, ITelemetryCli
         }
 
         return cleanFiles;
+    }
+
+    private async Task<List<TransferSourcePath>> ValidateSourceFilesAsync(
+        TaskOrchestrationContext context,
+        TransferPayload input,
+        EntityInstanceId entityId,
+        List<TransferSourcePath> cleanFiles,
+        ILogger logger)
+    {
+        if (cleanFiles.Count == 0)
+        {
+            return cleanFiles;
+        }
+
+        var available = new List<TransferSourcePath>();
+        var remaining = cleanFiles;
+        var maxAttempts = Math.Max(1, _sizeConfig.SourceValidationRetryAttempts);
+        var intervalSeconds = Math.Max(0, _sizeConfig.SourceValidationRetryIntervalSeconds);
+
+        for (var attempt = 0; attempt < maxAttempts; attempt++)
+        {
+            var result = await context.CallActivityAsync<ValidateSourceFilesResult>(
+                nameof(ValidateSourceFiles),
+                new ValidateSourceFilesPayload
+                {
+                    TransferDirection = input.TransferDirection,
+                    SourcePaths = remaining,
+                    WorkspaceId = input.WorkspaceId,
+                    BearerToken = input.BearerToken,
+                    BucketName = input.BucketName,
+                    CaseId = input.CaseId,
+                    UserName = input.UserName,
+                    CorrelationId = input.CorrelationId
+                }) ?? new ValidateSourceFilesResult();
+
+            available.AddRange(result.Available ?? []);
+
+            foreach (var failedItem in result.Failed ?? [])
+            {
+                await context.Entities.CallEntityAsync(
+                    entityId,
+                    nameof(TransferEntityState.AddFailedItem),
+                    failedItem);
+            }
+
+            remaining = result.Missing ?? [];
+            if (remaining.Count == 0)
+            {
+                break;
+            }
+
+            if (attempt < maxAttempts - 1)
+            {
+                logger.LogInformation(
+                    "Waiting {IntervalSeconds}s for {Count} source file(s) to become available (attempt {Attempt}/{MaxAttempts}) for TransferId {TransferId}.",
+                    intervalSeconds, remaining.Count, attempt + 1, maxAttempts, input.TransferId);
+
+                var nextCheckAt = context.CurrentUtcDateTime.AddSeconds(intervalSeconds);
+                await context.CreateTimer(nextCheckAt, CancellationToken.None);
+            }
+        }
+
+        foreach (var missing in remaining)
+        {
+            await context.Entities.CallEntityAsync(
+                entityId,
+                nameof(TransferEntityState.AddFailedItem),
+                new TransferFailedItem
+                {
+                    SourcePath = missing.Path,
+                    ErrorCode = TransferErrorCode.SourceFileNotFound,
+                    ErrorMessage = TransferErrorMessages.GetUserMessage(TransferErrorCode.SourceFileNotFound)
+                });
+        }
+
+        return available;
     }
 
     internal static (List<(TransferSourcePath Source, string DestPath)> Duplicates, List<TransferSourcePath> CleanFiles)

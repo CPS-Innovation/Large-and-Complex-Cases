@@ -284,8 +284,15 @@ public class EgressStorageClient(
         throw new NotImplementedException();
     }
 
-    public async Task<bool> FileExistsAsync(string path, string? workspaceId = null, string? bearerToken = null, string? bucketName = null)
+    public async Task<bool> FileExistsAsync(string path, string? workspaceId = null, string? bearerToken = null, string? bucketName = null, string? fileId = null)
     {
+        if (!string.IsNullOrEmpty(fileId))
+        {
+            return await FileExistsByIdAsync(
+                workspaceId ?? throw new ArgumentNullException(nameof(workspaceId), "Workspace ID cannot be null."),
+                fileId);
+        }
+
         var token = await GetWorkspaceToken();
 
         var existingFiles = await GetAllFilesFromFolderParallel(
@@ -295,6 +302,42 @@ public class EgressStorageClient(
             token);
 
         return existingFiles.Any(f => !string.IsNullOrEmpty(f.FullFilePath) && f.FullFilePath.Equals(path, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private async Task<bool> FileExistsByIdAsync(string workspaceId, string fileId)
+    {
+        var token = await GetWorkspaceToken();
+        var arg = new GetWorkspaceDocumentArg
+        {
+            WorkspaceId = workspaceId,
+            FileId = fileId
+        };
+
+        try
+        {
+            using var response = await SendRequestAsync(
+                _egressRequestFactory.GetWorkspaceDocumentHeadRequest(arg, token),
+                streamResponse: true);
+            return true;
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
+        {
+            return false;
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.MethodNotAllowed)
+        {
+            try
+            {
+                using var response = await SendRequestAsync(
+                    _egressRequestFactory.GetWorkspaceDocumentRequest(arg, token),
+                    streamResponse: true);
+                return true;
+            }
+            catch (HttpRequestException inner) when (inner.StatusCode == HttpStatusCode.NotFound)
+            {
+                return false;
+            }
+        }
     }
 
     public async Task<List<FileTransferInfo>> GetAllFilesFromFolderAsync(string folderPath, string? workspaceId = null)

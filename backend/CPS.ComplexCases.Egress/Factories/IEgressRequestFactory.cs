@@ -10,6 +10,7 @@ public interface IEgressRequestFactory
     HttpRequestMessage GetWorkspacePermissionsRequest(GetWorkspacePermissionArg arg, string token);
     HttpRequestMessage GetWorkspacePermissionsByRoleIdRequest(GetWorkspacePermissionsByRoleIdArg arg, string token);
     HttpRequestMessage GetWorkspaceDocumentRequest(GetWorkspaceDocumentArg arg, string token);
+    HttpRequestMessage GetWorkspaceDocumentHeadRequest(GetWorkspaceDocumentArg arg, string token);
     HttpRequestMessage CreateUploadRequest(CreateUploadArg arg, string token);
     HttpRequestMessage UploadChunkRequest(UploadChunkArg arg, string token);
     HttpRequestMessage CompleteUploadRequest(CompleteUploadArg arg, string token);

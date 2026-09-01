@@ -384,6 +384,84 @@ test.describe("transfer-error-page", () => {
     await expect(page).toHaveURL("/case/12/case-management");
     await expect(page.locator("h1")).toHaveText(`Thunderstruck`);
   });
+  test("Should show the transfer error page, if the transfer status is `PartiallyCompleted` with source file not found errors", async ({
+    page,
+    worker,
+  }) => {
+    await worker.use(
+      http.get(
+        "https://mocked-out-api/api/v1/filetransfer/transfer-id-egress-to-netapp/status",
+        async () => {
+          await delay(10);
+          return HttpResponse.json({
+            ...BASE_TRANSFER_STATUS,
+            status: "PartiallyCompleted",
+            transferType: "Copy",
+            direction: "EgressToNetApp",
+            completedAt: null,
+            failedItems: [
+              {
+                sourcePath: "folder1/missing-a.txt",
+                errorCode: "SourceFileNotFound",
+              },
+              {
+                sourcePath: "folder1/missing-b.txt",
+                errorCode: "SourceFileNotFound",
+              },
+            ],
+            userName: "dev_user@example.org",
+            totalFiles: 3,
+            processedFiles: 3,
+            failedFiles: 2,
+            successfulItems: [],
+            destinationPath: "",
+          } as TransferStatusResponse);
+        },
+      ),
+    );
+    await startTransfer(page);
+    await expect(page).toHaveURL("/case/12/case-management", {
+      timeout: 50000,
+    });
+    await expect(page).toHaveURL("/case/12/case-management/transfer-errors", {
+      timeout: 50000,
+    });
+    await expect(page.locator("h1")).toHaveText(
+      "There is a problem transferring files",
+    );
+    await expect(
+      page.getByTestId("file-exists-error-wrapper"),
+    ).not.toBeVisible();
+    await expect(
+      page.getByTestId("other-failed-error-wrapper"),
+    ).not.toBeVisible();
+    await expect(
+      page.getByTestId("source-not-found-error-wrapper"),
+    ).toBeVisible();
+    await expect(
+      page.getByTestId("source-not-found-error-wrapper").locator("h2"),
+    ).toHaveText("Some source files could not be found");
+    await page
+      .getByTestId("source-not-found-error-wrapper")
+      .locator("details>summary")
+      .click();
+    const listItems = page
+      .getByTestId("source-not-found-files-list")
+      .locator("li");
+    await expect(listItems).toHaveCount(2);
+    await expect(listItems).toContainText([
+      "folder1/missing-a.txt",
+      "folder1/missing-b.txt",
+    ]);
+    const listItems2 = page
+      .getByTestId("user-actions-wrapper")
+      .locator("ul > li");
+    await expect(listItems2).toHaveText([
+      "check that the source files exist and are accessible, then try again",
+      "check the activity log to see if any files transferred successfully",
+      "contact the product team for help and include the error message failed transfer - transfer-id-egress-to-netapp",
+    ]);
+  });
   test("User should not be able to land directly on the transfer error page,it should be redirected to search case page", async ({
     page,
   }) => {

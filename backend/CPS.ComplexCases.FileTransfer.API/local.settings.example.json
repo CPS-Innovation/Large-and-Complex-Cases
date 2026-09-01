@@ -26,6 +26,8 @@
     "SizeConfig__FolderPreCreateRetryAttempts": "3",
     "SizeConfig__FolderPreCreateFirstRetryIntervalSeconds": "5",
     "SizeConfig__FolderPreCreateBackoffCoefficient": "2.0",
+    "SizeConfig__SourceValidationRetryAttempts": "5",
+    "SizeConfig__SourceValidationRetryIntervalSeconds": "10",
     "ManageMaterialsCleanupSchedule": "0 0 2 * * *",
     "FileTransfer__ManageMaterialsCleanup__MaxAgeHours": "24"
   },

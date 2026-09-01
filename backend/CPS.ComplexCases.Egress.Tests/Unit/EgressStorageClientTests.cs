@@ -150,6 +150,82 @@ public class EgressStorageClientTests : IDisposable
     }
 
     [Fact]
+    public async Task FileExistsAsync_WithFileId_ReturnsTrue_WhenHeadSucceeds()
+    {
+        var workspaceId = _fixture.Create<string>();
+        var fileId = _fixture.Create<string>();
+        var token = _fixture.Create<string>();
+
+        SetupTokenRequest(token);
+        SetupDocumentHeadRequest(workspaceId, fileId, token);
+        SetupHttpMockResponses(
+            ("token", new GetWorkspaceTokenResponse { Token = token }),
+            ("head", new { }));
+
+        var exists = await _client.FileExistsAsync("ignored-path", workspaceId, fileId: fileId);
+
+        Assert.True(exists);
+        _requestFactoryMock.Verify(
+            f => f.GetWorkspaceDocumentHeadRequest(
+                It.Is<GetWorkspaceDocumentArg>(arg => arg.WorkspaceId == workspaceId && arg.FileId == fileId),
+                token),
+            Times.Once);
+        _requestFactoryMock.Verify(
+            f => f.GetWorkspaceDocumentRequest(It.IsAny<GetWorkspaceDocumentArg>(), It.IsAny<string>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task FileExistsAsync_WithFileId_ReturnsFalse_WhenHeadReturnsNotFound()
+    {
+        var workspaceId = _fixture.Create<string>();
+        var fileId = _fixture.Create<string>();
+        var token = _fixture.Create<string>();
+
+        SetupTokenRequest(token);
+        SetupDocumentHeadRequest(workspaceId, fileId, token);
+        SetupHttpMockResponsesWithStatus(
+            ("token", new GetWorkspaceTokenResponse { Token = token }, HttpStatusCode.OK),
+            ("head", new { message = "not found" }, HttpStatusCode.NotFound));
+
+        var exists = await _client.FileExistsAsync("ignored-path", workspaceId, fileId: fileId);
+
+        Assert.False(exists);
+    }
+
+    [Fact]
+    public async Task FileExistsAsync_WithFileId_FallsBackToGet_WhenHeadNotAllowed()
+    {
+        var workspaceId = _fixture.Create<string>();
+        var fileId = _fixture.Create<string>();
+        var token = _fixture.Create<string>();
+
+        SetupTokenRequest(token);
+        SetupDocumentHeadRequest(workspaceId, fileId, token);
+        SetupDocumentRequest(workspaceId, fileId, token);
+        SetupHttpMockResponsesWithStatus(
+            ("token", new GetWorkspaceTokenResponse { Token = token }, HttpStatusCode.OK),
+            ("head", new { }, HttpStatusCode.MethodNotAllowed),
+            ("document", "file-bytes", HttpStatusCode.OK));
+
+        var exists = await _client.FileExistsAsync("ignored-path", workspaceId, fileId: fileId);
+
+        Assert.True(exists);
+        _requestFactoryMock.Verify(
+            f => f.GetWorkspaceDocumentRequest(
+                It.Is<GetWorkspaceDocumentArg>(arg => arg.WorkspaceId == workspaceId && arg.FileId == fileId),
+                token),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task FileExistsAsync_WithFileId_Throws_WhenWorkspaceIdIsNull()
+    {
+        await Assert.ThrowsAsync<ArgumentNullException>(
+            () => _client.FileExistsAsync("path", workspaceId: null, fileId: "file-1"));
+    }
+
+    [Fact]
     public async Task UploadChunkAsync_WithValidParameters_ReturnsUploadChunkResult()
     {
         // Arrange
@@ -1049,6 +1125,16 @@ public class EgressStorageClientTests : IDisposable
         _requestFactoryMock
             .Setup(f => f.GetWorkspaceTokenRequest(It.IsAny<string>(), It.IsAny<string>()))
             .Returns(() => new HttpRequestMessage(HttpMethod.Get, $"{TestUrl}/api/v1/auth"));
+    }
+
+    private void SetupDocumentHeadRequest(string workspaceId, string fileId, string token)
+    {
+        _requestFactoryMock
+            .Setup(f => f.GetWorkspaceDocumentHeadRequest(
+                It.Is<GetWorkspaceDocumentArg>(arg =>
+                    arg.WorkspaceId == workspaceId && arg.FileId == fileId),
+                token))
+            .Returns(() => new HttpRequestMessage(HttpMethod.Head, $"{TestUrl}/api/v1/workspaces/{workspaceId}/files/{fileId}"));
     }
 
     private void SetupDocumentRequest(string workspaceId, string fileId, string token)

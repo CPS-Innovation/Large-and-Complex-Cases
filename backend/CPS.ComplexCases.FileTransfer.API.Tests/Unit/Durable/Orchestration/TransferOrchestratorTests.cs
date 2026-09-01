@@ -5,6 +5,7 @@ using CPS.ComplexCases.Common.Models.Domain.Enums;
 using CPS.ComplexCases.Common.Models.Requests;
 using CPS.ComplexCases.Common.Telemetry;
 using CPS.ComplexCases.FileTransfer.API.Durable.Activity;
+using CPS.ComplexCases.FileTransfer.API.Durable.Helpers;
 using CPS.ComplexCases.FileTransfer.API.Durable.Orchestration;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads.Domain;
@@ -27,6 +28,7 @@ public class TransferOrchestratorTests
     private readonly Mock<IOptions<SizeConfig>> _sizeConfigMock;
     private readonly Mock<ITelemetryClient> _telemetryClientMock;
     private readonly Mock<IInitializationHandler> _initializationHandler;
+    private readonly SizeConfig _sizeConfig;
     private readonly TransferOrchestrator _orchestrator;
 
     public TransferOrchestratorTests()
@@ -40,11 +42,22 @@ public class TransferOrchestratorTests
         _telemetryClientMock = new Mock<ITelemetryClient>();
         _initializationHandler = new Mock<IInitializationHandler>();
 
-        // Provide a default SizeConfig for tests
-        _sizeConfigMock.Setup(x => x.Value).Returns(new SizeConfig { BatchSize = 10 });
+        _sizeConfig = new SizeConfig { BatchSize = 10 };
+        _sizeConfigMock.Setup(x => x.Value).Returns(_sizeConfig);
 
         _contextMock.Setup(c => c.CreateReplaySafeLogger(It.IsAny<string>()))
             .Returns(_loggerMock.Object);
+
+        _contextMock.Setup(c => c.CallActivityAsync<ValidateSourceFilesResult>(
+                It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
+            .Returns<TaskName, object, TaskOptions>((_, payload, __) =>
+            {
+                var sourcePaths = (payload as ValidateSourceFilesPayload)?.SourcePaths ?? [];
+                return Task.FromResult(new ValidateSourceFilesResult
+                {
+                    Available = sourcePaths
+                });
+            });
 
         _orchestrator = new TransferOrchestrator(_sizeConfigMock.Object, _telemetryClientMock.Object, _initializationHandler.Object);
     }
@@ -53,7 +66,7 @@ public class TransferOrchestratorTests
     public async Task RunOrchestrator_WithValidInput_ExecutesAllActivitiesInCorrectOrder()
     {
         // Arrange
-        var expectedActivityCount = 5;
+        var expectedActivityCount = 6;
         var transferPayload = CreateValidTransferPayload();
         var activityCallOrder = new List<string>();
 
@@ -62,6 +75,14 @@ public class TransferOrchestratorTests
 
         _contextMock.Setup(c => c.CallActivityAsync(It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
             .Returns(Task.CompletedTask)
+            .Callback<TaskName, object, TaskOptions>((taskName, _, __) => activityCallOrder.Add(taskName.Name));
+
+        _contextMock.Setup(c => c.CallActivityAsync<ValidateSourceFilesResult>(It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
+            .Returns<TaskName, object, TaskOptions>((_, payload, __) =>
+            {
+                var sourcePaths = (payload as ValidateSourceFilesPayload)?.SourcePaths ?? [];
+                return Task.FromResult(new ValidateSourceFilesResult { Available = sourcePaths });
+            })
             .Callback<TaskName, object, TaskOptions>((taskName, _, __) => activityCallOrder.Add(taskName.Name));
 
         _contextMock.Setup(c => c.CallActivityAsync<TransferResult>(It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
@@ -77,10 +98,11 @@ public class TransferOrchestratorTests
         // Assert
         Assert.Equal(expectedActivityCount, activityCallOrder.Count);
         Assert.Equal("UpdateActivityLog", activityCallOrder[0]);
-        Assert.Equal("UpdateTransferStatus", activityCallOrder[1]);
-        Assert.Equal("TransferFile", activityCallOrder[2]);
-        Assert.Equal("FinalizeTransfer", activityCallOrder[3]);
-        Assert.Equal("UpdateActivityLog", activityCallOrder[4]);
+        Assert.Equal("ValidateSourceFiles", activityCallOrder[1]);
+        Assert.Equal("UpdateTransferStatus", activityCallOrder[2]);
+        Assert.Equal("TransferFile", activityCallOrder[3]);
+        Assert.Equal("FinalizeTransfer", activityCallOrder[4]);
+        Assert.Equal("UpdateActivityLog", activityCallOrder[5]);
     }
 
     [Fact]
@@ -802,6 +824,280 @@ public class TransferOrchestratorTests
 
         // Assert
         Assert.Empty(retryStateOperations);
+    }
+
+    [Fact]
+    public async Task RunOrchestrator_WhenAllSourceFilesAreAvailable_DoesNotFailOrWait()
+    {
+        var transferPayload = CreateValidTransferPayload();
+        var failedItems = new List<TransferFailedItem>();
+        var transferFilePayloads = new List<TransferFilePayload>();
+
+        _contextMock.Setup(c => c.GetInput<TransferPayload>()).Returns(transferPayload);
+        _contextMock.Setup(c => c.CallActivityAsync(It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
+            .Returns(Task.CompletedTask);
+        _contextMock.Setup(c => c.CallActivityAsync<TransferResult>(It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
+            .ReturnsAsync(new TransferResult { IsSuccess = true, SuccessfulItem = _fixture.Create<TransferItem>() })
+            .Callback<TaskName, object, TaskOptions>((taskName, payload, _) =>
+            {
+                if (taskName.Name == nameof(TransferFile) && payload is TransferFilePayload tfp)
+                    transferFilePayloads.Add(tfp);
+            });
+        _contextMock.Setup(c => c.Entities.CallEntityAsync(It.IsAny<EntityInstanceId>(), It.IsAny<string>(), It.IsAny<object>(), It.IsAny<CallEntityOptions>()))
+            .Returns(Task.CompletedTask)
+            .Callback<EntityInstanceId, string, object, CallEntityOptions>((_, operation, payload, __) =>
+            {
+                if (operation == nameof(TransferEntityState.AddFailedItem) && payload is TransferFailedItem failedItem)
+                    failedItems.Add(failedItem);
+            });
+
+        await _orchestrator.RunOrchestrator(_contextMock.Object);
+
+        Assert.Empty(failedItems);
+        Assert.Single(transferFilePayloads);
+        _contextMock.Verify(c => c.CreateTimer(It.IsAny<DateTime>(), It.IsAny<CancellationToken>()), Times.Never);
+        _contextMock.Verify(c => c.CallActivityAsync<ValidateSourceFilesResult>(
+                It.Is<TaskName>(t => t.Name == nameof(ValidateSourceFiles)),
+                It.IsAny<object>(),
+                It.IsAny<TaskOptions>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task RunOrchestrator_WhenSourceFilesAppearOnLaterAttempt_WaitsThenTransfers()
+    {
+        var transferPayload = CreateValidTransferPayload();
+        var now = new DateTime(2026, 8, 27, 10, 0, 0, DateTimeKind.Utc);
+        DateTime? timerFireAt = null;
+        var transferFilePayloads = new List<TransferFilePayload>();
+        _sizeConfig.SourceValidationRetryAttempts = 3;
+        _sizeConfig.SourceValidationRetryIntervalSeconds = 10;
+
+        _contextMock.Setup(c => c.CurrentUtcDateTime).Returns(now);
+        _contextMock.Setup(c => c.GetInput<TransferPayload>()).Returns(transferPayload);
+        _contextMock.Setup(c => c.CallActivityAsync(It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
+            .Returns(Task.CompletedTask);
+
+        _contextMock.SetupSequence(c => c.CallActivityAsync<ValidateSourceFilesResult>(
+                It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
+            .ReturnsAsync(new ValidateSourceFilesResult { Missing = [.. transferPayload.SourcePaths] })
+            .ReturnsAsync(new ValidateSourceFilesResult { Available = [.. transferPayload.SourcePaths] });
+
+        _contextMock.Setup(c => c.CreateTimer(It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask)
+            .Callback<DateTime, CancellationToken>((fireAt, _) => timerFireAt = fireAt);
+
+        _contextMock.Setup(c => c.CallActivityAsync<TransferResult>(It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
+            .ReturnsAsync(new TransferResult { IsSuccess = true, SuccessfulItem = _fixture.Create<TransferItem>() })
+            .Callback<TaskName, object, TaskOptions>((taskName, payload, _) =>
+            {
+                if (taskName.Name == nameof(TransferFile) && payload is TransferFilePayload tfp)
+                    transferFilePayloads.Add(tfp);
+            });
+        _contextMock.Setup(c => c.Entities.CallEntityAsync(It.IsAny<EntityInstanceId>(), It.IsAny<string>(), It.IsAny<object>(), It.IsAny<CallEntityOptions>()))
+            .Returns(Task.CompletedTask);
+
+        await _orchestrator.RunOrchestrator(_contextMock.Object);
+
+        Assert.Equal(now.AddSeconds(10), timerFireAt);
+        Assert.Single(transferFilePayloads);
+        _contextMock.Verify(c => c.CreateTimer(It.IsAny<DateTime>(), It.IsAny<CancellationToken>()), Times.Once);
+        _contextMock.Verify(c => c.Entities.CallEntityAsync(
+                It.IsAny<EntityInstanceId>(),
+                nameof(TransferEntityState.UpdateRetryState),
+                It.IsAny<object>(),
+                It.IsAny<CallEntityOptions>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task RunOrchestrator_WhenSourceFilesRemainMissing_FailsAsSourceFileNotFoundAndDoesNotTransfer()
+    {
+        var transferPayload = CreateValidTransferPayload();
+        var failedItems = new List<TransferFailedItem>();
+        var transferFileCalled = false;
+        _sizeConfig.SourceValidationRetryAttempts = 3;
+        _sizeConfig.SourceValidationRetryIntervalSeconds = 10;
+
+        _contextMock.Setup(c => c.CurrentUtcDateTime).Returns(new DateTime(2026, 8, 27, 10, 0, 0, DateTimeKind.Utc));
+        _contextMock.Setup(c => c.GetInput<TransferPayload>()).Returns(transferPayload);
+        _contextMock.Setup(c => c.CallActivityAsync(It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
+            .Returns(Task.CompletedTask);
+        _contextMock.Setup(c => c.CallActivityAsync<ValidateSourceFilesResult>(
+                It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
+            .ReturnsAsync(new ValidateSourceFilesResult { Missing = [.. transferPayload.SourcePaths] });
+        _contextMock.Setup(c => c.CreateTimer(It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+        _contextMock.Setup(c => c.CallActivityAsync<TransferResult>(It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
+            .ReturnsAsync(new TransferResult { IsSuccess = true, SuccessfulItem = _fixture.Create<TransferItem>() })
+            .Callback<TaskName, object, TaskOptions>((taskName, _, __) =>
+            {
+                if (taskName.Name == nameof(TransferFile)) transferFileCalled = true;
+            });
+        _contextMock.Setup(c => c.Entities.CallEntityAsync(It.IsAny<EntityInstanceId>(), It.IsAny<string>(), It.IsAny<object>(), It.IsAny<CallEntityOptions>()))
+            .Returns(Task.CompletedTask)
+            .Callback<EntityInstanceId, string, object, CallEntityOptions>((_, operation, payload, __) =>
+            {
+                if (operation == nameof(TransferEntityState.AddFailedItem) && payload is TransferFailedItem failedItem)
+                    failedItems.Add(failedItem);
+            });
+
+        await _orchestrator.RunOrchestrator(_contextMock.Object);
+
+        Assert.False(transferFileCalled);
+        var failed = Assert.Single(failedItems);
+        Assert.Equal(transferPayload.SourcePaths[0].Path, failed.SourcePath);
+        Assert.Equal(TransferErrorCode.SourceFileNotFound, failed.ErrorCode);
+        Assert.Contains("could not be found", failed.ErrorMessage);
+        _contextMock.Verify(c => c.CreateTimer(It.IsAny<DateTime>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
+        _contextMock.Verify(c => c.Entities.CallEntityAsync(
+                It.IsAny<EntityInstanceId>(),
+                nameof(TransferEntityState.UpdateRetryState),
+                It.IsAny<object>(),
+                It.IsAny<CallEntityOptions>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task RunOrchestrator_WhenMixedSourceAvailability_TransfersAvailableAndFailsMissing()
+    {
+        var transferPayload = CreateTransferPayloadWithMultiplePaths();
+        var available = transferPayload.SourcePaths[0];
+        var missing = transferPayload.SourcePaths[1];
+        var failedItems = new List<TransferFailedItem>();
+        var transferFilePayloads = new List<TransferFilePayload>();
+        _sizeConfig.SourceValidationRetryAttempts = 1;
+
+        _contextMock.Setup(c => c.GetInput<TransferPayload>()).Returns(transferPayload);
+        _contextMock.Setup(c => c.CallActivityAsync(It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
+            .Returns(Task.CompletedTask);
+        _contextMock.Setup(c => c.CallActivityAsync<ValidateSourceFilesResult>(
+                It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
+            .ReturnsAsync(new ValidateSourceFilesResult
+            {
+                Available = [available],
+                Missing = [missing]
+            });
+        _contextMock.Setup(c => c.CallActivityAsync<TransferResult>(It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
+            .ReturnsAsync(new TransferResult { IsSuccess = true, SuccessfulItem = _fixture.Create<TransferItem>() })
+            .Callback<TaskName, object, TaskOptions>((taskName, payload, _) =>
+            {
+                if (taskName.Name == nameof(TransferFile) && payload is TransferFilePayload tfp)
+                    transferFilePayloads.Add(tfp);
+            });
+        _contextMock.Setup(c => c.Entities.CallEntityAsync(It.IsAny<EntityInstanceId>(), It.IsAny<string>(), It.IsAny<object>(), It.IsAny<CallEntityOptions>()))
+            .Returns(Task.CompletedTask)
+            .Callback<EntityInstanceId, string, object, CallEntityOptions>((_, operation, payload, __) =>
+            {
+                if (operation == nameof(TransferEntityState.AddFailedItem) && payload is TransferFailedItem failedItem)
+                    failedItems.Add(failedItem);
+            });
+
+        await _orchestrator.RunOrchestrator(_contextMock.Object);
+
+        var failed = Assert.Single(failedItems);
+        Assert.Equal(missing.Path, failed.SourcePath);
+        Assert.Equal(TransferErrorCode.SourceFileNotFound, failed.ErrorCode);
+        var transferred = Assert.Single(transferFilePayloads);
+        Assert.Equal(available.Path, transferred.SourcePath.Path);
+        _contextMock.Verify(c => c.CreateTimer(It.IsAny<DateTime>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task RunOrchestrator_WhenSourceAccessFails_FailsFastWithoutPolling()
+    {
+        var transferPayload = CreateValidTransferPayload();
+        var failedItems = new List<TransferFailedItem>();
+        var transferFileCalled = false;
+        _sizeConfig.SourceValidationRetryAttempts = 5;
+
+        _contextMock.Setup(c => c.GetInput<TransferPayload>()).Returns(transferPayload);
+        _contextMock.Setup(c => c.CallActivityAsync(It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
+            .Returns(Task.CompletedTask);
+        _contextMock.Setup(c => c.CallActivityAsync<ValidateSourceFilesResult>(
+                It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
+            .ReturnsAsync(new ValidateSourceFilesResult
+            {
+                Failed =
+                [
+                    new TransferFailedItem
+                    {
+                        SourcePath = transferPayload.SourcePaths[0].Path,
+                        ErrorCode = TransferErrorCode.GeneralError,
+                        ErrorMessage = TransferErrorMessages.GetUserMessage(TransferErrorCode.GeneralError)
+                    }
+                ]
+            });
+        _contextMock.Setup(c => c.CallActivityAsync<TransferResult>(It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
+            .ReturnsAsync(new TransferResult { IsSuccess = true, SuccessfulItem = _fixture.Create<TransferItem>() })
+            .Callback<TaskName, object, TaskOptions>((taskName, _, __) =>
+            {
+                if (taskName.Name == nameof(TransferFile)) transferFileCalled = true;
+            });
+        _contextMock.Setup(c => c.Entities.CallEntityAsync(It.IsAny<EntityInstanceId>(), It.IsAny<string>(), It.IsAny<object>(), It.IsAny<CallEntityOptions>()))
+            .Returns(Task.CompletedTask)
+            .Callback<EntityInstanceId, string, object, CallEntityOptions>((_, operation, payload, __) =>
+            {
+                if (operation == nameof(TransferEntityState.AddFailedItem) && payload is TransferFailedItem failedItem)
+                    failedItems.Add(failedItem);
+            });
+
+        await _orchestrator.RunOrchestrator(_contextMock.Object);
+
+        Assert.False(transferFileCalled);
+        var failed = Assert.Single(failedItems);
+        Assert.Equal(TransferErrorCode.GeneralError, failed.ErrorCode);
+        _contextMock.Verify(c => c.CreateTimer(It.IsAny<DateTime>(), It.IsAny<CancellationToken>()), Times.Never);
+        _contextMock.Verify(c => c.CallActivityAsync<ValidateSourceFilesResult>(
+                It.Is<TaskName>(t => t.Name == nameof(ValidateSourceFiles)),
+                It.IsAny<object>(),
+                It.IsAny<TaskOptions>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task RunOrchestrator_WhenAllDestinationDuplicates_SkipsSourceValidation()
+    {
+        var payload = new TransferPayload
+        {
+            TransferId = _fixture.Create<Guid>(),
+            DestinationPath = "uploads/",
+            BearerToken = _fixture.Create<string>(),
+            SourceRootFolderPath = "folder1",
+            SourcePaths =
+            [
+                new TransferSourcePath { Path = "folder1/file1.txt", RelativePath = "folder1/file1.txt" }
+            ],
+            CaseId = _fixture.Create<int>(),
+            TransferType = TransferType.Copy,
+            TransferDirection = TransferDirection.NetAppToEgress,
+            WorkspaceId = _fixture.Create<string>(),
+            BucketName = _fixture.Create<string>(),
+            UserName = _fixture.Create<string>(),
+            IsRetry = false,
+            CorrelationId = _fixture.Create<Guid>()
+        };
+
+        _contextMock.Setup(c => c.GetInput<TransferPayload>()).Returns(payload);
+        _contextMock.Setup(c => c.CallActivityAsync<HashSet<string>>(
+                It.Is<TaskName>(t => t.Name == nameof(ListDestinationFilePaths)),
+                It.IsAny<object>(),
+                It.IsAny<TaskOptions>()))
+            .ReturnsAsync(new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "uploads/file1.txt" });
+        _contextMock.Setup(c => c.CallActivityAsync(It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
+            .Returns(Task.CompletedTask);
+        _contextMock.Setup(c => c.CallActivityAsync<TransferResult>(It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
+            .ReturnsAsync(new TransferResult { IsSuccess = true, SuccessfulItem = _fixture.Create<TransferItem>() });
+        _contextMock.Setup(c => c.Entities.CallEntityAsync(It.IsAny<EntityInstanceId>(), It.IsAny<string>(), It.IsAny<object>(), It.IsAny<CallEntityOptions>()))
+            .Returns(Task.CompletedTask);
+
+        await _orchestrator.RunOrchestrator(_contextMock.Object);
+
+        _contextMock.Verify(c => c.CallActivityAsync<ValidateSourceFilesResult>(
+                It.Is<TaskName>(t => t.Name == nameof(ValidateSourceFiles)),
+                It.IsAny<object>(),
+                It.IsAny<TaskOptions>()),
+            Times.Never);
     }
 
     private TransferPayload CreateValidTransferPayload()

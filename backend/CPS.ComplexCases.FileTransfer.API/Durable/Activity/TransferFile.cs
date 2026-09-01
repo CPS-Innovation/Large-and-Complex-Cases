@@ -9,6 +9,7 @@ using CPS.ComplexCases.Common.Storage;
 using CPS.ComplexCases.Common.Telemetry;
 using CPS.ComplexCases.Egress.Client;
 using CPS.ComplexCases.Egress.Models;
+using CPS.ComplexCases.FileTransfer.API.Durable.Helpers;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads.Domain;
 using CPS.ComplexCases.FileTransfer.API.Factories;
@@ -287,6 +288,17 @@ public class TransferFile(
             };
         }
 
+        if (ex is FileNotFoundException fileNotFound)
+        {
+            return new MappedExceptionOutcome
+            {
+                Rethrow = false,
+                ErrorCode = TransferErrorCode.SourceFileNotFound,
+                DiagnosticMessage = fileNotFound.Message,
+                Exception = fileNotFound
+            };
+        }
+
         if (ex is OperationCanceledException oce && !isCancellationRequested)
         {
             var errorMessage = $"HTTP request timed out: {oce.Message}";
@@ -334,6 +346,19 @@ public class TransferFile(
                 ErrorCode = TransferErrorCode.Transient,
                 DiagnosticMessage = errorMessage,
                 Exception = http
+            };
+        }
+
+        if (ex is HttpRequestException httpNotFound && httpNotFound.StatusCode == System.Net.HttpStatusCode.NotFound)
+        {
+            var errorMessage = $"Source file not found (HTTP 404): {httpNotFound.Message}";
+            logger?.LogWarning(httpNotFound, "Source file was not found during transfer");
+            return new MappedExceptionOutcome
+            {
+                Rethrow = false,
+                ErrorCode = TransferErrorCode.SourceFileNotFound,
+                DiagnosticMessage = errorMessage,
+                Exception = httpNotFound
             };
         }
 
@@ -757,17 +782,8 @@ public class TransferFile(
 
     // Maps an internal error code to a short, user-facing message. Detailed exception information is
     // retained in telemetry and logs; only this concise message is surfaced to the user.
-    private static string MapUserMessage(TransferErrorCode errorCode) => errorCode switch
-    {
-        TransferErrorCode.FileExists =>
-            "A file with the same name already exists at the destination.",
-        TransferErrorCode.IntegrityVerificationFailed =>
-            "The file was uploaded but failed integrity verification, so the transfer was not completed.",
-        TransferErrorCode.Transient =>
-            "The destination service was temporarily unavailable, so the file was not transferred. Please try again.",
-        _ =>
-            "The file could not be transferred due to an unexpected error. Please try again, and contact support if the problem continues."
-    };
+    private static string MapUserMessage(TransferErrorCode errorCode) =>
+        TransferErrorMessages.GetUserMessage(errorCode);
 
     // NetApp exception when the access key has been rotated since the
     // S3 client was created. Treating this as transient ensures the orchestrator

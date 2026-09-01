@@ -92,7 +92,7 @@ public class TransferFileHelperTests
     }
 
     [Fact]
-    public void MapExceptionToFailureResult_EgressToNetApp_404_IsGeneralError()
+    public void MapExceptionToFailureResult_EgressToNetApp_404_IsSourceFileNotFound()
     {
         var mapped = TransferFile.MapExceptionToFailureResult(
             new HttpRequestException("missing", null, HttpStatusCode.NotFound),
@@ -100,7 +100,19 @@ public class TransferFileHelperTests
             isCancellationRequested: false);
 
         Assert.False(mapped.Rethrow);
-        Assert.Equal(TransferErrorCode.GeneralError, mapped.ErrorCode);
+        Assert.Equal(TransferErrorCode.SourceFileNotFound, mapped.ErrorCode);
+    }
+
+    [Fact]
+    public void MapExceptionToFailureResult_FileNotFoundException_IsSourceFileNotFound()
+    {
+        var mapped = TransferFile.MapExceptionToFailureResult(
+            new FileNotFoundException("Object key not found"),
+            TransferDirection.NetAppToEgress,
+            isCancellationRequested: false);
+
+        Assert.False(mapped.Rethrow);
+        Assert.Equal(TransferErrorCode.SourceFileNotFound, mapped.ErrorCode);
     }
 
     [Fact]
