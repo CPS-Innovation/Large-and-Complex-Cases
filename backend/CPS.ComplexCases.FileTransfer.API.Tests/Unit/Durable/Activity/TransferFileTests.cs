@@ -843,12 +843,12 @@ public class TransferFileTests
     }
 
     [Fact]
-    public async Task Run_EgressToNetApp_SourceReadThrowsHttpRequestException404_ReturnsGeneralErrorAndFailsFast()
+    public async Task Run_EgressToNetApp_SourceReadThrowsHttpRequestException404_ReturnsSourceFileNotFoundAndFailsFast()
     {
         // Arrange — on an EgressToNetApp transfer the Egress client is the source. A genuine source-side
         // 404 (a file listed then deleted before the read) must NOT be reclassified as transient, or the
         // orchestrator would retry it across its 60s/120s/240s backoff and surface a misleading
-        // "temporarily unavailable". It should fall through to the general handler and fail fast.
+        // "temporarily unavailable".
         var payload = CreatePayload(); // EgressToNetApp
 
         _storageClientFactoryMock
@@ -875,11 +875,38 @@ public class TransferFileTests
         // Act
         var result = await _activity.Run(payload);
 
-        // Assert — classified as a general (non-transient) error with an accurate message.
         Assert.False(result.IsSuccess);
         Assert.NotNull(result.FailedItem);
-        Assert.Equal(TransferErrorCode.GeneralError, result.FailedItem.ErrorCode);
+        Assert.Equal(TransferErrorCode.SourceFileNotFound, result.FailedItem.ErrorCode);
         Assert.DoesNotContain("temporarily unavailable", result.FailedItem.ErrorMessage);
+        Assert.Contains("could not be found", result.FailedItem.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task Run_NetAppToEgress_SourceReadThrowsFileNotFoundException_ReturnsSourceFileNotFound()
+    {
+        var payload = CreatePayload();
+        payload.TransferDirection = TransferDirection.NetAppToEgress;
+
+        _storageClientFactoryMock
+            .Setup(x => x.GetClientsForDirection(payload.TransferDirection))
+            .Returns((_sourceClientMock.Object, _destinationClientMock.Object));
+
+        _sourceClientMock
+            .Setup(x => x.OpenReadStreamAsync(
+                payload.SourcePath.Path,
+                payload.WorkspaceId,
+                payload.SourcePath.FileId,
+                payload.BearerToken,
+                payload.BucketName))
+            .ThrowsAsync(new FileNotFoundException("Object missing"));
+
+        var result = await _activity.Run(payload);
+
+        Assert.False(result.IsSuccess);
+        Assert.NotNull(result.FailedItem);
+        Assert.Equal(TransferErrorCode.SourceFileNotFound, result.FailedItem.ErrorCode);
+        Assert.Contains("could not be found", result.FailedItem.ErrorMessage);
     }
 
     [Fact]

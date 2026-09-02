@@ -300,6 +300,16 @@ steps:
             "slotSetting": false
           },
           {
+            "name": "SizeConfig__SourceValidationRetryAttempts",
+            "value": "$(SizeConfigSourceValidationRetryAttempts)",
+            "slotSetting": false
+          },
+          {
+            "name": "SizeConfig__SourceValidationRetryIntervalSeconds",
+            "value": "$(SizeConfigSourceValidationRetryIntervalSeconds)",
+            "slotSetting": false
+          },
+          {
             "name": "Postgres__AuthMode",
             "value": "AAD",
             "slotSetting": false

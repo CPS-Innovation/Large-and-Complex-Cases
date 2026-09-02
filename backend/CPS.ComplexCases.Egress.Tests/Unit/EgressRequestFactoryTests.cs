@@ -49,4 +49,19 @@ public class EgressRequestFactoryTests
           "/api/v1/workspaces?view=full&skip=5&limit=25",
           request.RequestUri?.ToString());
     }
+
+    [Fact]
+    public void GetWorkspaceDocumentHeadRequest_UsesHeadMethodAndFileIdPath()
+    {
+        var arg = new GetWorkspaceDocumentArg
+        {
+            WorkspaceId = "ws-1",
+            FileId = "file-9"
+        };
+
+        using var request = _sut.GetWorkspaceDocumentHeadRequest(arg, "token");
+
+        Assert.Equal(HttpMethod.Head, request.Method);
+        Assert.Equal("/api/v1/workspaces/ws-1/files/file-9", request.RequestUri?.ToString());
+    }
 }

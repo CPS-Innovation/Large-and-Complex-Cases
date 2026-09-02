@@ -284,17 +284,62 @@ public class EgressStorageClient(
         throw new NotImplementedException();
     }
 
-    public async Task<bool> FileExistsAsync(string path, string? workspaceId = null, string? bearerToken = null, string? bucketName = null)
+    public async Task<bool> FileExistsAsync(string path, string? workspaceId = null, string? bearerToken = null, string? bucketName = null, string? fileId = null)
+    {
+        if (!string.IsNullOrEmpty(fileId))
+        {
+            return await FileExistsByIdAsync(
+                workspaceId ?? throw new ArgumentNullException(nameof(workspaceId), "Workspace ID cannot be null."),
+                fileId);
+        }
+
+        var resolvedWorkspaceId = workspaceId ?? throw new ArgumentNullException(nameof(workspaceId), "Workspace ID cannot be null.");
+        var token = await GetWorkspaceToken();
+        var parentFolderPath = Path.GetDirectoryName(path)?.Replace('\\', '/') ?? string.Empty;
+
+        // List only the file's parent folder (not the workspace root) so a missing fileId does not
+        // trigger a recursive scan of every folder in the workspace.
+        var filesInParentFolder = await GetAllPagesInParallel(resolvedWorkspaceId, folderId: null, token, parentFolderPath);
+
+        return filesInParentFolder.Any(f =>
+            !f.IsFolder &&
+            (f.Path.EnsureTrailingSlash() + f.FileName).Equals(path, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private async Task<bool> FileExistsByIdAsync(string workspaceId, string fileId)
     {
         var token = await GetWorkspaceToken();
+        var arg = new GetWorkspaceDocumentArg
+        {
+            WorkspaceId = workspaceId,
+            FileId = fileId
+        };
 
-        var existingFiles = await GetAllFilesFromFolderParallel(
-            workspaceId ?? throw new ArgumentNullException(nameof(workspaceId), "Workspace ID cannot be null."),
-            "",
-            "",
-            token);
-
-        return existingFiles.Any(f => !string.IsNullOrEmpty(f.FullFilePath) && f.FullFilePath.Equals(path, StringComparison.OrdinalIgnoreCase));
+        try
+        {
+            using var response = await SendRequestAsync(
+                _egressRequestFactory.GetWorkspaceDocumentHeadRequest(arg, token),
+                streamResponse: true);
+            return true;
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
+        {
+            return false;
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.MethodNotAllowed)
+        {
+            try
+            {
+                using var response = await SendRequestAsync(
+                    _egressRequestFactory.GetWorkspaceDocumentRequest(arg, token),
+                    streamResponse: true);
+                return true;
+            }
+            catch (HttpRequestException inner) when (inner.StatusCode == HttpStatusCode.NotFound)
+            {
+                return false;
+            }
+        }
     }
 
     public async Task<List<FileTransferInfo>> GetAllFilesFromFolderAsync(string folderPath, string? workspaceId = null)
@@ -451,7 +496,7 @@ public class EgressStorageClient(
         }
     }
 
-    private async Task<List<ListCaseMaterialDataResponse>> GetAllPagesInParallel(string workspaceId, string? folderId, string token)
+    private async Task<List<ListCaseMaterialDataResponse>> GetAllPagesInParallel(string workspaceId, string? folderId, string token, string? path = null)
     {
         const int take = 100;
 
@@ -459,6 +504,7 @@ public class EgressStorageClient(
         {
             WorkspaceId = workspaceId,
             FolderId = folderId,
+            Path = path,
             Take = take,
             Skip = 0,
             RecurseSubFolders = false
@@ -482,6 +528,7 @@ public class EgressStorageClient(
                 {
                     WorkspaceId = workspaceId,
                     FolderId = folderId,
+                    Path = path,
                     Take = take,
                     Skip = i * take,
                     RecurseSubFolders = false,

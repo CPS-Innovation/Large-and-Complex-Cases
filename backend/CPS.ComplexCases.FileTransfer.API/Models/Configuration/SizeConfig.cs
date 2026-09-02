@@ -23,4 +23,9 @@ public class SizeConfig
     public int FolderPreCreateRetryAttempts { get; set; } = 3;
     public int FolderPreCreateFirstRetryIntervalSeconds { get; set; } = 5;
     public double FolderPreCreateBackoffCoefficient { get; set; } = 2.0;
+
+    // Polling window for source-file availability before transfer fan-out.
+    // 5 attempts including the first, 10s apart, gives a 50s maximum wait.
+    public int SourceValidationRetryAttempts { get; set; } = 5;
+    public int SourceValidationRetryIntervalSeconds { get; set; } = 10;
 }

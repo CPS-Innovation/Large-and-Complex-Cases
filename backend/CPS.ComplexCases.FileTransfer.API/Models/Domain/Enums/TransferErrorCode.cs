@@ -8,5 +8,6 @@ public enum TransferErrorCode
     FileExists,
     GeneralError,
     IntegrityVerificationFailed,
+    SourceFileNotFound,
     Transient
 }

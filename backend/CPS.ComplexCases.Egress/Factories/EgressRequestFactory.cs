@@ -92,6 +92,15 @@ public class EgressRequestFactory : IEgressRequestFactory
         return request;
     }
 
+    public HttpRequestMessage GetWorkspaceDocumentHeadRequest(GetWorkspaceDocumentArg arg, string token)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Head, $"/api/v1/workspaces/{arg.WorkspaceId}/files/{arg.FileId}");
+
+        AppendToken(request, token);
+
+        return request;
+    }
+
     public HttpRequestMessage CreateUploadRequest(CreateUploadArg arg, string token)
     {
         var uploadData = new

@@ -257,7 +257,7 @@ public class NetAppStorageClient(
         return false;
     }
 
-    public Task<bool> FileExistsAsync(string path, string? workspaceId = null, string? bearerToken = null, string? bucketName = null)
+    public Task<bool> FileExistsAsync(string path, string? workspaceId = null, string? bearerToken = null, string? bucketName = null, string? fileId = null)
     {
         var arg = _netAppArgFactory.CreateGetObjectArg(
             bearerToken ?? throw new ArgumentNullException(nameof(bearerToken), "Bearer token cannot be null."),
