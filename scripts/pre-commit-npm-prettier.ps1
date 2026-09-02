@@ -13,18 +13,28 @@ $projectGroups = $Files |
 foreach ($group in $projectGroups) {
     $projectDir = $group.Name
 
+    if (-not (Test-Path "$projectDir/.prettierrc")) {
+        continue
+    }
+
+    $projectFiles = $group.Group | ForEach-Object {
+        $_ -replace "^$projectDir[\\/]", ""
+    }
+
     Push-Location $projectDir
 
     try {
-        $projectFiles = $group.Group| ForEach-Object { $_ -replace "^$projectDir[\\/]", "" }
+        npx --no prettier -- `
+            --write `
+            $projectFiles
 
-        npx prettier --write $projectFiles
-
-        if ($LASTEXITCODE -ne 0) {
-            exit $LASTEXITCODE
-        }
+        $exitCode = $LASTEXITCODE
     }
     finally {
         Pop-Location
+    }
+
+    if ($exitCode -ne 0) {
+        exit $exitCode
     }
 }
