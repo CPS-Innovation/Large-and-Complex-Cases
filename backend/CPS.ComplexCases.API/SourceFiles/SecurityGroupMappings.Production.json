@@ -1,5 +1,12 @@
 [
-    {
+  {
+    "id": "b23294db-719d-4c67-9e7e-44968cbe2f95",
+    "displayName": "Rose-Court-Groups-Cases",
+    "bucketName": "rctgroups",
+    "volumeUuid": "203242d4-3a5a-442f-a2b1-2124efa7b23d",
+    "description": "RWD Midlands and Wales Users security group for CPS Complex Cases"
+  },
+  {
     "id": "d18c4bec-6202-401d-8558-5338c9fb2676",
     "displayName": "Rose-Court-Cases",
     "bucketName": "rctcasedata",
