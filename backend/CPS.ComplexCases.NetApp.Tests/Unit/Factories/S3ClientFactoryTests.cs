@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.IdentityModel.Tokens.Jwt;
+using System.Net;
 using System.Net.Security;
 using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
@@ -625,6 +626,35 @@ public class S3ClientFactoryTests
         // Act & Assert
         await Assert.ThrowsAsync<InvalidOperationException>(
             () => _factory.GetS3ClientAsync(GenerateTestJwtToken(TestOid, TestUserName)));
+    }
+
+    [Fact]
+    public async Task CreateS3Client_DoesNotAssignProcessWideServerCertificateValidationCallback()
+    {
+#pragma warning disable SYSLIB0014 // ServicePointManager is obsolete; this test asserts the factory does not assign it
+        var previousCallback = ServicePointManager.ServerCertificateValidationCallback;
+        try
+        {
+            ServicePointManager.ServerCertificateValidationCallback = null;
+            Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Development");
+
+            _netAppCertFactoryMock
+                .Setup(f => f.GetTrustedCaCertificates())
+                .Returns(new X509Certificate2Collection());
+
+            _credentialServiceMock
+                .Setup(x => x.GetCredentialKeysAsync(It.IsAny<string>()))
+                .ReturnsAsync(("test-access-key", "test-secret-key"));
+
+            await _factory.GetS3ClientAsync(GenerateTestJwtToken(TestOid, TestUserName));
+
+            Assert.Null(ServicePointManager.ServerCertificateValidationCallback);
+        }
+        finally
+        {
+            ServicePointManager.ServerCertificateValidationCallback = previousCallback;
+        }
+#pragma warning restore SYSLIB0014
     }
 
     [Fact]

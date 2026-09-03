@@ -151,10 +151,11 @@ public class S3ClientFactory(
         }
         else if (isDevelopment)
         {
-            // In Development, bypass all SSL validation via HttpClientHandler
+            // In Development, bypass SSL validation on this S3 client's handler only.
+            // Do not assign ServicePointManager.ServerCertificateValidationCallback — that is process-wide.
             var handler = new HttpClientHandler
             {
-                ServerCertificateCustomValidationCallback = (sender, certificate, chain, sslPolicyErrors) => true
+                ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator // NOSONAR - Development-only bypass for self-signed NetApp S3 endpoints; scoped to this handler so other connections keep default validation
             };
 
             s3Config.HttpClientFactory = new CustomHttpClientFactory(handler);
