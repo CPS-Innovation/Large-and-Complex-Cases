@@ -1,6 +1,7 @@
 import { loadEnvConfig } from "../helpers/env-config";
 import {
   listEgressWorkspaceFilesByFolderId,
+  egressFileExistsById,
   authenticateEgress,
 } from "./egress-api";
 import { getAzureADToken } from "./auth-api";
@@ -126,7 +127,7 @@ export async function isFileInEgress(
     egressToken ?? (await getVerifyEgressTokenRef(config)),
     workspaceId,
     folderId,
-    false,
+    true,
     // Enables the 401 -> re-authenticate -> retry path. Long runs (the soak
     // scenarios take ~an hour) outlive an Egress token, and without this a
     // 401 returns an empty listing that reads as "the file is gone".
@@ -134,6 +135,30 @@ export async function isFileInEgress(
   );
 
   return files.some((f) => f.fileName === fileName);
+}
+
+/**
+ * Whether a file still exists in Egress, checked by its exact file id rather
+ * than by listing a folder and matching names. Prefer this for "the Move
+ * removed its source" assertions: it's a single deterministic call (no
+ * folder-listing retries), so it returns immediately when the file is gone and
+ * doesn't mask a genuine delete miss. Only usable where the file id is known
+ * (e.g. the source file captured at upload) — the copy-destination existence
+ * check has no id and must still list by name.
+ */
+export async function isFileInEgressById(
+  workspaceId: string,
+  fileId: string,
+  egressToken?: string | undefined,
+): Promise<boolean> {
+  const config = loadEnvConfig();
+
+  return egressFileExistsById(
+    config.egressBaseUrl,
+    egressToken ?? (await getVerifyEgressTokenRef(config)),
+    workspaceId,
+    fileId,
+  );
 }
 
 // Poll the Egress folder listing (API, no browser) until the file appears.

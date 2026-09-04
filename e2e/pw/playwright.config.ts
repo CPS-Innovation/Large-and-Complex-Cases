@@ -13,9 +13,9 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   workers: 1,
   reporter: [
-    ["list"], 
+    ["list"],
     ["html", { outputFolder: "./playwright-report" }],
-    ["junit", { outputFile: "./playwright-report/e2e-test-report.xml" }]
+    ["junit", { outputFile: "./playwright-report/e2e-test-report.xml" }],
   ],
   timeout: 120_000,
   expect: { timeout: 120_000 },
@@ -86,6 +86,5 @@ export default defineConfig({
       testMatch: "**/seed-netapp-fixture.setup.ts",
       use: { ...devices["Desktop Chrome"] },
     },
-
   ],
 });

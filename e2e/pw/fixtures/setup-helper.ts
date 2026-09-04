@@ -13,7 +13,7 @@ import { registerCase } from "../helpers/case-api";
 import { TacticalLoginPage } from "../pages/TacticalLoginPage";
 import { AzureADLoginPage } from "../pages/AzureADLoginPage";
 import { CaseSearchPage } from "../pages/CaseSearchPage";
-import type { TestSetupResult, UploadedFile } from "../helpers/types";
+import type { TestSetupResult } from "../helpers/types";
 
 export interface SetupOptions {
   fileSizeMb?: number;
@@ -74,7 +74,7 @@ export async function setupTestData(
     `[5/5] Uploading ${fileCount} test file(s) of ${fileSizeMb}MB each...`,
   );
   const fileSizeBytes = fileSizeMb * 1024 * 1024;
-  const files: UploadedFile[] = [];
+  const uploadIds: string[] = [];
 
   for (let i = 1; i <= fileCount; i++) {
     const timestamp = new Date()
@@ -91,19 +91,25 @@ export async function setupTestData(
       fileSizeBytes,
       fileName,
     );
-    const file = await getUploadedFile(
-      config.egressBaseUrl,
-      egressToken,
-      config.egressServiceAccountAuth,
-      workspaceId,
-      uploadId,
-      {
-        timeoutMs: Math.max(30000, fileSizeMb * 15000),
-        retryDelay: Math.min(10000, Math.max(1000, fileSizeMb * 5)),
-      },
-    );
-    files.push(file);
+    uploadIds.push(uploadId);
   }
+
+  console.log("  Getting the uploaded file ID(s)...");
+  const files = await Promise.all(
+    uploadIds.map((uploadId) =>
+      getUploadedFile(
+        config.egressBaseUrl,
+        egressToken,
+        config.egressServiceAccountAuth,
+        workspaceId,
+        uploadId,
+        {
+          timeoutMs: Math.max(30000, fileSizeMb * 15000),
+          retryDelay: Math.min(10000, Math.max(2000, fileSizeMb * 5)),
+        },
+      ),
+    ),
+  );
 
   console.log("=== Workspace Setup Complete ===\n");
 

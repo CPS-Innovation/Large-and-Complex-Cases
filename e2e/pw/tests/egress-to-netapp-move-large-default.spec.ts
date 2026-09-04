@@ -2,13 +2,13 @@ import { test } from "../fixtures/test-fixtures-default";
 import { CaseSearchPage } from "../pages/CaseSearchPage";
 import { SearchResultsPage } from "../pages/SearchResultsPage";
 import { CaseManagementPage } from "../pages/CaseManagementPage";
-import { getTransferMaterialsTab } from "../pages/getTransferMaterialsTab";
 import { ActivityLogTab } from "../pages/ActivityLogTab";
 import {
   verifyNetAppFileSizeByName,
-  isFileInEgress,
+  isFileInEgressById,
   waitForFileInEgress,
 } from "../helpers/transfer-verify";
+import { getTransferMaterialsTab } from "../pages/getTransferMaterialsTab";
 import { expect } from "@playwright/test";
 
 test.describe("Egress to NetApp Move (Default Mode)", () => {
@@ -79,7 +79,7 @@ test.describe("Egress to NetApp Move (Default Mode)", () => {
     await transferTab.confirmTransfer("Move");
 
     // Step 6: Wait for transfer to complete (10 min timeout)
-    await transferTab.waitForTransferComplete(600_000); 
+    await transferTab.waitForTransferComplete(600_000);
 
     // Step 7: Verify in Activity Log
     await caseMgmt.switchToTab("activity-log");
@@ -91,10 +91,12 @@ test.describe("Egress to NetApp Move (Default Mode)", () => {
     await activityLog.expandFileList();
     await activityLog.downloadCsv();
     await activityLog.verifyDownloadSuccess();
-  
+
     // Step 9: Confirm complete files exist in shared drive
     for (const file of testData.files) {
-      console.log(`\nVerifying file '${file.fileName}' exists in NetApp in its original size (${file.fileSize} bytes)`)
+      console.log(
+        `\nVerifying file '${file.fileName}' exists in NetApp in its original size (${file.fileSize} bytes)`,
+      );
       await verifyNetAppFileSizeByName(
         file.fileName,
         testData.caseId!,
@@ -104,23 +106,21 @@ test.describe("Egress to NetApp Move (Default Mode)", () => {
 
     // Step 10: Confirm files removed from Egress
     for (const file of testData.files) {
-      console.log(`\nVerifying file '${file.fileName}' has been deleted from source '${testData.uploadPath}'.`)
-      await test.step(
-        `Verify file '${file.fileName}' is no longer present in Egress`,
-        async () => {
-          const exists = await isFileInEgress(
-            testData.workspace.id,
-            testData.sourceSubfolderId!,
-            file.fileName,
-            testData.egressToken!,
-          );
-
-          expect(
-            exists,
-            `File '${file.fileName}' still exists in Egress`
-          ).toBeFalsy();
-        }
+      console.log(
+        `\nVerifying file '${file.fileName}' has been deleted from source '${testData.uploadPath}'.`,
       );
+      await test.step(`Verify file '${file.fileName}' is no longer present in Egress`, async () => {
+        const exists = await isFileInEgressById(
+          testData.workspace.id,
+          file.fileId,
+          testData.egressToken,
+        );
+
+        expect(
+          exists,
+          `File '${file.fileName}' still exists in Egress`,
+        ).toBeFalsy();
+      });
     }
   });
 });
