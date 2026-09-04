@@ -16,7 +16,7 @@ import TransferMovePermissionsErrorPage from "./case-management/transfer-materia
 import DisconnectSharedDriveConfirmationPage from "./case-management/netapp-disconnect/DisconnectSharedDriveConfirmationPage";
 import DisconnectSharedDriveSuccessPage from "./case-management/netapp-disconnect/DisconnectSharedDriveSuccessPage";
 import DisconnectSharedDriveFailurePage from "./case-management/netapp-disconnect/DisconnectSharedDriveFailurePage";
-import TransferDestinationPage from "./case-management/transfer-materials-v1/TransferDestinationPage";
+import TransferDestinationPage from "./case-management/transfer-materials/TransferDestinationPage";
 import MaintenancePage from "./maintenance-page";
 import UnAuthorisedPage from "./unauthorised";
 import { MainStateContext } from "../providers/MainStateProvider";

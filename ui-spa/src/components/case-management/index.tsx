@@ -2,15 +2,13 @@ import { useState, useEffect, useMemo, useContext } from "react";
 import { Tabs } from "../common/tabs/Tabs";
 import { TabId } from "../../common/types/CaseManagement";
 import { ItemProps } from "../common/tabs/types";
-import TransferMaterialsPage from "./transfer-materials";
-import TransferMaterialsV1Page from "./transfer-materials-v1";
+import TransferMaterialsV1Page from "./transfer-materials";
 import TransferResolveFilePathPage from "./transfer-materials/TransferResolveFilePathPage";
 import ActivityLogPage from "./activity-log/index";
 import { getCaseMetaData } from "../../apis/gateway-api";
 import { useNavigate, useLocation, useParams } from "react-router";
 import { MainStateContext } from "../../providers/MainStateProvider";
 import { PageContentWrapper } from "../govuk/PageContentWrapper";
-import TransferTreeViewPage from "../case-management/transfer-materials/TransferTreeViewPage";
 import { useQuery } from "@tanstack/react-query";
 import { getUrlSearchParam } from "../../common/utils/getUrlSearchParam";
 
@@ -89,65 +87,39 @@ const CaseManagementPage = () => {
   const tabItems = useMemo(() => {
     const items: ItemProps<TabId>[] = [];
 
-    if (featureFlags?.transferMaterialsV1) {
-      items.push({
-        id: "transfer-materials",
-        label: "Transfer materials",
-        panel: {
-          children: caseMetaData ? (
-            <TransferMaterialsV1Page
-              isTabActive={activeTabId === "transfer-materials"}
-              caseId={caseId}
-              operationName={operationNameOrDefendantName}
-              egressWorkspaceId={caseMetaData.egressWorkspaceId}
-              egressWorkspaceName={
-                caseMetaData.egressWorkspaceName || operationNameOrDefendantName
-              }
-              netAppPath={caseMetaData.netappFolderPath}
-              activeTransferId={
-                routeState?.transferId ?? caseMetaData.activeTransferId ?? ""
-              }
-              urn={caseMetaData.urn}
-              transferSourceInitialValue={
-                transferPage?.transferSource ?? "egress"
-              }
-              transferEgressFolderPathInitialValue={
-                transferPage?.transferSourceEgressFolderPath ?? null
-              }
-              transferNetAppFolderPathInitialValue={
-                transferPage?.transferSourceNetAppFolderPath ?? null
-              }
-            />
-          ) : (
-            <></>
-          ),
-        },
-      });
-    }
-
-    if (featureFlags !== null && !featureFlags?.transferMaterialsV1) {
-      items.push({
-        id: "transfer-materials",
-        label: "Transfer materials",
-        panel: {
-          children: caseMetaData ? (
-            <TransferMaterialsPage
-              isTabActive={activeTabId === "transfer-materials"}
-              caseId={caseId}
-              operationName={operationNameOrDefendantName}
-              egressWorkspaceId={caseMetaData.egressWorkspaceId}
-              netAppPath={caseMetaData.netappFolderPath}
-              activeTransferId={
-                routeState?.transferId ?? caseMetaData.activeTransferId ?? ""
-              }
-              urn={caseMetaData.urn}
-            />
-          ) : (
-            <></>
-          ),
-        },
-      });
-    }
+    items.push({
+      id: "transfer-materials",
+      label: "Transfer materials",
+      panel: {
+        children: caseMetaData ? (
+          <TransferMaterialsV1Page
+            isTabActive={activeTabId === "transfer-materials"}
+            caseId={caseId}
+            operationName={operationNameOrDefendantName}
+            egressWorkspaceId={caseMetaData.egressWorkspaceId}
+            egressWorkspaceName={
+              caseMetaData.egressWorkspaceName || operationNameOrDefendantName
+            }
+            netAppPath={caseMetaData.netappFolderPath}
+            activeTransferId={
+              routeState?.transferId ?? caseMetaData.activeTransferId ?? ""
+            }
+            urn={caseMetaData.urn}
+            transferSourceInitialValue={
+              transferPage?.transferSource ?? "egress"
+            }
+            transferEgressFolderPathInitialValue={
+              transferPage?.transferSourceEgressFolderPath ?? null
+            }
+            transferNetAppFolderPathInitialValue={
+              transferPage?.transferSourceNetAppFolderPath ?? null
+            }
+          />
+        ) : (
+          <></>
+        ),
+      },
+    });
 
     items.push({
       id: "activity-log",
@@ -173,7 +145,6 @@ const CaseManagementPage = () => {
           children: caseMetaData ? (
             <div>
               <h3> Case Details</h3>
-              <TransferTreeViewPage caseId={caseId} />
             </div>
           ) : (
             <></>
