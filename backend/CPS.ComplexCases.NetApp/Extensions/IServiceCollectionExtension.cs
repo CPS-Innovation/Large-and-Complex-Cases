@@ -146,7 +146,7 @@ public static class IServiceCollectionExtension
         {
             return new HttpClientHandler
             {
-                ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+                ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator // NOSONAR - Development-only bypass for self-signed NetApp endpoints; scoped to this HttpClient handler so other connections keep default validation
             };
         }
         else
