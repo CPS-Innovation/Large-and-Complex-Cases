@@ -8,6 +8,7 @@ public class FilesDeletedEvent : BaseTelemetryEvent
     public required string TransferDirection { get; set; }
     public long TotalFilesDeleted { get; set; }
     public long TotalFilesFailedToDelete { get; set; }
+    public bool IsSuccessful { get; set; }
     public DateTime DeletionStartTime { get; set; }
     public DateTime DeletionEndTime { get; set; }
 
@@ -18,6 +19,7 @@ public class FilesDeletedEvent : BaseTelemetryEvent
             { nameof(CaseId), CaseId.ToString() },
             { nameof(TransferId), TransferId.ToString() },
             { nameof(TransferDirection), TransferDirection },
+            { nameof(IsSuccessful), IsSuccessful.ToString() },
         }, new Dictionary<string, double?>
         {
             { TelemetryConstants.DurationCustomDimensionName, GetDurationInMilliseconds(DeletionStartTime, DeletionEndTime) },

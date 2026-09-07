@@ -13,6 +13,7 @@ using CPS.ComplexCases.FileTransfer.API.Durable.Payloads.Domain;
 using CPS.ComplexCases.FileTransfer.API.Durable.State;
 using CPS.ComplexCases.FileTransfer.API.Factories;
 using CPS.ComplexCases.FileTransfer.API.Models.Domain.Enums;
+using CPS.ComplexCases.FileTransfer.API.Telemetry;
 using CPS.ComplexCases.FileTransfer.API.Tests.Unit.Stubs;
 using Microsoft.DurableTask.Client;
 using Microsoft.DurableTask.Client.Entities;
@@ -291,5 +292,158 @@ public class DeleteFilesTests
                 exception,
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Once);
+
+        _telemetryClientMock.Verify(
+            t => t.TrackEvent(It.Is<FilesDeletedEvent>(e =>
+                e.TotalFilesFailedToDelete == 2 &&
+                e.TotalFilesDeleted == 0 &&
+                !e.IsSuccessful)),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task Run_UsesDeletedFilesCount_WhenDeletedFilesAreReturned()
+    {
+        var payload = CreateEgressToNetAppPayload();
+        var items = CreateCompletedItems(("file1.txt", "f1"), ("file2.txt", "f2"));
+        SetupDeleteRun(payload, items, new DeleteFilesResult
+        {
+            AllSuccessful = true,
+            DeletedFiles = ["file1.txt", "file2.txt"],
+            FailedFiles = []
+        });
+
+        await _activity.Run(payload, _durableTaskClientStub, CancellationToken.None);
+
+        _telemetryClientMock.Verify(
+            t => t.TrackEvent(It.Is<FilesDeletedEvent>(e =>
+                e.TotalFilesDeleted == 2 &&
+                e.TotalFilesFailedToDelete == 0 &&
+                e.IsSuccessful)),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task Run_FallsBackToRequestedCountMinusFailures_WhenDeletedFilesIsEmpty()
+    {
+        var payload = CreateEgressToNetAppPayload();
+        var items = CreateCompletedItems(("file1.txt", "f1"), ("file2.txt", "f2"), ("file3.txt", "f3"));
+        SetupDeleteRun(payload, items, new DeleteFilesResult
+        {
+            AllSuccessful = true,
+            DeletedFiles = [],
+            FailedFiles = []
+        });
+
+        await _activity.Run(payload, _durableTaskClientStub, CancellationToken.None);
+
+        _telemetryClientMock.Verify(
+            t => t.TrackEvent(It.Is<FilesDeletedEvent>(e =>
+                e.TotalFilesDeleted == 3 &&
+                e.TotalFilesFailedToDelete == 0 &&
+                e.IsSuccessful)),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task Run_FallsBackSubtractingFailedCount_WhenDeletedFilesIsEmptyAndSomeFailed()
+    {
+        var payload = CreateEgressToNetAppPayload();
+        var items = CreateCompletedItems(("file1.txt", "f1"), ("file2.txt", "f2"), ("file3.txt", "f3"));
+        SetupDeleteRun(payload, items, new DeleteFilesResult
+        {
+            AllSuccessful = false,
+            DeletedFiles = [],
+            FailedFiles =
+            [
+                new FailedFileDeletion { FileId = "f2", Filename = "file2.txt", Reason = "locked" }
+            ]
+        });
+
+        await _activity.Run(payload, _durableTaskClientStub, CancellationToken.None);
+
+        _telemetryClientMock.Verify(
+            t => t.TrackEvent(It.Is<FilesDeletedEvent>(e =>
+                e.TotalFilesDeleted == 2 &&
+                e.TotalFilesFailedToDelete == 1 &&
+                !e.IsSuccessful)),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task Run_TracksFailedCount_WhenSomeFilesFailToDelete()
+    {
+        var payload = CreateEgressToNetAppPayload();
+        var items = CreateCompletedItems(("file1.txt", "f1"), ("file2.txt", "f2"));
+        SetupDeleteRun(payload, items, new DeleteFilesResult
+        {
+            AllSuccessful = false,
+            DeletedFiles = ["file1.txt"],
+            FailedFiles =
+            [
+                new FailedFileDeletion { FileId = "f2", Filename = "file2.txt", Reason = "not found" }
+            ]
+        });
+
+        await _activity.Run(payload, _durableTaskClientStub, CancellationToken.None);
+
+        _telemetryClientMock.Verify(
+            t => t.TrackEvent(It.Is<FilesDeletedEvent>(e =>
+                e.TotalFilesDeleted == 1 &&
+                e.TotalFilesFailedToDelete == 1 &&
+                !e.IsSuccessful)),
+            Times.Once);
+    }
+
+    private DeleteFilesPayload CreateEgressToNetAppPayload() => new()
+    {
+        TransferDirection = TransferDirection.EgressToNetApp,
+        TransferId = Guid.NewGuid(),
+        WorkspaceId = _workspaceId,
+        UserName = _testUser
+    };
+
+    private static List<TransferItem> CreateCompletedItems(params (string Path, string FileId)[] files) =>
+        files.Select(f => new TransferItem
+        {
+            Status = TransferItemStatus.Completed,
+            SourcePath = f.Path,
+            FileId = f.FileId,
+            Size = 1234,
+            IsRenamed = false
+        }).ToList();
+
+    private void SetupDeleteRun(DeleteFilesPayload payload, List<TransferItem> successfulItems, DeleteFilesResult result)
+    {
+        var entity = new EntityMetadata<TransferEntity>(
+            id: new EntityInstanceId(nameof(TransferEntityState), payload.TransferId.ToString()),
+            state: new TransferEntity
+            {
+                SuccessfulItems = successfulItems,
+                DestinationPath = _destinationPath,
+                BearerToken = _bearerToken
+            });
+
+        _transferEntityHelperMock
+            .Setup(c => c.GetTransferEntityAsync(
+                It.IsAny<DurableTaskClient>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(entity);
+
+        _transferEntityHelperMock
+            .Setup(c => c.DeleteMovedItemsCompleted(
+                It.IsAny<DurableTaskClient>(), It.IsAny<Guid>(), It.IsAny<List<DeletionError>>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        _storageClientFactoryMock
+            .Setup(f => f.GetSourceClientForDirection(payload.TransferDirection))
+            .Returns(_storageClientMock.Object);
+
+        _storageClientMock
+            .Setup(c => c.DeleteFilesAsync(
+                It.IsAny<List<DeletionEntityDto>>(),
+                payload.WorkspaceId,
+                null,
+                null))
+            .ReturnsAsync(result);
     }
 }
