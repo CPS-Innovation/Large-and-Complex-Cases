@@ -103,6 +103,7 @@ public class DeleteFiles(ITransferEntityHelper transferEntityHelper, IStorageCli
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error occurred while deleting files for transfer ID {TransferId}: {Message}", payload.TransferId, ex.Message);
+            telemetryEvent.TotalFilesFailedToDelete = filesToDelete.Count;
         }
 
         telemetryEvent.DeletionEndTime = DateTime.UtcNow;

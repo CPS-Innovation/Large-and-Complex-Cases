@@ -273,7 +273,7 @@ public class EgressStorageClient(
                 .ToList(),
             FailedFiles = result.Files.Where(x => x.Code > 0).Select(x => new FailedFileDeletion
             {
-                FileId = x.FileId ?? string.Empty,
+                FileId = x.FileId ?? x.Filename ?? string.Empty,
                 Filename = x.Filename ?? string.Empty,
                 Reason = x.Status ?? string.Empty
             })

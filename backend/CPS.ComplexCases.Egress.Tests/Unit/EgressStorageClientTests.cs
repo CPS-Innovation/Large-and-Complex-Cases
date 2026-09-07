@@ -440,6 +440,37 @@ public class EgressStorageClientTests : IDisposable
     }
 
     [Fact]
+    public async Task DeleteFilesAsync_WithNonZeroCodeAndNullFileId_FallsBackToFilename()
+    {
+        var workspaceId = _fixture.Create<string>();
+        var token = _fixture.Create<string>();
+        var filesToDelete = new List<DeletionEntityDto>
+        {
+            new() { Path = "folder/file1.txt", FileId = "file-1" }
+        };
+
+        SetupTokenRequest(token);
+        SetupDeleteFilesRequest(workspaceId, token);
+        SetupHttpMockResponses(
+            ("token", new GetWorkspaceTokenResponse { Token = token }),
+            ("delete", new DeleteFilesResponse
+            {
+                AllSuccessful = false,
+                Files =
+                [
+                    new DeletedFileResult { Code = 1, FileId = null, Filename = "file1.txt", Status = "not found" }
+                ]
+            }));
+
+        var result = await _client.DeleteFilesAsync(filesToDelete, workspaceId);
+
+        var failedFile = Assert.Single(result.FailedFiles!);
+        Assert.Equal("file1.txt", failedFile.FileId);
+        Assert.Equal("file1.txt", failedFile.Filename);
+        Assert.Equal("not found", failedFile.Reason);
+    }
+
+    [Fact]
     public async Task DeleteFilesAsync_WithMixedResults_SplitsDeletedAndFailedFiles()
     {
         var workspaceId = _fixture.Create<string>();

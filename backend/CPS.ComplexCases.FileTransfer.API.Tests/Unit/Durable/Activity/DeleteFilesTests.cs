@@ -292,6 +292,13 @@ public class DeleteFilesTests
                 exception,
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Once);
+
+        _telemetryClientMock.Verify(
+            t => t.TrackEvent(It.Is<FilesDeletedEvent>(e =>
+                e.TotalFilesFailedToDelete == 2 &&
+                e.TotalFilesDeleted == 0 &&
+                !e.IsSuccessful)),
+            Times.Once);
     }
 
     [Fact]
