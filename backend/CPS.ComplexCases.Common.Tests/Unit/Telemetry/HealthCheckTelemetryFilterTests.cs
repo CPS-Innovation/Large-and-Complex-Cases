@@ -30,6 +30,9 @@ public class HealthCheckTelemetryFilterTests
     [InlineData("/api/health")]
     [InlineData("/API/STATUS")]
     [InlineData("/api/status/")]
+    [InlineData("/api/status?ready=true")]
+    [InlineData("/api/health?ready=true")]
+    [InlineData("/api/status/?ready=true")]
     public void Process_FiltersRequest_WhenRequestPathIsPeriodicHealthEndpoint(string requestPath)
     {
         var request = new RequestTelemetry { Name = "GET some-other-route" };
@@ -178,6 +181,15 @@ public class HealthCheckTelemetryFilterTests
         request.Properties["RequestPath"] = "/api/v1/cases/123";
 
         AssertPassedThrough(request);
+    }
+
+    [Fact]
+    public void Process_DoesNotThrow_WhenContextIsNull()
+    {
+        var item = new Mock<ITelemetry>();
+        item.Setup(x => x.Context).Returns((TelemetryContext)null!);
+
+        AssertPassedThrough(item.Object);
     }
 
     [Fact]

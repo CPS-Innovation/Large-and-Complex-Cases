@@ -28,7 +28,7 @@ public class HealthCheckTelemetryFilter(ITelemetryProcessor next) : ITelemetryPr
 
     private static bool ShouldFilter(ITelemetry item)
     {
-        if (IsPeriodicHealthOperation(item.Context.Operation.Name))
+        if (IsPeriodicHealthOperation(item.Context?.Operation?.Name))
         {
             return true;
         }
@@ -78,7 +78,7 @@ public class HealthCheckTelemetryFilter(ITelemetryProcessor next) : ITelemetryPr
             return false;
         }
 
-        var normalized = path.Trim().TrimEnd('/');
+        var normalized = path.Trim().Split('?', 2)[0].TrimEnd('/');
         foreach (var healthPath in PeriodicHealthPaths)
         {
             if (string.Equals(normalized, healthPath, StringComparison.OrdinalIgnoreCase))
