@@ -4,6 +4,7 @@ public class DeleteFilesResult
 {
     public List<string>? DeletedFiles { get; set; } = [];
     public List<FailedFileDeletion>? FailedFiles { get; set; } = [];
+    public bool AllSuccessful { get; set; }
     public bool IsSuccessful => FailedFiles?.Count == 0;
 }
 

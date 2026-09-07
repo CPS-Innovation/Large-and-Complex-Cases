@@ -92,8 +92,13 @@ public class DeleteFiles(ITransferEntityHelper transferEntityHelper, IStorageCli
                 await _transferEntityHelper.DeleteMovedItemsCompleted(client, payload.TransferId, new List<DeletionError>(), cancellationToken);
             }
 
-            telemetryEvent.TotalFilesDeleted = result.DeletedFiles?.Count ?? 0;
-            telemetryEvent.TotalFilesFailedToDelete = result.FailedFiles?.Count ?? 0;
+            var failedCount = result.FailedFiles?.Count ?? 0;
+            telemetryEvent.TotalFilesFailedToDelete = failedCount;
+            var deletedCount = result.DeletedFiles?.Count ?? 0;
+            telemetryEvent.TotalFilesDeleted = deletedCount > 0
+                ? deletedCount
+                : Math.Max(0, filesToDelete.Count - failedCount);
+            telemetryEvent.IsSuccessful = result.AllSuccessful;
         }
         catch (Exception ex)
         {
@@ -109,4 +114,3 @@ public class DeleteFiles(ITransferEntityHelper transferEntityHelper, IStorageCli
         TransferDirection.EgressToNetApp
     ];
 }
-
