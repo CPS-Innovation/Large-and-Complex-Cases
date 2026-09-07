@@ -194,11 +194,15 @@ const TransferDestinationPage: React.FC = () => {
     const initiateFileTransferResponse =
       await initiateFileTransferMutation.mutateAsync(initiatePayload);
 
+    dispatch({
+      type: "SET_INITIATE_FILE_TRANSFER_RESPONSE",
+      payload: {
+        initiateFileTransferResponse,
+      },
+    });
+
     navigate(`/case/${caseId}/case-management`, {
       replace: true,
-      state: {
-        transferId: initiateFileTransferResponse.id,
-      },
     });
   };
 

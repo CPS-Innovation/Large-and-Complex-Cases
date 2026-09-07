@@ -647,6 +647,12 @@ const TransferMaterialsV1Page: React.FC<TransferMaterialsV1PageProps> = ({
         setActiveTransferData(activeTransferData);
         if (response.userName === username && transferId)
           handleFileTransferClear(transferId);
+        dispatch({
+          type: "SET_INITIATE_FILE_TRANSFER_RESPONSE",
+          payload: {
+            initiateFileTransferResponse: null,
+          },
+        });
 
         setTransferId("");
         if (transferSource === "netapp") {
@@ -666,6 +672,12 @@ const TransferMaterialsV1Page: React.FC<TransferMaterialsV1PageProps> = ({
           payload: {
             transferId: transferId,
             failedItems: response.failedItems,
+          },
+        });
+        dispatch({
+          type: "SET_INITIATE_FILE_TRANSFER_RESPONSE",
+          payload: {
+            initiateFileTransferResponse: null,
           },
         });
         navigate(`/case/${caseId}/case-management/transfer-errors`);

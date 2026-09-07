@@ -85,6 +85,7 @@ export type MainState = {
   apiData: {
     caseDivisionsOrAreas: CaseDivisionsOrAreaResponse | null;
     caseMetaData: CaseMetaDataResponse | null;
+    initiateFileTransferResponseData: { id: string } | null;
   };
 };
 
@@ -150,6 +151,7 @@ export const initialState: MainState = {
   apiData: {
     caseDivisionsOrAreas: null,
     caseMetaData: null,
+    initiateFileTransferResponseData: null,
   },
 };
 
@@ -168,6 +170,12 @@ export type MainStateActions =
       type: "SET_CASE_META_DATA";
       payload: {
         caseMetaData: CaseMetaDataResponse;
+      };
+    }
+  | {
+      type: "SET_INITIATE_FILE_TRANSFER_RESPONSE";
+      payload: {
+        initiateFileTransferResponse: { id: string } | null;
       };
     }
   | {
@@ -411,6 +419,17 @@ export const mainStateReducer = (
           transferPage: {
             ...action.payload,
           },
+        },
+      };
+    }
+
+    case "SET_INITIATE_FILE_TRANSFER_RESPONSE": {
+      return {
+        ...state,
+        apiData: {
+          ...state.apiData,
+          initiateFileTransferResponseData:
+            action.payload.initiateFileTransferResponse,
         },
       };
     }

@@ -19,13 +19,6 @@ import styles from "./index.module.scss";
 const CaseManagementPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const {
-    state: routeState,
-  }: {
-    state?: {
-      transferId?: string;
-    };
-  } = location;
   const { caseId } = useParams() as { caseId: string };
   if (!caseId) throw new Error("missing caseId in the url");
 
@@ -34,6 +27,7 @@ const CaseManagementPage = () => {
   const { state, dispatch } = useContext(MainStateContext);
   const {
     appData: { featureFlags, transferPage },
+    apiData: { initiateFileTransferResponseData },
   } = state;
   const handleTabSelection = (tabId: TabId) => {
     setActiveTabId(tabId);
@@ -105,7 +99,9 @@ const CaseManagementPage = () => {
               }
               netAppPath={caseMetaData.netappFolderPath}
               activeTransferId={
-                routeState?.transferId ?? caseMetaData.activeTransferId ?? ""
+                initiateFileTransferResponseData?.id ??
+                caseMetaData.activeTransferId ??
+                ""
               }
               urn={caseMetaData.urn}
               transferSourceInitialValue={
@@ -138,7 +134,9 @@ const CaseManagementPage = () => {
               egressWorkspaceId={caseMetaData.egressWorkspaceId}
               netAppPath={caseMetaData.netappFolderPath}
               activeTransferId={
-                routeState?.transferId ?? caseMetaData.activeTransferId ?? ""
+                initiateFileTransferResponseData?.id ??
+                caseMetaData.activeTransferId ??
+                ""
               }
               urn={caseMetaData.urn}
             />
@@ -186,10 +184,10 @@ const CaseManagementPage = () => {
     activeTabId,
     caseId,
     caseMetaData,
-    routeState,
     featureFlags,
     transferPage,
     operationNameOrDefendantName,
+    initiateFileTransferResponseData,
   ]);
   if (isCaseMetaDataLoading) {
     return (

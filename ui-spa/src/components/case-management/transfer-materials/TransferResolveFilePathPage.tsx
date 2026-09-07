@@ -25,7 +25,7 @@ import styles from "./TransferResolveFilePathPage.module.scss";
 const MAX_FILE_PATH_CHARACTERS = 260;
 
 const TransferResolveFilePathPage = () => {
-  const { state } = useContext(MainStateContext);
+  const { state, dispatch } = useContext(MainStateContext);
   const navigate = useNavigate();
   const location = useLocation();
   const { caseId } = useParams();
@@ -153,6 +153,12 @@ const TransferResolveFilePathPage = () => {
 
     try {
       const response = await initiateFileTransfer(initiatePayload);
+      dispatch({
+        type: "SET_INITIATE_FILE_TRANSFER_RESPONSE",
+        payload: {
+          initiateFileTransferResponse: response,
+        },
+      });
       navigate(`/case/${caseId}/case-management`, {
         replace: true,
         state: {
