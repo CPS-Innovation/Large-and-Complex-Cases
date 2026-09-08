@@ -158,6 +158,7 @@ export async function isFileInEgressById(
     egressToken ?? (await getVerifyEgressTokenRef(config)),
     workspaceId,
     fileId,
+    config.egressServiceAccountAuth,
   );
 }
 
