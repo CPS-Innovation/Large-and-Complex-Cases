@@ -177,6 +177,13 @@ test.describe("transfer material netapp to egress transfer", () => {
       ],
       "copy",
     );
+    // making sure the success message is removed after a page reload
+    await delay(100);
+    await page.reload();
+    await transferMaterialsSourcePage.verifyUrl("/case/12/case-management");
+    await transferMaterialsSourcePage.verifyPageElements();
+    await delay(1000);
+    await transferMaterialsSourcePage.validateTransferSuccessBannerHidden();
   });
 
   test("Should show the netapp to egress transfer loading screen, if the same user come back to the application after triggering transfer and should show completion as it happens", async ({

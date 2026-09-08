@@ -16,7 +16,9 @@ async function runTransferScenario(page: Page, transferType: "copy" | "move") {
     "egress",
     false,
   );
-  await transferMaterialsSourcePage.verifyFolderPath(["Egress: Workspace-Alpha"]);
+  await transferMaterialsSourcePage.verifyFolderPath([
+    "Egress: Workspace-Alpha",
+  ]);
   await transferMaterialsSourcePage.validateTableColumnHeaders();
 
   const folderRows = [
@@ -130,6 +132,13 @@ async function runTransferScenario(page: Page, transferType: "copy" | "move") {
     ],
     transferType,
   );
+  // making sure the success message is removed after a page reload
+  await delay(100);
+  await page.reload();
+  await transferMaterialsSourcePage.verifyUrl("/case/12/case-management");
+  await transferMaterialsSourcePage.verifyPageElements();
+  await delay(1000);
+  await transferMaterialsSourcePage.validateTransferSuccessBannerHidden();
 }
 test.describe("transfer material egress netapp transfer", () => {
   test.beforeEach(async ({ page }) => {
