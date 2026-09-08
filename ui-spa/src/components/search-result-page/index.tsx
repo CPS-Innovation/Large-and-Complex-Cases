@@ -14,7 +14,9 @@ import { useGetCaseDivisionsOrAreas } from "../../common/hooks/useGetCaseDivisio
 import { PageContentWrapper } from "../govuk/PageContentWrapper";
 import { getSearchFieldPayload } from "../../common/utils/getSearchFieldPayload";
 import { useQuery } from "@tanstack/react-query";
+import { Spinner } from "../common/Spinner";
 import styles from "./index.module.scss";
+import commonStyles from "../case-management/index.module.scss";
 
 const CaseSearchResultPage = () => {
   const [triggerSearchApi, setTriggerSearchApi] = useState(false);
@@ -362,7 +364,10 @@ const CaseSearchResultPage = () => {
   if ((isSearchResultsLoading || isDivisionsOrAreasLoading) && !searchResults) {
     return (
       <PageContentWrapper>
-        <div aria-live="polite">Loading...</div>
+        <div className={commonStyles.pageLoadingSpinnerWrapper}>
+          <Spinner data-testid="page-loading-spinner" diameterPx={50} />
+          <div aria-live="polite">Loading...</div>
+        </div>
       </PageContentWrapper>
     );
   }
