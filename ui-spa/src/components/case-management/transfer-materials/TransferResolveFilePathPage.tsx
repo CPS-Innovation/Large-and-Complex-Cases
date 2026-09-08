@@ -161,9 +161,6 @@ const TransferResolveFilePathPage = () => {
       });
       navigate(`/case/${caseId}/case-management`, {
         replace: true,
-        state: {
-          transferId: response.id,
-        },
       });
     } catch (error) {
       console.log("error", error);
