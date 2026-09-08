@@ -188,7 +188,7 @@ test.describe("transfer-error-page", () => {
     await page.getByRole("button", { name: "Continue" }).click();
     await expect(page).toHaveURL("/case/12/case-management");
     await expect(page.locator("h1")).toHaveText(`Thunderstruck`);
-    //this is to make the page is not getting redirected to error page
+    //this is to make sure the page is not getting redirected to error page
     await delay(1000);
     await expect(page).toHaveURL("/case/12/case-management");
   });

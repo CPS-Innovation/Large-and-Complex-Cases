@@ -470,6 +470,14 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
 
       await transferMaterialsSourcePage.verifyPageElements();
       await transferMaterialsSourcePage.verifyEgressTransferSourceElements();
+
+      // making sure the success message is removed after a page reload
+      await delay(100);
+      await page.reload();
+      await transferMaterialsSourcePage.verifyUrl("/case/12/case-management");
+      await transferMaterialsSourcePage.verifyPageElements();
+      await delay(1000);
+      await transferMaterialsSourcePage.validateTransferSuccessBannerHidden();
     });
     test("The back link and cancel button from the resolve transfer path files page should take the user to casemanagement page", async ({
       page,
