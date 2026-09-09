@@ -186,7 +186,6 @@ test.describe("transfer-error-page", () => {
 
     await expect(page.getByRole("button", { name: "Continue" })).toBeVisible();
     await page.getByRole("button", { name: "Continue" }).click();
-    await expect(page).toHaveURL("/case/12/case-management");
     await expect(page.locator("h1")).toHaveText(`Thunderstruck`);
     //this is to make sure the page is not getting redirected to error page
     await delay(1000);
@@ -287,7 +286,6 @@ test.describe("transfer-error-page", () => {
     );
     await expect(page.getByRole("button", { name: "Continue" })).toBeVisible();
     await page.getByRole("link", { name: "Back" }).click();
-    await expect(page).toHaveURL("/case/12/case-management");
     await expect(page.locator("h1")).toHaveText(`Thunderstruck`);
     await delay(1000);
     await expect(page).toHaveURL("/case/12/case-management");
@@ -386,7 +384,6 @@ test.describe("transfer-error-page", () => {
     );
     await expect(page.getByRole("button", { name: "Continue" })).toBeVisible();
     await page.getByRole("link", { name: "Back" }).click();
-    await expect(page).toHaveURL("/case/12/case-management");
     await expect(page.locator("h1")).toHaveText(`Thunderstruck`);
     await delay(1000);
     await expect(page).toHaveURL("/case/12/case-management");
@@ -475,9 +472,7 @@ test.describe("transfer-error-page", () => {
     );
     await expect(page.getByRole("button", { name: "Continue" })).toBeVisible();
     await page.getByRole("link", { name: "Back" }).click();
-    await expect(page).toHaveURL("/case/12/case-management");
     await expect(page.locator("h1")).toHaveText(`Thunderstruck`);
-    await expect(page).toHaveURL("/case/12/case-management");
     await delay(1000);
     await expect(page).toHaveURL("/case/12/case-management");
   });

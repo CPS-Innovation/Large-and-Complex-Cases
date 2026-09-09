@@ -178,11 +178,10 @@ test.describe("transfer material netapp to egress transfer", () => {
       "copy",
     );
     // making sure the success message is removed after a page reload
-    await delay(100);
-    await page.reload();
+    await page.goto("/case/12/case-management?transfer-materials-v1=true");
     await transferMaterialsSourcePage.verifyUrl("/case/12/case-management");
     await transferMaterialsSourcePage.verifyPageElements();
-    await delay(1000);
+    await transferMaterialsSourcePage.verifyEgressTransferSourceElements();
     await transferMaterialsSourcePage.validateTransferSuccessBannerHidden();
   });
 
