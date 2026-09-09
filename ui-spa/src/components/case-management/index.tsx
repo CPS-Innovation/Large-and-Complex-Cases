@@ -13,6 +13,7 @@ import { PageContentWrapper } from "../govuk/PageContentWrapper";
 import TransferTreeViewPage from "../case-management/transfer-materials/TransferTreeViewPage";
 import { useQuery } from "@tanstack/react-query";
 import { getUrlSearchParam } from "../../common/utils/getUrlSearchParam";
+import { Spinner } from "../common/Spinner";
 
 import styles from "./index.module.scss";
 
@@ -194,7 +195,10 @@ const CaseManagementPage = () => {
   if (isCaseMetaDataLoading) {
     return (
       <PageContentWrapper>
-        <div aria-live="polite">Loading...</div>
+        <div className={styles.pageLoadingSpinnerWrapper}>
+          <Spinner data-testid="page-loading-spinner" diameterPx={50} />
+          <div aria-live="polite">Loading...</div>
+        </div>
       </PageContentWrapper>
     );
   }
