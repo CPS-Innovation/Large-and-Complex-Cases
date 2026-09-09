@@ -186,8 +186,10 @@ test.describe("transfer-error-page", () => {
 
     await expect(page.getByRole("button", { name: "Continue" })).toBeVisible();
     await page.getByRole("button", { name: "Continue" }).click();
-    await expect(page).toHaveURL("/case/12/case-management");
     await expect(page.locator("h1")).toHaveText(`Thunderstruck`);
+    //this is to make sure the page is not getting redirected to error page
+    await delay(1000);
+    await expect(page).toHaveURL("/case/12/case-management");
   });
   test("Should show the transfer error page, if the transfer status is `Failed` with no fileExists error", async ({
     page,
@@ -284,8 +286,9 @@ test.describe("transfer-error-page", () => {
     );
     await expect(page.getByRole("button", { name: "Continue" })).toBeVisible();
     await page.getByRole("link", { name: "Back" }).click();
-    await expect(page).toHaveURL("/case/12/case-management");
     await expect(page.locator("h1")).toHaveText(`Thunderstruck`);
+    await delay(1000);
+    await expect(page).toHaveURL("/case/12/case-management");
   });
   test("Should show the transfer error page, if the transfer status is `Failed` with only fileExists error", async ({
     page,
@@ -381,8 +384,9 @@ test.describe("transfer-error-page", () => {
     );
     await expect(page.getByRole("button", { name: "Continue" })).toBeVisible();
     await page.getByRole("link", { name: "Back" }).click();
-    await expect(page).toHaveURL("/case/12/case-management");
     await expect(page.locator("h1")).toHaveText(`Thunderstruck`);
+    await delay(1000);
+    await expect(page).toHaveURL("/case/12/case-management");
   });
   test("Should show the transfer error page, if the transfer status is `PartiallyCompleted` with source file not found errors", async ({
     page,
@@ -461,6 +465,16 @@ test.describe("transfer-error-page", () => {
       "check the activity log to see if any files transferred successfully",
       "contact the product team for help and include the error message failed transfer - transfer-id-egress-to-netapp",
     ]);
+    await expect(page.getByRole("link", { name: "Back" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Back" })).toHaveAttribute(
+      "href",
+      "/case/12/case-management",
+    );
+    await expect(page.getByRole("button", { name: "Continue" })).toBeVisible();
+    await page.getByRole("link", { name: "Back" }).click();
+    await expect(page.locator("h1")).toHaveText(`Thunderstruck`);
+    await delay(1000);
+    await expect(page).toHaveURL("/case/12/case-management");
   });
   test("User should not be able to land directly on the transfer error page,it should be redirected to search case page", async ({
     page,
