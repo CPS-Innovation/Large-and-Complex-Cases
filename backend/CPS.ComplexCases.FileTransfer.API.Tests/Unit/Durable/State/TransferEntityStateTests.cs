@@ -188,6 +188,31 @@ public class TransferEntityStateTests
     }
 
     [Fact]
+    public void FinalizeTransfer_WithDeletionErrors_SetsStatusToPartiallyCompleted()
+    {
+        var state = new TransferEntityState();
+        state.Initialize(new TransferEntity
+        {
+            DestinationPath = "dest",
+            BearerToken = "fakeBearerToken",
+            SuccessfulItems =
+            [
+                new TransferItem { SourcePath = "file1", Status = TransferItemStatus.Completed, IsRenamed = false, Size = 0 }
+            ],
+            FailedItems = [],
+            DeletionErrors =
+            [
+                new DeletionError { FileId = "file1", ErrorMessage = "File was not confirmed deleted by Egress." }
+            ]
+        });
+
+        state.FinalizeTransfer();
+
+        Assert.Equal(TransferStatus.PartiallyCompleted, state.CurrentState.Status);
+        Assert.NotNull(state.CurrentState.CompletedAt);
+    }
+
+    [Fact]
     public void DeleteMovedItemsCompleted_RecordsErrorsAndFlagsState()
     {
         // Arrange

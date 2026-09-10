@@ -22,6 +22,7 @@ public class EgressStorageClient(
     ITelemetryClient telemetryClient) : BaseEgressClient(logger, egressOptions, httpClient, egressRequestFactory, telemetryClient), IStorageClient
 {
     private const string RootPathValue = ".";
+    private const int BulkDeleteBatchSize = 10;
 
     public async Task<(Stream Stream, long ContentLength)> OpenReadStreamAsync(string path, string? workspaceId = null, string? fileId = null, string? bearerToken = null, string? bucketName = null)
     {
@@ -248,7 +249,7 @@ public class EgressStorageClient(
 
         var token = await GetWorkspaceToken();
 
-        var fileIds = filesToDelete.Select(f => f.FileId).ToList();
+        var fileIds = filesToDelete.Select(f => f.FileId!).ToList();
 
         if (fileIds.Count == 0)
         {
@@ -256,28 +257,36 @@ public class EgressStorageClient(
             return new DeleteFilesResult();
         }
 
-        var deleteArg = new DeleteFilesArg
-        {
-            WorkspaceId = workspaceId,
-            FileIds = fileIds!
-        };
+        var deletedFiles = new List<string>();
+        var failedFiles = new List<FailedFileDeletion>();
 
-        var result = await SendRequestAsync<DeleteFilesResponse>(_egressRequestFactory.DeleteFilesRequest(deleteArg, token));
-
-        return new DeleteFilesResult
+        foreach (var chunk in fileIds.Chunk(BulkDeleteBatchSize))
         {
-            AllSuccessful = result.AllSuccessful,
-            DeletedFiles = result.Files
+            var deleteArg = new DeleteFilesArg
+            {
+                WorkspaceId = workspaceId,
+                FileIds = [.. chunk]
+            };
+
+            var result = await SendRequestAsync<DeleteFilesResponse>(_egressRequestFactory.DeleteFilesRequest(deleteArg, token));
+
+            deletedFiles.AddRange(result.Files
                 .Where(x => x.Code == 0)
-                .Select(x => x.FileId ?? x.Filename ?? "deleted")
-                .ToList(),
-            FailedFiles = result.Files.Where(x => x.Code > 0).Select(x => new FailedFileDeletion
+                .Select(x => x.FileId ?? x.Filename ?? "deleted"));
+
+            failedFiles.AddRange(result.Files.Where(x => x.Code > 0).Select(x => new FailedFileDeletion
             {
                 FileId = x.FileId ?? x.Filename ?? string.Empty,
                 Filename = x.Filename ?? string.Empty,
                 Reason = x.Status ?? string.Empty
-            })
-            .ToList()
+            }));
+        }
+
+        return new DeleteFilesResult
+        {
+            AllSuccessful = failedFiles.Count == 0,
+            DeletedFiles = deletedFiles,
+            FailedFiles = failedFiles
         };
     }
 
