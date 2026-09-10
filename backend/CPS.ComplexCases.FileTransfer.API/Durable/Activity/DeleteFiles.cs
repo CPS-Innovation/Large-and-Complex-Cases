@@ -1,4 +1,5 @@
 using CPS.ComplexCases.Common.Handlers;
+using CPS.ComplexCases.Common.Models.Domain;
 using CPS.ComplexCases.Common.Models.Domain.Dtos;
 using CPS.ComplexCases.Common.Models.Domain.Enums;
 using CPS.ComplexCases.Common.Telemetry;
@@ -73,41 +74,102 @@ public class DeleteFiles(ITransferEntityHelper transferEntityHelper, IStorageCli
         try
         {
             var result = await storageClient.DeleteFilesAsync(filesToDelete, payload.WorkspaceId);
+            var deletionErrors = BuildDeletionErrors(filesToDelete, result);
 
-            if (result.FailedFiles != null && result.FailedFiles.Count != 0)
+            if (deletionErrors.Count != 0)
             {
-                _logger.LogWarning("Failed to delete some files for transfer ID {TransferId}.", payload.TransferId);
-
-                var failedItems = result.FailedFiles.Select(x => new DeletionError
-                {
-                    FileId = x.FileId,
-                    ErrorMessage = x.Reason ?? "Unknown error"
-                }).ToList();
-
-                await _transferEntityHelper.DeleteMovedItemsCompleted(client, payload.TransferId, failedItems, cancellationToken);
+                _logger.LogWarning(
+                    "Failed to delete {FailedCount} of {RequestedCount} files for transfer ID {TransferId}.",
+                    deletionErrors.Count,
+                    filesToDelete.Count,
+                    payload.TransferId);
             }
             else
             {
                 _logger.LogInformation("Successfully deleted all files for transfer ID {TransferId}.", payload.TransferId);
-                await _transferEntityHelper.DeleteMovedItemsCompleted(client, payload.TransferId, new List<DeletionError>(), cancellationToken);
             }
 
-            var failedCount = result.FailedFiles?.Count ?? 0;
-            telemetryEvent.TotalFilesFailedToDelete = failedCount;
-            var deletedCount = result.DeletedFiles?.Count ?? 0;
-            telemetryEvent.TotalFilesDeleted = deletedCount > 0
-                ? deletedCount
-                : Math.Max(0, filesToDelete.Count - failedCount);
-            telemetryEvent.IsSuccessful = result.AllSuccessful;
+            await _transferEntityHelper.DeleteMovedItemsCompleted(client, payload.TransferId, deletionErrors, cancellationToken);
+
+            telemetryEvent.TotalFilesFailedToDelete = deletionErrors.Count;
+            telemetryEvent.TotalFilesDeleted = filesToDelete.Count - deletionErrors.Count;
+            telemetryEvent.IsSuccessful = deletionErrors.Count == 0;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error occurred while deleting files for transfer ID {TransferId}: {Message}", payload.TransferId, ex.Message);
             telemetryEvent.TotalFilesFailedToDelete = filesToDelete.Count;
+            throw;
+        }
+        finally
+        {
+            telemetryEvent.DeletionEndTime = DateTime.UtcNow;
+            _telemetryClient.TrackEvent(telemetryEvent);
+        }
+    }
+
+    private static List<DeletionError> BuildDeletionErrors(List<DeletionEntityDto> filesToDelete, DeleteFilesResult result)
+    {
+        var failedFiles = result.FailedFiles ?? [];
+        var deletedFiles = result.DeletedFiles ?? [];
+
+        var deletionErrors = failedFiles.Select(x => new DeletionError
+        {
+            FileId = x.FileId,
+            ErrorMessage = string.IsNullOrEmpty(x.Reason) ? "Unknown error" : x.Reason
+        }).ToList();
+
+        var accountedIdentifiers = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var deleted in deletedFiles)
+        {
+            if (!string.IsNullOrEmpty(deleted))
+            {
+                accountedIdentifiers.Add(deleted);
+            }
         }
 
-        telemetryEvent.DeletionEndTime = DateTime.UtcNow;
-        _telemetryClient.TrackEvent(telemetryEvent);
+        foreach (var failed in failedFiles)
+        {
+            if (!string.IsNullOrEmpty(failed.FileId))
+            {
+                accountedIdentifiers.Add(failed.FileId);
+            }
+
+            if (!string.IsNullOrEmpty(failed.Filename))
+            {
+                accountedIdentifiers.Add(failed.Filename);
+            }
+        }
+
+        var unaccounted = filesToDelete.Where(file => !IsAccountedFor(file, accountedIdentifiers)).ToList();
+        var missingCount = Math.Max(0, filesToDelete.Count - deletedFiles.Count - failedFiles.Count);
+
+        foreach (var file in unaccounted.Take(missingCount))
+        {
+            deletionErrors.Add(new DeletionError
+            {
+                FileId = file.FileId ?? file.Path,
+                ErrorMessage = "File was not confirmed deleted by Egress."
+            });
+        }
+
+        return deletionErrors;
+    }
+
+    private static bool IsAccountedFor(DeletionEntityDto file, HashSet<string> accountedIdentifiers)
+    {
+        if (!string.IsNullOrEmpty(file.FileId) && accountedIdentifiers.Contains(file.FileId))
+        {
+            return true;
+        }
+
+        if (!string.IsNullOrEmpty(file.Path) && accountedIdentifiers.Contains(file.Path))
+        {
+            return true;
+        }
+
+        var fileName = Path.GetFileName(file.Path);
+        return !string.IsNullOrEmpty(fileName) && accountedIdentifiers.Contains(fileName);
     }
 
     private static readonly HashSet<TransferDirection> AllowedDirections =

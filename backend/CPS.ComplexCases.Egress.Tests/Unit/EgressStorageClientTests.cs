@@ -505,6 +505,146 @@ public class EgressStorageClientTests : IDisposable
     }
 
     [Fact]
+    public async Task DeleteFilesAsync_WithElevenFiles_SendsChunkedRequestsOfAtMostTen()
+    {
+        var workspaceId = _fixture.Create<string>();
+        var token = _fixture.Create<string>();
+        var fileIds = Enumerable.Range(0, 11).Select(i => $"file-{i}").ToList();
+        var filesToDelete = fileIds
+            .Select(id => new DeletionEntityDto { Path = $"folder/{id}.txt", FileId = id })
+            .ToList();
+
+        SetupTokenRequest(token);
+        SetupDeleteFilesRequest(workspaceId, token);
+        SetupHttpMockResponses(
+            ("token", new GetWorkspaceTokenResponse { Token = token }),
+            ("delete", new DeleteFilesResponse
+            {
+                AllSuccessful = true,
+                Files = fileIds.Take(10).Select(id => new DeletedFileResult
+                {
+                    Code = 0,
+                    FileId = id,
+                    Filename = $"{id}.txt",
+                    Status = "OK"
+                }).ToList()
+            }),
+            ("delete", new DeleteFilesResponse
+            {
+                AllSuccessful = true,
+                Files =
+                [
+                    new DeletedFileResult { Code = 0, FileId = "file-10", Filename = "file-10.txt", Status = "OK" }
+                ]
+            }));
+
+        var result = await _client.DeleteFilesAsync(filesToDelete, workspaceId);
+
+        Assert.True(result.AllSuccessful);
+        Assert.Equal(11, result.DeletedFiles!.Count);
+        Assert.Empty(result.FailedFiles!);
+        Assert.Equal(fileIds, result.DeletedFiles);
+
+        _requestFactoryMock.Verify(
+            f => f.DeleteFilesRequest(
+                It.Is<DeleteFilesArg>(arg =>
+                    arg.WorkspaceId == workspaceId &&
+                    arg.FileIds.Count == 10 &&
+                    arg.FileIds.SequenceEqual(fileIds.Take(10))),
+                token),
+            Times.Once);
+        _requestFactoryMock.Verify(
+            f => f.DeleteFilesRequest(
+                It.Is<DeleteFilesArg>(arg =>
+                    arg.WorkspaceId == workspaceId &&
+                    arg.FileIds.Count == 1 &&
+                    arg.FileIds.SequenceEqual(fileIds.Skip(10))),
+                token),
+            Times.Once);
+        _requestFactoryMock.Verify(
+            f => f.DeleteFilesRequest(It.IsAny<DeleteFilesArg>(), token),
+            Times.Exactly(2));
+    }
+
+    [Fact]
+    public async Task DeleteFilesAsync_WithTenFiles_SendsSingleRequest()
+    {
+        var workspaceId = _fixture.Create<string>();
+        var token = _fixture.Create<string>();
+        var fileIds = Enumerable.Range(0, 10).Select(i => $"file-{i}").ToList();
+        var filesToDelete = fileIds
+            .Select(id => new DeletionEntityDto { Path = $"folder/{id}.txt", FileId = id })
+            .ToList();
+
+        SetupTokenRequest(token);
+        SetupDeleteFilesRequest(workspaceId, token);
+        SetupHttpMockResponses(
+            ("token", new GetWorkspaceTokenResponse { Token = token }),
+            ("delete", new DeleteFilesResponse
+            {
+                AllSuccessful = true,
+                Files = fileIds.Select(id => new DeletedFileResult
+                {
+                    Code = 0,
+                    FileId = id,
+                    Filename = $"{id}.txt",
+                    Status = "OK"
+                }).ToList()
+            }));
+
+        var result = await _client.DeleteFilesAsync(filesToDelete, workspaceId);
+
+        Assert.True(result.AllSuccessful);
+        Assert.Equal(10, result.DeletedFiles!.Count);
+        _requestFactoryMock.Verify(
+            f => f.DeleteFilesRequest(It.IsAny<DeleteFilesArg>(), token),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task DeleteFilesAsync_WithChunkedMixedResults_AggregatesDeletedAndFailedFiles()
+    {
+        var workspaceId = _fixture.Create<string>();
+        var token = _fixture.Create<string>();
+        var fileIds = Enumerable.Range(0, 11).Select(i => $"file-{i}").ToList();
+        var filesToDelete = fileIds
+            .Select(id => new DeletionEntityDto { Path = $"folder/{id}.txt", FileId = id })
+            .ToList();
+
+        SetupTokenRequest(token);
+        SetupDeleteFilesRequest(workspaceId, token);
+        SetupHttpMockResponses(
+            ("token", new GetWorkspaceTokenResponse { Token = token }),
+            ("delete", new DeleteFilesResponse
+            {
+                AllSuccessful = true,
+                Files = fileIds.Take(10).Select(id => new DeletedFileResult
+                {
+                    Code = 0,
+                    FileId = id,
+                    Filename = $"{id}.txt",
+                    Status = "OK"
+                }).ToList()
+            }),
+            ("delete", new DeleteFilesResponse
+            {
+                AllSuccessful = false,
+                Files =
+                [
+                    new DeletedFileResult { Code = 1, FileId = "file-10", Filename = "file-10.txt", Status = "locked" }
+                ]
+            }));
+
+        var result = await _client.DeleteFilesAsync(filesToDelete, workspaceId);
+
+        Assert.False(result.AllSuccessful);
+        Assert.Equal(10, result.DeletedFiles!.Count);
+        var failedFile = Assert.Single(result.FailedFiles!);
+        Assert.Equal("file-10", failedFile.FileId);
+        Assert.Equal("locked", failedFile.Reason);
+    }
+
+    [Fact]
     public async Task UploadChunkAsync_WithValidParameters_ReturnsUploadChunkResult()
     {
         // Arrange
