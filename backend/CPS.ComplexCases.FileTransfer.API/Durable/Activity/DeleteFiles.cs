@@ -153,10 +153,7 @@ public class DeleteFiles(ITransferEntityHelper transferEntityHelper, IStorageCli
             }
         }
 
-        var unaccounted = filesToDelete.Where(file => !IsAccountedFor(file, accountedIdentifiers)).ToList();
-        var missingCount = Math.Max(0, filesToDelete.Count - deletedFiles.Count - failedFiles.Count);
-
-        foreach (var file in unaccounted.Take(missingCount))
+        foreach (var file in filesToDelete.Where(file => !IsAccountedFor(file, accountedIdentifiers)))
         {
             deletionErrors.Add(new DeletionError
             {

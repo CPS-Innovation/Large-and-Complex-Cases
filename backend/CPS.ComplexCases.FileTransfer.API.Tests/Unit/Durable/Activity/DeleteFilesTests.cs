@@ -471,6 +471,41 @@ public class DeleteFilesTests
     }
 
     [Fact]
+    public async Task Run_RecordsEveryUnmatchedFile_WhenDeletedIdentifiersDoNotMatchRequestedFiles()
+    {
+        var payload = CreateEgressToNetAppPayload();
+        var items = CreateCompletedItems(("file1.txt", "f1"), ("file2.txt", "f2"), ("file3.txt", "f3"));
+        SetupDeleteRun(payload, items, new DeleteFilesResult
+        {
+            AllSuccessful = true,
+            DeletedFiles = ["deleted", "f2"],
+            FailedFiles = []
+        });
+
+        await _activity.Run(payload, _durableTaskClientStub, CancellationToken.None);
+
+        _transferEntityHelperMock.Verify(
+            c => c.DeleteMovedItemsCompleted(
+                It.IsAny<DurableTaskClient>(),
+                payload.TransferId,
+                It.Is<List<DeletionError>>(errors =>
+                    errors.Count == 2 &&
+                    errors.Any(e => e.FileId == "f1") &&
+                    errors.Any(e => e.FileId == "f3") &&
+                    errors.All(e => e.ErrorMessage.Contains("not confirmed deleted"))),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+
+        _telemetryClientMock.Verify(
+            t => t.TrackEvent(It.Is<FilesDeletedEvent>(e =>
+                e.TotalFilesDeleted == 1 &&
+                e.TotalFilesFailedToDelete == 2 &&
+                !e.IsSuccessful &&
+                e.FailureReasons == "File was not confirmed deleted by Egress. (2)")),
+            Times.Once);
+    }
+
+    [Fact]
     public async Task Run_TracksFailedCount_WhenSomeFilesFailToDelete()
     {
         var payload = CreateEgressToNetAppPayload();
