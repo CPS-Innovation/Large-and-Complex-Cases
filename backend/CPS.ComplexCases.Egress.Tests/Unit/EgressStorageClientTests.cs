@@ -645,6 +645,199 @@ public class EgressStorageClientTests : IDisposable
     }
 
     [Fact]
+    public async Task DeleteFilesAsync_WithNullAndWhitespaceFileIds_ExcludesThemFromRequest()
+    {
+        var workspaceId = _fixture.Create<string>();
+        var token = _fixture.Create<string>();
+        var filesToDelete = new List<DeletionEntityDto>
+        {
+            new() { Path = "folder/file1.txt", FileId = "file-1" },
+            new() { Path = "folder/missing-id.txt", FileId = null },
+            new() { Path = "folder/blank-id.txt", FileId = "   " },
+            new() { Path = "folder/file2.txt", FileId = "file-2" },
+            new() { Path = "folder/empty-id.txt", FileId = string.Empty }
+        };
+
+        SetupTokenRequest(token);
+        SetupDeleteFilesRequest(workspaceId, token);
+        SetupHttpMockResponses(
+            ("token", new GetWorkspaceTokenResponse { Token = token }),
+            ("delete", new DeleteFilesResponse
+            {
+                AllSuccessful = true,
+                Files =
+                [
+                    new DeletedFileResult { Code = 0, FileId = "file-1", Filename = "file1.txt", Status = "OK" },
+                    new DeletedFileResult { Code = 0, FileId = "file-2", Filename = "file2.txt", Status = "OK" }
+                ]
+            }));
+
+        var result = await _client.DeleteFilesAsync(filesToDelete, workspaceId);
+
+        Assert.True(result.AllSuccessful);
+        Assert.Equal(["file-1", "file-2"], result.DeletedFiles);
+        _requestFactoryMock.Verify(
+            f => f.DeleteFilesRequest(
+                It.Is<DeleteFilesArg>(arg =>
+                    arg.WorkspaceId == workspaceId &&
+                    arg.FileIds.SequenceEqual(new[] { "file-1", "file-2" })),
+                token),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task DeleteFilesAsync_WithOnlyNullOrWhitespaceFileIds_ReturnsEmptyResultWithoutDeleteRequest()
+    {
+        var workspaceId = _fixture.Create<string>();
+        var token = _fixture.Create<string>();
+        var filesToDelete = new List<DeletionEntityDto>
+        {
+            new() { Path = "folder/missing-id.txt", FileId = null },
+            new() { Path = "folder/blank-id.txt", FileId = "   " },
+            new() { Path = "folder/empty-id.txt", FileId = string.Empty }
+        };
+
+        SetupTokenRequest(token);
+        SetupHttpMockResponses(
+            ("token", new GetWorkspaceTokenResponse { Token = token }));
+
+        var result = await _client.DeleteFilesAsync(filesToDelete, workspaceId);
+
+        Assert.Empty(result.DeletedFiles!);
+        Assert.Empty(result.FailedFiles!);
+        _requestFactoryMock.Verify(
+            f => f.DeleteFilesRequest(It.IsAny<DeleteFilesArg>(), It.IsAny<string>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task DeleteFilesAsync_WhenEgressOmitsFiles_ReturnsNotAllSuccessful()
+    {
+        var workspaceId = _fixture.Create<string>();
+        var token = _fixture.Create<string>();
+        var filesToDelete = new List<DeletionEntityDto>
+        {
+            new() { Path = "folder/file1.txt", FileId = "file-1" },
+            new() { Path = "folder/file2.txt", FileId = "file-2" }
+        };
+
+        SetupTokenRequest(token);
+        SetupDeleteFilesRequest(workspaceId, token);
+        SetupHttpMockResponses(
+            ("token", new GetWorkspaceTokenResponse { Token = token }),
+            ("delete", new DeleteFilesResponse
+            {
+                AllSuccessful = true,
+                Files =
+                [
+                    new DeletedFileResult { Code = 0, FileId = "file-1", Filename = "file1.txt", Status = "OK" }
+                ]
+            }));
+
+        var result = await _client.DeleteFilesAsync(filesToDelete, workspaceId);
+
+        Assert.False(result.AllSuccessful);
+        Assert.Equal(["file-1"], result.DeletedFiles);
+        Assert.Empty(result.FailedFiles!);
+    }
+
+    [Fact]
+    public async Task DeleteFilesAsync_WhenEgressReportsNotAllSuccessful_ReturnsNotAllSuccessful()
+    {
+        var workspaceId = _fixture.Create<string>();
+        var token = _fixture.Create<string>();
+        var filesToDelete = new List<DeletionEntityDto>
+        {
+            new() { Path = "folder/file1.txt", FileId = "file-1" }
+        };
+
+        SetupTokenRequest(token);
+        SetupDeleteFilesRequest(workspaceId, token);
+        SetupHttpMockResponses(
+            ("token", new GetWorkspaceTokenResponse { Token = token }),
+            ("delete", new DeleteFilesResponse
+            {
+                AllSuccessful = false,
+                Files =
+                [
+                    new DeletedFileResult { Code = 0, FileId = "file-1", Filename = "file1.txt", Status = "OK" }
+                ]
+            }));
+
+        var result = await _client.DeleteFilesAsync(filesToDelete, workspaceId);
+
+        Assert.False(result.AllSuccessful);
+        Assert.Equal(["file-1"], result.DeletedFiles);
+        Assert.Empty(result.FailedFiles!);
+    }
+
+    [Theory]
+    [InlineData(2, "File is locked and cannot be modified")]
+    [InlineData(4, "File not found")]
+    [InlineData(5, "Workspace not found")]
+    [InlineData(8, "Insufficient permissions for workspace")]
+    [InlineData(9, "Workspace is not active")]
+    [InlineData(10, "Operation failed")]
+    [InlineData(1, "Unknown error (code 1)")]
+    public async Task DeleteFilesAsync_WithNullStatus_MapsErrorCodeToReason(int code, string expectedReason)
+    {
+        var workspaceId = _fixture.Create<string>();
+        var token = _fixture.Create<string>();
+        var filesToDelete = new List<DeletionEntityDto>
+        {
+            new() { Path = "folder/file1.txt", FileId = "file-1" }
+        };
+
+        SetupTokenRequest(token);
+        SetupDeleteFilesRequest(workspaceId, token);
+        SetupHttpMockResponses(
+            ("token", new GetWorkspaceTokenResponse { Token = token }),
+            ("delete", new DeleteFilesResponse
+            {
+                AllSuccessful = false,
+                Files =
+                [
+                    new DeletedFileResult { Code = code, FileId = "file-1", Filename = "file1.txt", Status = null }
+                ]
+            }));
+
+        var result = await _client.DeleteFilesAsync(filesToDelete, workspaceId);
+
+        var failedFile = Assert.Single(result.FailedFiles!);
+        Assert.Equal(expectedReason, failedFile.Reason);
+        Assert.False(result.AllSuccessful);
+    }
+
+    [Fact]
+    public async Task DeleteFilesAsync_PrefersStatusOverMappedErrorCode()
+    {
+        var workspaceId = _fixture.Create<string>();
+        var token = _fixture.Create<string>();
+        var filesToDelete = new List<DeletionEntityDto>
+        {
+            new() { Path = "folder/file1.txt", FileId = "file-1" }
+        };
+
+        SetupTokenRequest(token);
+        SetupDeleteFilesRequest(workspaceId, token);
+        SetupHttpMockResponses(
+            ("token", new GetWorkspaceTokenResponse { Token = token }),
+            ("delete", new DeleteFilesResponse
+            {
+                AllSuccessful = false,
+                Files =
+                [
+                    new DeletedFileResult { Code = 4, FileId = "file-1", Filename = "file1.txt", Status = "not found" }
+                ]
+            }));
+
+        var result = await _client.DeleteFilesAsync(filesToDelete, workspaceId);
+
+        var failedFile = Assert.Single(result.FailedFiles!);
+        Assert.Equal("not found", failedFile.Reason);
+    }
+
+    [Fact]
     public async Task UploadChunkAsync_WithValidParameters_ReturnsUploadChunkResult()
     {
         // Arrange

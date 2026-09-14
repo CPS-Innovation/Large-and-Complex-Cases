@@ -239,7 +239,7 @@ public class DeleteFilesTests
     }
 
     [Fact]
-    public async Task Run_LogsErrorAndRethrows_WhenDeleteFilesAsyncThrowsException()
+    public async Task Run_RecordsAllFilesAsDeletionErrors_WhenDeleteFilesAsyncThrowsException()
     {
         // Arrange
         var payload = new DeleteFilesPayload
@@ -282,6 +282,11 @@ public class DeleteFilesTests
             .Setup(x => x.GetTransferEntityAsync(It.IsAny<DurableTaskClient>(), payload.TransferId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(entity);
 
+        _transferEntityHelperMock
+            .Setup(c => c.DeleteMovedItemsCompleted(
+                It.IsAny<DurableTaskClient>(), It.IsAny<Guid>(), It.IsAny<List<DeletionError>>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
         _storageClientFactoryMock
             .Setup(x => x.GetSourceClientForDirection(payload.TransferDirection))
             .Returns(_storageClientMock.Object);
@@ -294,11 +299,9 @@ public class DeleteFilesTests
         var sut = new DeleteFiles(_transferEntityHelperMock.Object, _storageClientFactoryMock.Object, _loggerMock.Object, _initializationHandlerMock.Object, _telemetryClientMock.Object);
 
         // Act
-        var thrown = await Assert.ThrowsAsync<Exception>(() => sut.Run(payload, _durableTaskClientStub, CancellationToken.None));
+        await sut.Run(payload, _durableTaskClientStub, CancellationToken.None);
 
         // Assert
-        Assert.Same(exception, thrown);
-
         _loggerMock.Verify(
             l => l.Log(
                 LogLevel.Error,
@@ -311,16 +314,21 @@ public class DeleteFilesTests
         _transferEntityHelperMock.Verify(
             c => c.DeleteMovedItemsCompleted(
                 It.IsAny<DurableTaskClient>(),
-                It.IsAny<Guid>(),
-                It.IsAny<List<DeletionError>>(),
+                payload.TransferId,
+                It.Is<List<DeletionError>>(errors =>
+                    errors.Count == 2 &&
+                    errors.Any(e => e.FileId == "f1") &&
+                    errors.Any(e => e.FileId == "f2") &&
+                    errors.All(e => e.ErrorMessage == "Deletion failed due to unexpected error: delete failed")),
                 It.IsAny<CancellationToken>()),
-            Times.Never);
+            Times.Once);
 
         _telemetryClientMock.Verify(
             t => t.TrackEvent(It.Is<FilesDeletedEvent>(e =>
                 e.TotalFilesFailedToDelete == 2 &&
                 e.TotalFilesDeleted == 0 &&
-                !e.IsSuccessful)),
+                !e.IsSuccessful &&
+                e.FailureReasons == "Deletion failed due to unexpected error: delete failed (2)")),
             Times.Once);
     }
 
@@ -342,7 +350,8 @@ public class DeleteFilesTests
             t => t.TrackEvent(It.Is<FilesDeletedEvent>(e =>
                 e.TotalFilesDeleted == 2 &&
                 e.TotalFilesFailedToDelete == 0 &&
-                e.IsSuccessful)),
+                e.IsSuccessful &&
+                string.IsNullOrEmpty(e.FailureReasons))),
             Times.Once);
     }
 
@@ -375,7 +384,8 @@ public class DeleteFilesTests
             t => t.TrackEvent(It.Is<FilesDeletedEvent>(e =>
                 e.TotalFilesDeleted == 0 &&
                 e.TotalFilesFailedToDelete == 2 &&
-                !e.IsSuccessful)),
+                !e.IsSuccessful &&
+                e.FailureReasons == "File was not confirmed deleted by Egress. (2)")),
             Times.Once);
     }
 
@@ -418,7 +428,8 @@ public class DeleteFilesTests
             t => t.TrackEvent(It.Is<FilesDeletedEvent>(e =>
                 e.TotalFilesDeleted == 10 &&
                 e.TotalFilesFailedToDelete == 1 &&
-                !e.IsSuccessful)),
+                !e.IsSuccessful &&
+                e.FailureReasons == "File was not confirmed deleted by Egress. (1)")),
             Times.Once);
     }
 
@@ -454,7 +465,8 @@ public class DeleteFilesTests
             t => t.TrackEvent(It.Is<FilesDeletedEvent>(e =>
                 e.TotalFilesDeleted == 1 &&
                 e.TotalFilesFailedToDelete == 2 &&
-                !e.IsSuccessful)),
+                !e.IsSuccessful &&
+                e.FailureReasons == "File was not confirmed deleted by Egress. (1); locked (1)")),
             Times.Once);
     }
 
@@ -490,7 +502,8 @@ public class DeleteFilesTests
             t => t.TrackEvent(It.Is<FilesDeletedEvent>(e =>
                 e.TotalFilesDeleted == 1 &&
                 e.TotalFilesFailedToDelete == 1 &&
-                !e.IsSuccessful)),
+                !e.IsSuccessful &&
+                e.FailureReasons == "not found (1)")),
             Times.Once);
     }
 

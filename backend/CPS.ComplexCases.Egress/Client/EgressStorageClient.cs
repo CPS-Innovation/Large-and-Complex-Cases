@@ -249,7 +249,10 @@ public class EgressStorageClient(
 
         var token = await GetWorkspaceToken();
 
-        var fileIds = filesToDelete.Select(f => f.FileId!).ToList();
+        var fileIds = filesToDelete
+            .Where(f => !string.IsNullOrWhiteSpace(f.FileId))
+            .Select(f => f.FileId!)
+            .ToList();
 
         if (fileIds.Count == 0)
         {
@@ -259,6 +262,7 @@ public class EgressStorageClient(
 
         var deletedFiles = new List<string>();
         var failedFiles = new List<FailedFileDeletion>();
+        var allSuccessful = true;
 
         foreach (var chunk in fileIds.Chunk(BulkDeleteBatchSize))
         {
@@ -269,22 +273,25 @@ public class EgressStorageClient(
             };
 
             var result = await SendRequestAsync<DeleteFilesResponse>(_egressRequestFactory.DeleteFilesRequest(deleteArg, token));
+            allSuccessful &= result.AllSuccessful;
 
-            deletedFiles.AddRange(result.Files
+            var files = result.Files ?? [];
+
+            deletedFiles.AddRange(files
                 .Where(x => x.Code == 0)
                 .Select(x => x.FileId ?? x.Filename ?? "deleted"));
 
-            failedFiles.AddRange(result.Files.Where(x => x.Code > 0).Select(x => new FailedFileDeletion
+            failedFiles.AddRange(files.Where(x => x.Code > 0).Select(x => new FailedFileDeletion
             {
                 FileId = x.FileId ?? x.Filename ?? string.Empty,
                 Filename = x.Filename ?? string.Empty,
-                Reason = x.Status ?? string.Empty
+                Reason = GetDeleteFailureReason(x)
             }));
         }
 
         return new DeleteFilesResult
         {
-            AllSuccessful = failedFiles.Count == 0,
+            AllSuccessful = allSuccessful && failedFiles.Count == 0 && deletedFiles.Count == fileIds.Count,
             DeletedFiles = deletedFiles,
             FailedFiles = failedFiles
         };
@@ -566,6 +573,25 @@ public class EgressStorageClient(
         }
 
         return allData;
+    }
+
+    private static string GetDeleteFailureReason(DeletedFileResult file)
+    {
+        if (!string.IsNullOrWhiteSpace(file.Status))
+        {
+            return file.Status;
+        }
+
+        return file.Code switch
+        {
+            2 => "File is locked and cannot be modified",
+            4 => "File not found",
+            5 => "Workspace not found",
+            8 => "Insufficient permissions for workspace",
+            9 => "Workspace is not active",
+            10 => "Operation failed",
+            _ => $"Unknown error (code {file.Code})"
+        };
     }
 
     internal static string GetRelativePathFromSourceRoot(string relativePath, string? sourceRootFolderPath)

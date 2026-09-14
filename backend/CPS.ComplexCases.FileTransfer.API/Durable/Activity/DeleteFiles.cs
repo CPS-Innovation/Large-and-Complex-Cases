@@ -94,12 +94,24 @@ public class DeleteFiles(ITransferEntityHelper transferEntityHelper, IStorageCli
             telemetryEvent.TotalFilesFailedToDelete = deletionErrors.Count;
             telemetryEvent.TotalFilesDeleted = filesToDelete.Count - deletionErrors.Count;
             telemetryEvent.IsSuccessful = deletionErrors.Count == 0;
+            telemetryEvent.FailureReasons = SummarizeFailureReasons(deletionErrors);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error occurred while deleting files for transfer ID {TransferId}: {Message}", payload.TransferId, ex.Message);
-            telemetryEvent.TotalFilesFailedToDelete = filesToDelete.Count;
-            throw;
+
+            var allDeletionErrors = filesToDelete.Select(f => new DeletionError
+            {
+                FileId = f.FileId ?? f.Path,
+                ErrorMessage = $"Deletion failed due to unexpected error: {ex.Message}"
+            }).ToList();
+
+            await _transferEntityHelper.DeleteMovedItemsCompleted(client, payload.TransferId, allDeletionErrors, cancellationToken);
+
+            telemetryEvent.TotalFilesFailedToDelete = allDeletionErrors.Count;
+            telemetryEvent.TotalFilesDeleted = 0;
+            telemetryEvent.IsSuccessful = false;
+            telemetryEvent.FailureReasons = SummarizeFailureReasons(allDeletionErrors);
         }
         finally
         {
@@ -154,6 +166,23 @@ public class DeleteFiles(ITransferEntityHelper transferEntityHelper, IStorageCli
         }
 
         return deletionErrors;
+    }
+
+    private static string? SummarizeFailureReasons(IReadOnlyCollection<DeletionError> deletionErrors)
+    {
+        if (deletionErrors.Count == 0)
+        {
+            return null;
+        }
+
+        return string.Join("; ",
+            deletionErrors
+                .GroupBy(
+                    e => string.IsNullOrWhiteSpace(e.ErrorMessage) ? "Unknown error" : e.ErrorMessage,
+                    StringComparer.OrdinalIgnoreCase)
+                .OrderByDescending(g => g.Count())
+                .ThenBy(g => g.Key, StringComparer.OrdinalIgnoreCase)
+                .Select(g => $"{g.Key} ({g.Count()})"));
     }
 
     private static bool IsAccountedFor(DeletionEntityDto file, HashSet<string> accountedIdentifiers)
