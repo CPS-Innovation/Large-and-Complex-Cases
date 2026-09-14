@@ -9,18 +9,26 @@ public class FilesDeletedEvent : BaseTelemetryEvent
     public long TotalFilesDeleted { get; set; }
     public long TotalFilesFailedToDelete { get; set; }
     public bool IsSuccessful { get; set; }
+    public string? FailureReasons { get; set; }
     public DateTime DeletionStartTime { get; set; }
     public DateTime DeletionEndTime { get; set; }
 
     public override (IDictionary<string, string> Properties, IDictionary<string, double?> Metrics) ToTelemetryEventProps()
     {
-        return (new Dictionary<string, string>
+        var properties = new Dictionary<string, string>
         {
             { nameof(CaseId), CaseId.ToString() },
             { nameof(TransferId), TransferId.ToString() },
             { nameof(TransferDirection), TransferDirection },
             { nameof(IsSuccessful), IsSuccessful.ToString() },
-        }, new Dictionary<string, double?>
+        };
+
+        if (!string.IsNullOrEmpty(FailureReasons))
+        {
+            properties[nameof(FailureReasons)] = FailureReasons;
+        }
+
+        return (properties, new Dictionary<string, double?>
         {
             { TelemetryConstants.DurationCustomDimensionName, GetDurationInMilliseconds(DeletionStartTime, DeletionEndTime) },
             { nameof(TotalFilesDeleted), TotalFilesDeleted },
