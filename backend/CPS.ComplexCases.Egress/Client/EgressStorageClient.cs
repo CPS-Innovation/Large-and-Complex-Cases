@@ -22,6 +22,7 @@ public class EgressStorageClient(
     ITelemetryClient telemetryClient) : BaseEgressClient(logger, egressOptions, httpClient, egressRequestFactory, telemetryClient), IStorageClient
 {
     private const string RootPathValue = ".";
+    private const int BulkDeleteBatchSize = 10;
 
     public async Task<(Stream Stream, long ContentLength)> OpenReadStreamAsync(string path, string? workspaceId = null, string? fileId = null, string? bearerToken = null, string? bucketName = null)
     {
@@ -248,7 +249,10 @@ public class EgressStorageClient(
 
         var token = await GetWorkspaceToken();
 
-        var fileIds = filesToDelete.Select(f => f.FileId).ToList();
+        var fileIds = filesToDelete
+            .Where(f => !string.IsNullOrWhiteSpace(f.FileId))
+            .Select(f => f.FileId!)
+            .ToList();
 
         if (fileIds.Count == 0)
         {
@@ -256,28 +260,40 @@ public class EgressStorageClient(
             return new DeleteFilesResult();
         }
 
-        var deleteArg = new DeleteFilesArg
-        {
-            WorkspaceId = workspaceId,
-            FileIds = fileIds!
-        };
+        var deletedFiles = new List<string>();
+        var failedFiles = new List<FailedFileDeletion>();
+        var allSuccessful = true;
 
-        var result = await SendRequestAsync<DeleteFilesResponse>(_egressRequestFactory.DeleteFilesRequest(deleteArg, token));
-
-        return new DeleteFilesResult
+        foreach (var chunk in fileIds.Chunk(BulkDeleteBatchSize))
         {
-            AllSuccessful = result.AllSuccessful,
-            DeletedFiles = result.Files
+            var deleteArg = new DeleteFilesArg
+            {
+                WorkspaceId = workspaceId,
+                FileIds = [.. chunk]
+            };
+
+            var result = await SendRequestAsync<DeleteFilesResponse>(_egressRequestFactory.DeleteFilesRequest(deleteArg, token));
+            allSuccessful &= result.AllSuccessful;
+
+            var files = result.Files ?? [];
+
+            deletedFiles.AddRange(files
                 .Where(x => x.Code == 0)
-                .Select(x => x.FileId ?? x.Filename ?? "deleted")
-                .ToList(),
-            FailedFiles = result.Files.Where(x => x.Code > 0).Select(x => new FailedFileDeletion
+                .Select(x => x.FileId ?? x.Filename ?? "deleted"));
+
+            failedFiles.AddRange(files.Where(x => x.Code > 0).Select(x => new FailedFileDeletion
             {
                 FileId = x.FileId ?? x.Filename ?? string.Empty,
                 Filename = x.Filename ?? string.Empty,
-                Reason = x.Status ?? string.Empty
-            })
-            .ToList()
+                Reason = GetDeleteFailureReason(x)
+            }));
+        }
+
+        return new DeleteFilesResult
+        {
+            AllSuccessful = allSuccessful && failedFiles.Count == 0 && deletedFiles.Count == fileIds.Count,
+            DeletedFiles = deletedFiles,
+            FailedFiles = failedFiles
         };
     }
 
@@ -557,6 +573,25 @@ public class EgressStorageClient(
         }
 
         return allData;
+    }
+
+    private static string GetDeleteFailureReason(DeletedFileResult file)
+    {
+        if (!string.IsNullOrWhiteSpace(file.Status))
+        {
+            return file.Status;
+        }
+
+        return file.Code switch
+        {
+            2 => "File is locked and cannot be modified",
+            4 => "File not found",
+            5 => "Workspace not found",
+            8 => "Insufficient permissions for workspace",
+            9 => "Workspace is not active",
+            10 => "Operation failed",
+            _ => $"Unknown error (code {file.Code})"
+        };
     }
 
     internal static string GetRelativePathFromSourceRoot(string relativePath, string? sourceRootFolderPath)
