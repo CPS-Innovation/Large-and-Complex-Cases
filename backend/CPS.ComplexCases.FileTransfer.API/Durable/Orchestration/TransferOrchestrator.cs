@@ -11,9 +11,6 @@ using CPS.ComplexCases.FileTransfer.API.Durable.State;
 using CPS.ComplexCases.FileTransfer.API.Models.Configuration;
 using CPS.ComplexCases.FileTransfer.API.Models.Domain.Enums;
 using CPS.ComplexCases.FileTransfer.API.Telemetry;
-using Microsoft.Azure.Functions.Worker;
-using Microsoft.DurableTask;
-using Microsoft.DurableTask.Entities;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -50,15 +47,18 @@ public class TransferOrchestrator(IOptions<SizeConfig> sizeConfig, ITelemetryCli
             OrchestrationStartTime = context.CurrentUtcDateTime
         };
 
+        var filesProcessingStarted = false;
         try
         {
-            var (entityId, transferEntity) = await InitializeTransferEntityAsync(context, input);
+            var (entityId, transferEntity) = await InitializeTransferEntityAsync(context, input, logger);
 
             var cleanFiles = await FilterDuplicateDestinationFilesAsync(context, input, entityId);
 
             cleanFiles = await ValidateSourceFilesAsync(context, input, entityId, cleanFiles, logger);
 
             await PreCreateEgressDestinationFoldersAsync(context, input, cleanFiles, logger);
+
+            filesProcessingStarted = true;
 
             var allResults = await FanOutTransferFilesAsync(
                 context, input, transferEntity, cleanFiles, entityId, transferOrchestrationEvent);
@@ -68,13 +68,13 @@ public class TransferOrchestrator(IOptions<SizeConfig> sizeConfig, ITelemetryCli
 
             await DeleteSourceFilesIfMoveAsync(context, input);
 
-            await FinalizeAndLogCompletionAsync(context, input);
+            await FinalizeAndLogCompletionAsync(context, input, logger);
 
             transferOrchestrationEvent.IsSuccessful = transferOrchestrationEvent.TotalFilesFailed == 0;
         }
         catch (Exception ex)
         {
-            await HandleOrchestratorFailureAsync(context, input, logger, ex);
+            await HandleOrchestratorFailureAsync(context, input, logger, ex, filesProcessingStarted);
             throw;
         }
         finally
@@ -86,7 +86,8 @@ public class TransferOrchestrator(IOptions<SizeConfig> sizeConfig, ITelemetryCli
 
     private static async Task<(EntityInstanceId EntityId, TransferEntity TransferEntity)> InitializeTransferEntityAsync(
         TaskOrchestrationContext context,
-        TransferPayload input)
+        TransferPayload input,
+        ILogger logger)
     {
         var transferEntity = new TransferEntity
         {
@@ -112,8 +113,9 @@ public class TransferOrchestrator(IOptions<SizeConfig> sizeConfig, ITelemetryCli
             nameof(TransferEntityState.Initialize),
             transferEntity);
 
-        await context.CallActivityAsync(
-            nameof(UpdateActivityLog),
+        await TryCallUpdateActivityLogAsync(
+            context,
+            logger,
             new UpdateActivityLogPayload
             {
                 ActionType = ActivityLog.Enums.ActionType.TransferInitiated,
@@ -468,7 +470,7 @@ public class TransferOrchestrator(IOptions<SizeConfig> sizeConfig, ITelemetryCli
             });
     }
 
-    private static async Task FinalizeAndLogCompletionAsync(TaskOrchestrationContext context, TransferPayload input)
+    private static async Task FinalizeAndLogCompletionAsync(TaskOrchestrationContext context, TransferPayload input, ILogger logger)
     {
         await context.CallActivityAsync(
             nameof(FinalizeTransfer),
@@ -477,8 +479,9 @@ public class TransferOrchestrator(IOptions<SizeConfig> sizeConfig, ITelemetryCli
                 TransferId = input.TransferId,
             });
 
-        await context.CallActivityAsync(
-            nameof(UpdateActivityLog),
+        await TryCallUpdateActivityLogAsync(
+            context,
+            logger,
             new UpdateActivityLogPayload
             {
                 ActionType = ActivityLog.Enums.ActionType.TransferCompleted,
@@ -492,9 +495,14 @@ public class TransferOrchestrator(IOptions<SizeConfig> sizeConfig, ITelemetryCli
         TaskOrchestrationContext context,
         TransferPayload input,
         ILogger logger,
-        Exception ex)
+        Exception ex,
+        bool filesProcessingStarted)
     {
         logger.LogError(ex, "TransferOrchestrator failed for TransferId: {TransferId}. With CorrelationId {CorrelationId}", input.TransferId, input.CorrelationId);
+
+        var errorMessage = filesProcessingStarted
+            ? ex.Message
+            : $"The transfer failed before any files were processed. {ex.Message}";
 
         await context.CallActivityAsync(
             nameof(UpdateTransferStatus),
@@ -502,18 +510,39 @@ public class TransferOrchestrator(IOptions<SizeConfig> sizeConfig, ITelemetryCli
             {
                 TransferId = input.TransferId,
                 Status = TransferStatus.Failed,
+                ErrorMessage = errorMessage,
             });
 
-        await context.CallActivityAsync(
-            nameof(UpdateActivityLog),
+        await TryCallUpdateActivityLogAsync(
+            context,
+            logger,
             new UpdateActivityLogPayload
             {
                 ActionType = ActivityLog.Enums.ActionType.TransferFailed,
                 TransferId = input.TransferId.ToString(),
                 UserName = input.UserName,
                 CorrelationId = input.CorrelationId,
-                ExceptionMessage = ex.Message
+                ExceptionMessage = errorMessage
             });
+    }
+
+    private static async Task TryCallUpdateActivityLogAsync(
+        TaskOrchestrationContext context,
+        ILogger logger,
+        UpdateActivityLogPayload payload)
+    {
+        try
+        {
+            await context.CallActivityAsync(nameof(UpdateActivityLog), payload);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(
+                ex,
+                "UpdateActivityLog failed for TransferId {TransferId} ({ActionType}); continuing transfer.",
+                payload.TransferId,
+                payload.ActionType);
+        }
     }
 
     private static TransferFilePayload BuildTransferFilePayload(

@@ -1,22 +1,10 @@
 using System.Text.Json;
-using AutoFixture;
-using AutoFixture.AutoMoq;
-using CPS.ComplexCases.ActivityLog.Enums;
-using CPS.ComplexCases.ActivityLog.Services;
-using CPS.ComplexCases.Common.Handlers;
-using CPS.ComplexCases.Common.Models.Domain.Enums;
-using CPS.ComplexCases.Common.Models.Requests;
-using CPS.ComplexCases.Common.Services;
-using CPS.ComplexCases.Data.Entities;
 using CPS.ComplexCases.FileTransfer.API.Durable.Activity;
+using CPS.ComplexCases.FileTransfer.API.Durable.Helpers;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads.Domain;
 using CPS.ComplexCases.FileTransfer.API.Models.Domain.Enums;
 using CPS.ComplexCases.FileTransfer.API.Tests.Unit.Stubs;
-using Microsoft.DurableTask.Client.Entities;
-using Microsoft.DurableTask.Entities;
-using Microsoft.Extensions.Logging;
-using Moq;
 
 namespace CPS.ComplexCases.FileTransfer.API.Tests.Unit.Durable.Activity;
 
@@ -45,7 +33,10 @@ public class UpdateActivityLogTests
         _durableEntityClientStub = new DurableEntityClientStub("TestClient");
         _durableTaskClientStub = new DurableTaskClientStub(_durableEntityClientStub);
 
-        _activity = new UpdateActivityLog(_activityLogServiceMock.Object, _loggerMock.Object, _initializationHandlerMock.Object, _caseMetadataServiceMock.Object);
+        _activity = new UpdateActivityLog(_activityLogServiceMock.Object, _loggerMock.Object, _initializationHandlerMock.Object, _caseMetadataServiceMock.Object)
+        {
+            EntityVisibilityRetryDelay = TimeSpan.Zero
+        };
         _bearerToken = _fixture.Create<string>();
     }
 
@@ -60,8 +51,10 @@ public class UpdateActivityLogTests
             UserName = _fixture.Create<string>()
         };
 
+        var getEntityCallCount = 0;
         _durableEntityClientStub.OnGetEntityAsync = (id, token) =>
         {
+            getEntityCallCount++;
             return Task.FromResult<EntityMetadata<TransferEntity>?>(null);
         };
 
@@ -69,7 +62,69 @@ public class UpdateActivityLogTests
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
             _activity.Run(payload, _durableTaskClientStub));
 
-        Assert.Contains($"Transfer entity with ID {payload.TransferId} not found", exception.Message);
+        Assert.Contains($"Transfer entity with ID {payload.TransferId} not found after retries", exception.Message);
+        Assert.Equal(DurableEntityRetry.DefaultVisibilityMaxAttempts, getEntityCallCount);
+    }
+
+    [Fact]
+    public async Task Run_RetriesGetEntityAsync_WhenEntityIsInitiallyNotVisible()
+    {
+        var transferId = _fixture.Create<Guid>();
+        var userName = _fixture.Create<string>();
+        var caseId = _fixture.Create<int>();
+        var getEntityCallCount = 0;
+
+        var entityState = new TransferEntity
+        {
+            Id = transferId,
+            CaseId = caseId,
+            Direction = TransferDirection.EgressToNetApp,
+            TransferType = TransferType.Copy,
+            TotalFiles = 1,
+            DestinationPath = "/dest/path",
+            BearerToken = _bearerToken,
+            SourcePaths =
+            [
+                new TransferSourcePath
+                {
+                    FullFilePath = @"C:\source\file1.txt",
+                    Path = "/source"
+                }
+            ]
+        };
+
+        _durableEntityClientStub.OnGetEntityAsync = (id, token) =>
+        {
+            getEntityCallCount++;
+            if (getEntityCallCount < 3)
+            {
+                return Task.FromResult<EntityMetadata<TransferEntity>?>(null);
+            }
+
+            return Task.FromResult<EntityMetadata<TransferEntity>?>(new EntityMetadata<TransferEntity>(
+                new EntityInstanceId("TransferEntity", transferId.ToString()),
+                entityState));
+        };
+
+        var payload = new UpdateActivityLogPayload
+        {
+            TransferId = transferId.ToString(),
+            ActionType = ActionType.TransferInitiated,
+            UserName = userName
+        };
+
+        await _activity.Run(payload, _durableTaskClientStub);
+
+        Assert.Equal(3, getEntityCallCount);
+        _activityLogServiceMock.Verify(service => service.CreateActivityLogAsync(
+            payload.ActionType,
+            ResourceType.FileTransfer,
+            caseId,
+            entityState.Id.ToString(),
+            entityState.Direction.ToString(),
+            userName,
+            It.IsAny<JsonDocument>()),
+            Times.Once);
     }
     [Fact]
     public async Task Run_ThrowsArgumentNullException_WhenPayloadIsNull()

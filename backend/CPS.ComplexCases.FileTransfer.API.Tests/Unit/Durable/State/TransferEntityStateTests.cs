@@ -1,4 +1,3 @@
-using CPS.ComplexCases.Common.Models.Requests;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads.Domain;
 using CPS.ComplexCases.FileTransfer.API.Durable.State;
 using CPS.ComplexCases.FileTransfer.API.Models.Domain.Enums;
@@ -421,5 +420,25 @@ public class TransferEntityStateTests
         Assert.NotNull(state.CurrentState.RetryState);
         Assert.Null(state.CurrentState.RetryState!.NextRetryAt);
         Assert.Equal(1, state.CurrentState.RetryState.RetryAttempt);
+    }
+
+    [Fact]
+    public void SetErrorMessage_StoresMessageAndRefreshesUpdatedAt()
+    {
+        var state = new TransferEntityState();
+        state.Initialize(new TransferEntity
+        {
+            DestinationPath = "dest",
+            BearerToken = "fakeBearerToken",
+            UpdatedAt = DateTime.UtcNow.AddMinutes(-5)
+        });
+
+        var previousUpdatedAt = state.CurrentState.UpdatedAt;
+        const string errorMessage = "The transfer failed before any files were processed. Entity not found after retries.";
+
+        state.SetErrorMessage(errorMessage);
+
+        Assert.Equal(errorMessage, state.CurrentState.ErrorMessage);
+        Assert.True(state.CurrentState.UpdatedAt > previousUpdatedAt);
     }
 }

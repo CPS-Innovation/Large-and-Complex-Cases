@@ -1,19 +1,8 @@
-using AutoFixture;
-using AutoFixture.AutoMoq;
-using CPS.ComplexCases.Common.Constants;
-using CPS.ComplexCases.Common.Models.Domain.Enums;
-using CPS.ComplexCases.Common.Models.Requests;
 using CPS.ComplexCases.FileTransfer.API.Dtos;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads.Domain;
 using CPS.ComplexCases.FileTransfer.API.Functions;
 using CPS.ComplexCases.FileTransfer.API.Models.Domain.Enums;
 using CPS.ComplexCases.FileTransfer.API.Tests.Unit.Stubs;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.DurableTask.Client.Entities;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Primitives;
-using Moq;
 
 namespace CPS.ComplexCases.FileTransfer.API.Tests.Unit.Functions;
 
@@ -412,6 +401,29 @@ public class GetTransferStatusTests
         var okResult = Assert.IsType<OkObjectResult>(result);
         var dto = Assert.IsType<TransferStatusDto>(okResult.Value);
         Assert.Null(dto.RetryState);
+    }
+
+    [Fact]
+    public async Task Run_WhenEntityHasErrorMessage_ReturnsErrorMessageOnDto()
+    {
+        var transferEntity = CreateValidTransferEntity();
+        transferEntity.Status = TransferStatus.Failed;
+        transferEntity.ProcessedFiles = 0;
+        transferEntity.ErrorMessage = "The transfer failed before any files were processed. Transfer entity was not found after retries.";
+
+        var stub = new DurableEntityClientStub("FileTransferEntities")
+        {
+            OnGetEntityAsync = (id, _) => Task.FromResult<EntityMetadata<TransferEntity>?>(new EntityMetadata<TransferEntity>(id, transferEntity))
+        };
+        var durableTaskClientStub = new DurableTaskClientStub(stub);
+
+        var result = await _function.Run(_httpRequestMock.Object, durableTaskClientStub, _transferId);
+
+        var okResult = Assert.IsType<OkObjectResult>(result);
+        var dto = Assert.IsType<TransferStatusDto>(okResult.Value);
+        Assert.Equal(transferEntity.ErrorMessage, dto.ErrorMessage);
+        Assert.Equal(0, dto.ProcessedFiles);
+        Assert.Empty(dto.FailedItems);
     }
 
     private TransferEntity CreateValidTransferEntity()

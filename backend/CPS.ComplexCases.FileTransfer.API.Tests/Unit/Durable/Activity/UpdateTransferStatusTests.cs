@@ -1,9 +1,8 @@
-using AutoFixture;
 using CPS.ComplexCases.FileTransfer.API.Durable.Activity;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads;
 using CPS.ComplexCases.FileTransfer.API.Durable.State;
+using CPS.ComplexCases.FileTransfer.API.Models.Domain.Enums;
 using CPS.ComplexCases.FileTransfer.API.Tests.Unit.Stubs;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace CPS.ComplexCases.FileTransfer.API.Tests.Unit.Durable.Activity;
 
@@ -22,7 +21,9 @@ public class UpdateTransferStatusTests
     public async Task Run_SignalsEntity_WithCorrectIdOperationAndStatus()
     {
         // Arrange
-        var payload = _fixture.Create<UpdateTransferStatusPayload>();
+        var payload = _fixture.Build<UpdateTransferStatusPayload>()
+            .Without(p => p.ErrorMessage)
+            .Create();
         var entityClientStub = new DurableEntityClientStub("test");
         var clientStub = new DurableTaskClientStub(entityClientStub);
 
@@ -34,5 +35,25 @@ public class UpdateTransferStatusTests
         Assert.Equal(nameof(TransferEntityState).ToLowerInvariant(), entityClientStub.SignaledEntityId?.Name);
         Assert.Equal(payload.TransferId.ToString(), entityClientStub.SignaledEntityId?.Key);
         Assert.Equal(nameof(TransferEntityState.UpdateStatus), entityClientStub.SignaledOperationName);
+        Assert.Single(entityClientStub.SignalledCalls);
+    }
+
+    [Fact]
+    public async Task Run_WhenErrorMessageIsSet_SignalsUpdateStatusThenSetErrorMessage()
+    {
+        var payload = _fixture.Build<UpdateTransferStatusPayload>()
+            .With(p => p.Status, TransferStatus.Failed)
+            .With(p => p.ErrorMessage, "The transfer failed before any files were processed. Entity not found after retries.")
+            .Create();
+        var entityClientStub = new DurableEntityClientStub("test");
+        var clientStub = new DurableTaskClientStub(entityClientStub);
+
+        await _activity.Run(payload, clientStub, CancellationToken.None);
+
+        Assert.Equal(2, entityClientStub.SignalledCalls.Count);
+        Assert.Equal(nameof(TransferEntityState.UpdateStatus), entityClientStub.SignalledCalls[0].Operation);
+        Assert.Equal(payload.Status, entityClientStub.SignalledCalls[0].Input);
+        Assert.Equal(nameof(TransferEntityState.SetErrorMessage), entityClientStub.SignalledCalls[1].Operation);
+        Assert.Equal(payload.ErrorMessage, entityClientStub.SignalledCalls[1].Input);
     }
 }

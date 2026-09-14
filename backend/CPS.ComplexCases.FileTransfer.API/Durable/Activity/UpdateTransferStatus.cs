@@ -1,9 +1,6 @@
 using CPS.ComplexCases.FileTransfer.API.Durable.Helpers;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads;
 using CPS.ComplexCases.FileTransfer.API.Durable.State;
-using Microsoft.Azure.Functions.Worker;
-using Microsoft.DurableTask.Client;
-using Microsoft.DurableTask.Entities;
 using Microsoft.Extensions.Logging;
 
 namespace CPS.ComplexCases.FileTransfer.API.Durable.Activity;
@@ -24,5 +21,15 @@ public class UpdateTransferStatus(ILogger<UpdateTransferStatus> logger)
                 updateStatusPayload.Status, null, cancellationToken),
             _logger,
             cancellationToken);
+
+        if (!string.IsNullOrWhiteSpace(updateStatusPayload.ErrorMessage))
+        {
+            await DurableEntityRetry.ExecuteAsync(
+                nameof(UpdateTransferStatus),
+                () => client.Entities.SignalEntityAsync(entityId, nameof(TransferEntityState.SetErrorMessage),
+                    updateStatusPayload.ErrorMessage, null, cancellationToken),
+                _logger,
+                cancellationToken);
+        }
     }
 }

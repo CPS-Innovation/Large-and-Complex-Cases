@@ -24,6 +24,7 @@ public class TransferStatusDto
     public int FailedFiles { get; init; }
     public int SkippedFiles { get; init; }
     public TransferRetryStateDto? RetryState { get; init; }
+    public string? ErrorMessage { get; init; }
 
     public static TransferStatusDto From(TransferEntity entity) => new()
     {
@@ -51,6 +52,7 @@ public class TransferStatusDto
         FailedFiles = entity.FailedFiles,
         SkippedFiles = entity.SkippedFiles,
         RetryState = entity.RetryState is null ? null : TransferRetryStateDto.From(entity.RetryState),
+        ErrorMessage = entity.ErrorMessage,
     };
 }
 

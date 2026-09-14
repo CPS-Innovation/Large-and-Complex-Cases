@@ -1,7 +1,5 @@
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads.Domain;
 using CPS.ComplexCases.FileTransfer.API.Models.Domain.Enums;
-using Microsoft.Azure.Functions.Worker;
-using Microsoft.DurableTask.Entities;
 
 namespace CPS.ComplexCases.FileTransfer.API.Durable.State;
 
@@ -21,6 +19,12 @@ public class TransferEntityState : TaskEntity<TransferEntity>
     public void UpdateStatus(TransferStatus status)
     {
         State.Status = status;
+        State.UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void SetErrorMessage(string errorMessage)
+    {
+        State.ErrorMessage = errorMessage;
         State.UpdatedAt = DateTime.UtcNow;
     }
 

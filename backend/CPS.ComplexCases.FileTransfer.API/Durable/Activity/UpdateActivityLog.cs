@@ -9,9 +9,6 @@ using CPS.ComplexCases.FileTransfer.API.Durable.Helpers;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads.Domain;
 using CPS.ComplexCases.FileTransfer.API.Durable.State;
-using Microsoft.Azure.Functions.Worker;
-using Microsoft.DurableTask.Client;
-using Microsoft.DurableTask.Entities;
 using Microsoft.Extensions.Logging;
 
 namespace CPS.ComplexCases.FileTransfer.API.Durable.Activity;
@@ -23,8 +20,13 @@ public class UpdateActivityLog(IActivityLogService activityLogService, ILogger<U
     private readonly IInitializationHandler _initializationHandler = initializationHandler;
     private readonly ICaseMetadataService _caseMetadataService = caseMetadataService;
 
+    // Overridable in unit tests so visibility retries do not wait on real delays.
+    internal TimeSpan EntityVisibilityRetryDelay { get; init; } = DurableEntityRetry.DefaultVisibilityRetryDelay;
+    internal int EntityVisibilityMaxAttempts { get; init; } = DurableEntityRetry.DefaultVisibilityMaxAttempts;
+    internal Func<TimeSpan, CancellationToken, Task> DelayAsync { get; init; } = Task.Delay;
+
     [Function(nameof(UpdateActivityLog))]
-    public async Task Run([ActivityTrigger] UpdateActivityLogPayload payload, [DurableClient] DurableTaskClient client)
+    public async Task Run([ActivityTrigger] UpdateActivityLogPayload payload, [DurableClient] DurableTaskClient client, CancellationToken cancellationToken = default)
     {
         _initializationHandler.Initialize(payload?.UserName!, payload?.CorrelationId);
 
@@ -34,14 +36,18 @@ public class UpdateActivityLog(IActivityLogService activityLogService, ILogger<U
         }
 
         var entityId = new EntityInstanceId(nameof(TransferEntityState), payload.TransferId.ToString());
-        var entity = await DurableEntityRetry.ExecuteAsync(
+        var entity = await DurableEntityRetry.ExecuteUntilNotNullAsync(
             nameof(UpdateActivityLog),
-            () => client.Entities.GetEntityAsync<TransferEntity>(entityId),
-            _logger);
+            () => client.Entities.GetEntityAsync<TransferEntity>(entityId, cancellationToken),
+            _logger,
+            cancellationToken,
+            EntityVisibilityMaxAttempts,
+            EntityVisibilityRetryDelay,
+            DelayAsync);
 
         if (entity == null)
         {
-            throw new InvalidOperationException($"Transfer entity with ID {payload.TransferId} not found.");
+            throw new InvalidOperationException($"Transfer entity with ID {payload.TransferId} not found after retries.");
         }
 
         // For NetApp to Egress the case's NetApp root folder is stored in case metadata. The file
