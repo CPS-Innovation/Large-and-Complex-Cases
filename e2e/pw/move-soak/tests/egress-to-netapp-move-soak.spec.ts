@@ -105,8 +105,10 @@ test.describe("Move Soak Tests", () => {
             durationSeconds: transferDurationSeconds.toFixed(2),
             durationMinutes: transferDurationMinutes.toFixed(2),
             throughputMBps: throughputMBps.toFixed(2),
+            processedFiles: status?.processedFiles,
             successfulFiles: status?.successfulFiles,
             failedFiles: status?.failedFiles,
+            errorMessage: status?.errorMessage ?? null,
           },
           null,
           2,
@@ -136,6 +138,24 @@ test.describe("Move Soak Tests", () => {
 
       // 5. Assertions per scenario
       expect(status).toBeTruthy();
+
+      // FCT2-21926: a Failed transfer that processed nothing leaves failedItems
+      // empty, so the assertion below reports "0/N failed" and explains nothing.
+      // Soft-assert the cause so the report carries it either way.
+      if (status?.status === "Failed") {
+        if (status.processedFiles === 0) {
+          test.info().annotations.push({
+            type: "Failure Stage",
+            description: "failed during initialisation (processedFiles 0)",
+          });
+        }
+        expect
+          .soft(
+            status.errorMessage,
+            `Transfer ${transfer.id} failed without an errorMessage`,
+          )
+          .toBeTruthy();
+      }
 
       expect(
         status,
