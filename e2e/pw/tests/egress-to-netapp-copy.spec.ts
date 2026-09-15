@@ -43,10 +43,14 @@ test.describe("Egress to NetApp Copy", () => {
     await transferTab.selectAction("Copy");
 
     // Step 4: Confirm and wait for completion
+    const clearSettled = transferTab.watchForTransferClear();
     await transferTab.confirmTransfer("Copy");
     await transferTab.waitForTransferComplete();
 
-    // Step 5: Verify in Activity Log
+    // Step 5: banner must not survive a refresh (FCT2-21942)
+    await transferTab.verifySuccessBannerClearedOnReload(clearSettled);
+
+    // Step 6: Verify in Activity Log
     await caseMgmt.switchToTab("activity-log");
     const activityLog = new ActivityLogTab(page);
     await activityLog.waitForLogs();
