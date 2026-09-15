@@ -1,4 +1,5 @@
 using CPS.ComplexCases.FileTransfer.API.Durable.Helpers;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace CPS.ComplexCases.FileTransfer.API.Tests.Unit.Durable.Helpers;
 

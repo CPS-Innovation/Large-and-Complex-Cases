@@ -1,8 +1,10 @@
+using AutoFixture;
 using CPS.ComplexCases.FileTransfer.API.Durable.Activity;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads;
 using CPS.ComplexCases.FileTransfer.API.Durable.State;
 using CPS.ComplexCases.FileTransfer.API.Models.Domain.Enums;
 using CPS.ComplexCases.FileTransfer.API.Tests.Unit.Stubs;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace CPS.ComplexCases.FileTransfer.API.Tests.Unit.Durable.Activity;
 
