@@ -1,4 +1,5 @@
 using CPS.ComplexCases.Common.Models.Requests;
+using CPS.ComplexCases.FileTransfer.API.Durable.Payloads;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads.Domain;
 using CPS.ComplexCases.FileTransfer.API.Durable.State;
 using CPS.ComplexCases.FileTransfer.API.Models.Domain.Enums;
@@ -466,5 +467,54 @@ public class TransferEntityStateTests
 
         Assert.Equal(errorMessage, state.CurrentState.ErrorMessage);
         Assert.True(state.CurrentState.UpdatedAt > previousUpdatedAt);
+    }
+
+    [Fact]
+    public void UpdateStatus_SetsStatusAndErrorMessageTogether()
+    {
+        var state = new TransferEntityState();
+        state.Initialize(new TransferEntity
+        {
+            DestinationPath = "dest",
+            BearerToken = "fakeBearerToken",
+            Status = TransferStatus.InProgress,
+            UpdatedAt = DateTime.UtcNow.AddMinutes(-5)
+        });
+
+        var previousUpdatedAt = state.CurrentState.UpdatedAt;
+        var payload = new UpdateTransferStatusPayload
+        {
+            TransferId = Guid.NewGuid(),
+            Status = TransferStatus.Failed,
+            ErrorMessage = "The transfer failed before any files were processed."
+        };
+
+        state.UpdateStatus(payload);
+
+        Assert.Equal(TransferStatus.Failed, state.CurrentState.Status);
+        Assert.Equal(payload.ErrorMessage, state.CurrentState.ErrorMessage);
+        Assert.True(state.CurrentState.UpdatedAt > previousUpdatedAt);
+    }
+
+    [Fact]
+    public void UpdateStatus_DoesNotClearErrorMessage_WhenPayloadOmitsIt()
+    {
+        var state = new TransferEntityState();
+        state.Initialize(new TransferEntity
+        {
+            DestinationPath = "dest",
+            BearerToken = "fakeBearerToken",
+            Status = TransferStatus.Failed,
+            ErrorMessage = "existing error"
+        });
+
+        state.UpdateStatus(new UpdateTransferStatusPayload
+        {
+            Status = TransferStatus.InProgress,
+            ErrorMessage = null
+        });
+
+        Assert.Equal(TransferStatus.InProgress, state.CurrentState.Status);
+        Assert.Equal("existing error", state.CurrentState.ErrorMessage);
     }
 }

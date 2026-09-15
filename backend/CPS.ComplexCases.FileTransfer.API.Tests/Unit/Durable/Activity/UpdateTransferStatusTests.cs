@@ -38,10 +38,11 @@ public class UpdateTransferStatusTests
         Assert.Equal(payload.TransferId.ToString(), entityClientStub.SignaledEntityId?.Key);
         Assert.Equal(nameof(TransferEntityState.UpdateStatus), entityClientStub.SignaledOperationName);
         Assert.Single(entityClientStub.SignalledCalls);
+        Assert.Same(payload, entityClientStub.SignalledCalls[0].Input);
     }
 
     [Fact]
-    public async Task Run_WhenErrorMessageIsSet_SignalsUpdateStatusThenSetErrorMessage()
+    public async Task Run_WhenErrorMessageIsSet_SignalsUpdateStatusOnceWithPayload()
     {
         var payload = _fixture.Build<UpdateTransferStatusPayload>()
             .With(p => p.Status, TransferStatus.Failed)
@@ -52,10 +53,8 @@ public class UpdateTransferStatusTests
 
         await _activity.Run(payload, clientStub, CancellationToken.None);
 
-        Assert.Equal(2, entityClientStub.SignalledCalls.Count);
+        Assert.Single(entityClientStub.SignalledCalls);
         Assert.Equal(nameof(TransferEntityState.UpdateStatus), entityClientStub.SignalledCalls[0].Operation);
-        Assert.Equal(payload.Status, entityClientStub.SignalledCalls[0].Input);
-        Assert.Equal(nameof(TransferEntityState.SetErrorMessage), entityClientStub.SignalledCalls[1].Operation);
-        Assert.Equal(payload.ErrorMessage, entityClientStub.SignalledCalls[1].Input);
+        Assert.Same(payload, entityClientStub.SignalledCalls[0].Input);
     }
 }
