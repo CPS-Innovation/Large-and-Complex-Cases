@@ -141,7 +141,8 @@ test.describe("Move Soak Tests", () => {
         status,
         `Transfer ${transfer.id} finished as ${status?.status}, ` +
           `${status?.failedFiles}/${status?.totalFiles} file(s) failed: ` +
-          `${(status?.failedItems ?? []).join(", ")}`,
+          `${(status?.failedItems ?? []).join(", ")}` +
+          (status?.errorMessage ? ` (${status.errorMessage})` : ""),
       ).toMatchObject({
         status: "Completed",
         failedFiles: 0,

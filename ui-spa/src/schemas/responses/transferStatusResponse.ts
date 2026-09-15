@@ -44,6 +44,7 @@ export const transferStatusResponseSchema = z.object({
   ),
   skippedItems: z.array(transferSkippedItemSchema).optional(),
   destinationPath: z.string(),
+  errorMessage: z.string().nullable().optional(),
 });
 
 export type TransferStatusResponse = z.infer<

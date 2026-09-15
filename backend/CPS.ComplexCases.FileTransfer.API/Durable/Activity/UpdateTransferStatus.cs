@@ -21,7 +21,7 @@ public class UpdateTransferStatus(ILogger<UpdateTransferStatus> logger)
         await DurableEntityRetry.ExecuteAsync(
             nameof(UpdateTransferStatus),
             () => client.Entities.SignalEntityAsync(entityId, nameof(TransferEntityState.UpdateStatus),
-                updateStatusPayload.Status, null, cancellationToken),
+                updateStatusPayload, null, cancellationToken),
             _logger,
             cancellationToken);
     }

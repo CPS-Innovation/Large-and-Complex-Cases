@@ -414,6 +414,29 @@ public class GetTransferStatusTests
         Assert.Null(dto.RetryState);
     }
 
+    [Fact]
+    public async Task Run_WhenEntityHasErrorMessage_ReturnsErrorMessageOnDto()
+    {
+        var transferEntity = CreateValidTransferEntity();
+        transferEntity.Status = TransferStatus.Failed;
+        transferEntity.ProcessedFiles = 0;
+        transferEntity.ErrorMessage = "The transfer failed before any files were processed. Transfer entity was not found after retries.";
+
+        var stub = new DurableEntityClientStub("FileTransferEntities")
+        {
+            OnGetEntityAsync = (id, _) => Task.FromResult<EntityMetadata<TransferEntity>?>(new EntityMetadata<TransferEntity>(id, transferEntity))
+        };
+        var durableTaskClientStub = new DurableTaskClientStub(stub);
+
+        var result = await _function.Run(_httpRequestMock.Object, durableTaskClientStub, _transferId);
+
+        var okResult = Assert.IsType<OkObjectResult>(result);
+        var dto = Assert.IsType<TransferStatusDto>(okResult.Value);
+        Assert.Equal(transferEntity.ErrorMessage, dto.ErrorMessage);
+        Assert.Equal(0, dto.ProcessedFiles);
+        Assert.Empty(dto.FailedItems);
+    }
+
     private TransferEntity CreateValidTransferEntity()
     {
         return new TransferEntity

@@ -6,4 +6,5 @@ public class UpdateTransferStatusPayload
 {
     public Guid TransferId { get; set; }
     public TransferStatus Status { get; set; }
+    public string? ErrorMessage { get; set; }
 }

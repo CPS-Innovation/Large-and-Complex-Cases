@@ -28,6 +28,7 @@ public class TransferEntity
     public List<TransferItem> SkippedItems { get; set; } = new List<TransferItem>();
     public List<DeletionError> DeletionErrors { get; set; } = new List<DeletionError>();
     public TransferRetryState? RetryState { get; set; }
+    public string? ErrorMessage { get; set; }
     public bool? IsRetry { get; set; } = false;
     public bool? MovedFilesDeletedSuccessfully { get; set; } = false;
     public string? UserName { get; set; }

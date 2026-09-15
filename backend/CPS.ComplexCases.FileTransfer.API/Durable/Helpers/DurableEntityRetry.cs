@@ -14,6 +14,9 @@ public static class DurableEntityRetry
     private const int MaxAttempts = 3;
     private static readonly TimeSpan Delay = TimeSpan.FromSeconds(1);
 
+    internal const int DefaultVisibilityMaxAttempts = 5;
+    internal static readonly TimeSpan DefaultVisibilityRetryDelay = TimeSpan.FromSeconds(1);
+
     public static async Task<T> ExecuteAsync<T>(
         string operationName,
         Func<Task<T>> action,
@@ -39,6 +42,47 @@ public static class DurableEntityRetry
 
         // Final attempt: let any failure (transient or not) propagate to the caller.
         return await action();
+    }
+
+    /// <summary>
+    /// Reads entity state from the management API, retrying when the result is null so that
+    /// short replication lag after <c>CallEntityAsync(Initialize)</c> does not fail the caller.
+    /// </summary>
+    public static async Task<T?> ExecuteUntilNotNullAsync<T>(
+        string operationName,
+        Func<Task<T?>> action,
+        ILogger logger,
+        CancellationToken cancellationToken = default,
+        int maxAttempts = DefaultVisibilityMaxAttempts,
+        TimeSpan? retryDelay = null,
+        Func<TimeSpan, CancellationToken, Task>? delayAsync = null)
+        where T : class
+    {
+        ArgumentOutOfRangeException.ThrowIfLessThan(maxAttempts, 1);
+
+        var delay = retryDelay ?? DefaultVisibilityRetryDelay;
+        var delayFn = delayAsync ?? Task.Delay;
+
+        T? result = null;
+        for (var attempt = 1; attempt <= maxAttempts; attempt++)
+        {
+            result = await ExecuteAsync(operationName, action, logger, cancellationToken);
+            if (result is not null)
+            {
+                return result;
+            }
+
+            if (attempt < maxAttempts)
+            {
+                logger.LogWarning(
+                    "Durable entity not yet visible on {Operation} (attempt {Attempt}/{MaxAttempts}). Retrying in {DelaySeconds}s.",
+                    operationName, attempt, maxAttempts, delay.TotalSeconds);
+
+                await delayFn(delay, cancellationToken);
+            }
+        }
+
+        return result;
     }
 
     public static Task ExecuteAsync(

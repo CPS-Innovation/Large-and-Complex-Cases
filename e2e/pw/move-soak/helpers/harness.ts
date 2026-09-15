@@ -27,7 +27,7 @@ export class MoveSoakHarness {
       this.config.egressBaseUrl,
       this.config.serviceAccountAuth
     );
-    
+
     return this.egressToken;
   }
 
@@ -89,7 +89,7 @@ export class MoveSoakHarness {
           { folderPath: this.config.egressSourceFolder },
         );
 
-        uploadIds.push({ 
+        uploadIds.push({
           uploadId: uploadId,
           sizeMb: spec.fileSizeMb
         });
@@ -241,6 +241,7 @@ export class MoveSoakHarness {
       processedFiles: resBody.processedFiles,
       successfulFiles: resBody.successfulFiles,
       failedFiles: resBody.failedFiles,
+      errorMessage: resBody.errorMessage ?? null,
     } as TransferStatusCheckResponse;
   }
 

@@ -381,6 +381,118 @@ public class TransferOrchestratorTests
         Assert.Equal(TransferStatus.InProgress, capturedStatusPayloads[0].Status);
         Assert.Equal(TransferStatus.Failed, capturedStatusPayloads[1].Status);
         Assert.Equal(transferPayload.TransferId, capturedStatusPayloads[1].TransferId);
+        Assert.Equal(exception.Message, capturedStatusPayloads[1].ErrorMessage);
+    }
+
+    [Fact]
+    public async Task RunOrchestrator_WhenFailureOccursBeforeFileProcessing_PersistsInitialisationErrorMessage()
+    {
+        var transferPayload = CreateValidTransferPayload();
+        var exception = new InvalidOperationException("ValidateSourceFiles failed");
+        UpdateTransferStatusPayload? failedStatusPayload = null;
+
+        _contextMock.Setup(c => c.GetInput<TransferPayload>()).Returns(transferPayload);
+        _contextMock.Setup(c => c.CallActivityAsync(It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
+            .Returns<TaskName, object, TaskOptions>((taskName, payload, _) =>
+            {
+                if (taskName.Name == "UpdateTransferStatus" && payload is UpdateTransferStatusPayload statusPayload
+                    && statusPayload.Status == TransferStatus.Failed)
+                {
+                    failedStatusPayload = statusPayload;
+                }
+
+                return Task.CompletedTask;
+            });
+        _contextMock.Setup(c => c.CallActivityAsync<ValidateSourceFilesResult>(
+                It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
+            .ThrowsAsync(exception);
+        _contextMock.Setup(c => c.Entities.CallEntityAsync(It.IsAny<EntityInstanceId>(), It.IsAny<string>(), It.IsAny<object>(), It.IsAny<CallEntityOptions>()))
+            .Returns(Task.CompletedTask);
+
+        var thrown = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => _orchestrator.RunOrchestrator(_contextMock.Object));
+
+        Assert.Equal(exception, thrown);
+        Assert.NotNull(failedStatusPayload);
+        Assert.Equal(TransferStatus.Failed, failedStatusPayload!.Status);
+        Assert.StartsWith("The transfer failed before any files were processed.", failedStatusPayload.ErrorMessage);
+        Assert.Contains(exception.Message, failedStatusPayload.ErrorMessage);
+        _contextMock.Verify(c => c.CallActivityAsync<TransferResult>(
+                It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task RunOrchestrator_WhenUpdateActivityLogThrowsOnInit_ContinuesTransfer()
+    {
+        var transferPayload = CreateValidTransferPayload();
+        var transferFileCalled = false;
+
+        _contextMock.Setup(c => c.GetInput<TransferPayload>()).Returns(transferPayload);
+        _contextMock.Setup(c => c.CallActivityAsync(It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
+            .Returns<TaskName, object, TaskOptions>((taskName, payload, _) =>
+            {
+                if (taskName.Name == "UpdateActivityLog"
+                    && payload is UpdateActivityLogPayload { ActionType: ActivityLog.Enums.ActionType.TransferInitiated })
+                {
+                    throw new InvalidOperationException($"Transfer entity with ID {transferPayload.TransferId} not found after retries.");
+                }
+
+                return Task.CompletedTask;
+            });
+        _contextMock.Setup(c => c.CallActivityAsync<TransferResult>(It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
+            .ReturnsAsync(new TransferResult { IsSuccess = true, SuccessfulItem = _fixture.Create<TransferItem>() })
+            .Callback<TaskName, object, TaskOptions>((taskName, _, __) =>
+            {
+                if (taskName.Name == "TransferFile") transferFileCalled = true;
+            });
+        _contextMock.Setup(c => c.Entities.CallEntityAsync(It.IsAny<EntityInstanceId>(), It.IsAny<string>(), It.IsAny<object>(), It.IsAny<CallEntityOptions>()))
+            .Returns(Task.CompletedTask);
+
+        await _orchestrator.RunOrchestrator(_contextMock.Object);
+
+        Assert.True(transferFileCalled);
+        _contextMock.Verify(c => c.CallActivityAsync(
+                It.Is<TaskName>(t => t.Name == "UpdateTransferStatus"),
+                It.Is<object>(o => ((UpdateTransferStatusPayload)o).Status == TransferStatus.Failed),
+                It.IsAny<TaskOptions>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task RunOrchestrator_WhenUpdateActivityLogThrowsOnCompletion_DoesNotFailTransfer()
+    {
+        var transferPayload = CreateValidTransferPayload();
+
+        _contextMock.Setup(c => c.GetInput<TransferPayload>()).Returns(transferPayload);
+        _contextMock.Setup(c => c.CallActivityAsync(It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
+            .Returns<TaskName, object, TaskOptions>((taskName, payload, _) =>
+            {
+                if (taskName.Name == "UpdateActivityLog"
+                    && payload is UpdateActivityLogPayload { ActionType: ActivityLog.Enums.ActionType.TransferCompleted })
+                {
+                    throw new InvalidOperationException($"Transfer entity with ID {transferPayload.TransferId} not found after retries.");
+                }
+
+                return Task.CompletedTask;
+            });
+        _contextMock.Setup(c => c.CallActivityAsync<TransferResult>(It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
+            .ReturnsAsync(new TransferResult { IsSuccess = true, SuccessfulItem = _fixture.Create<TransferItem>() });
+        _contextMock.Setup(c => c.Entities.CallEntityAsync(It.IsAny<EntityInstanceId>(), It.IsAny<string>(), It.IsAny<object>(), It.IsAny<CallEntityOptions>()))
+            .Returns(Task.CompletedTask);
+
+        await _orchestrator.RunOrchestrator(_contextMock.Object);
+
+        _contextMock.Verify(c => c.CallActivityAsync(
+                It.Is<TaskName>(t => t.Name == "UpdateTransferStatus"),
+                It.Is<object>(o => ((UpdateTransferStatusPayload)o).Status == TransferStatus.Failed),
+                It.IsAny<TaskOptions>()),
+            Times.Never);
+        _contextMock.Verify(c => c.CallActivityAsync(
+                It.Is<TaskName>(t => t.Name == "FinalizeTransfer"),
+                It.IsAny<object>(),
+                It.IsAny<TaskOptions>()),
+            Times.Once);
     }
 
     [Fact]

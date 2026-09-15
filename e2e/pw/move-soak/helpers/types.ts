@@ -55,4 +55,5 @@ export type TransferStatusCheckResponse =  {
   processedFiles: number;
   successfulFiles: number;
   failedFiles: number;
+  errorMessage?: string | null;
 };
