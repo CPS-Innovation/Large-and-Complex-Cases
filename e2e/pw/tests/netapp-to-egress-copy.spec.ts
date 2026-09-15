@@ -52,6 +52,8 @@ test.describe("NetApp to Egress Copy", () => {
     // destination is "2. Counsel only" -> this run's dated subfolder (a
     // different top-level folder than the "4. Served Evidence" source, so
     // repeat runs don't collide).
+    const clearSettled = transferTab.watchForTransferClear();
+
     if (loadEnvConfig().transferMaterialsV1) {
       // New screen: no second panel — Copy selected navigates to the
       // destination-tree page where the target folder is chosen.
@@ -72,6 +74,9 @@ test.describe("NetApp to Egress Copy", () => {
       await transferTab.confirmTransfer("Copy");
     }
     await transferTab.waitForTransferComplete();
+
+    // Banner must not survive a refresh (FCT2-21942)
+    await transferTab.verifySuccessBannerClearedOnReload(clearSettled);
 
     // Step 7: Verify in Activity Log
     await caseMgmt.switchToTab("activity-log");
