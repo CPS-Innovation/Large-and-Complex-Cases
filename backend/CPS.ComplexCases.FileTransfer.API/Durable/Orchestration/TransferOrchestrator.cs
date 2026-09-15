@@ -11,6 +11,9 @@ using CPS.ComplexCases.FileTransfer.API.Durable.State;
 using CPS.ComplexCases.FileTransfer.API.Models.Configuration;
 using CPS.ComplexCases.FileTransfer.API.Models.Domain.Enums;
 using CPS.ComplexCases.FileTransfer.API.Telemetry;
+using Microsoft.Azure.Functions.Worker;
+using Microsoft.DurableTask;
+using Microsoft.DurableTask.Entities;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -339,30 +342,18 @@ public class TransferOrchestrator(IOptions<SizeConfig> sizeConfig, ITelemetryCli
                 Status = TransferStatus.InProgress,
             });
 
-        int batchSize = _sizeConfig.BatchSize;
-        var batch = new List<Task<TransferResult>>();
+        int batchSize = Math.Max(1, _sizeConfig.BatchSize);
         var allResults = new List<TransferResult>();
 
-        foreach (var sourcePath in cleanFiles)
+        foreach (var chunk in cleanFiles.Chunk(batchSize))
         {
-            batch.Add(context.CallActivityAsync<TransferResult>(
-                nameof(TransferFile),
-                BuildTransferFilePayload(input, transferEntity, sourcePath)));
+            var batchResults = await Task.WhenAll(chunk.Select(sourcePath =>
+                context.CallActivityAsync<TransferResult>(
+                    nameof(TransferFile),
+                    BuildTransferFilePayload(input, transferEntity, sourcePath))));
 
-            if (batch.Count >= batchSize)
-            {
-                var batchResults = await Task.WhenAll(batch);
-                await TransferResultProcessor.ProcessAsync(context, entityId, batchResults, transferOrchestrationEvent);
-                allResults.AddRange(batchResults);
-                batch.Clear();
-            }
-        }
-
-        if (batch.Count > 0)
-        {
-            var remainingResults = await Task.WhenAll(batch);
-            await TransferResultProcessor.ProcessAsync(context, entityId, remainingResults, transferOrchestrationEvent);
-            allResults.AddRange(remainingResults);
+            await TransferResultProcessor.ProcessAsync(context, entityId, batchResults, transferOrchestrationEvent);
+            allResults.AddRange(batchResults);
         }
 
         return allResults;
