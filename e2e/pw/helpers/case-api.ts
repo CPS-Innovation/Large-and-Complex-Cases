@@ -10,6 +10,11 @@ export async function registerCase(
 
   const correlationId = crypto.randomUUID();
 
+  // DDEI rejects digits in a surname; workspace names always have them.
+  const defendantSurnameSafe =
+    defendantSurname.replace(/[^A-Za-z '.-]/g, "").replace(/-+$/, "") ||
+    "AutomationTesting";
+
   const body = {
     urn: {
       policeForce: "45",
@@ -32,7 +37,7 @@ export async function registerCase(
     defendants: [
       {
         isDefendant: true,
-        surname: defendantSurname,
+        surname: defendantSurnameSafe,
         firstname: "",
         companyName: "",
         dateOfBirth: "1984-05-23",

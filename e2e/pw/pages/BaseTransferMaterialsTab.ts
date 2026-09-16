@@ -1,4 +1,6 @@
-import { Page } from "@playwright/test";
+import { Page, Response, expect } from "@playwright/test";
+
+const TRANSFER_CLEAR_ROUTE = /\/v1\/filetransfer\/[^/]+\/clear$/;
 
 /**
  * Shared Egress-side and common helpers for both Transfer Materials page
@@ -95,6 +97,41 @@ export abstract class BaseTransferMaterialsTab {
     throw new Error(
       `Timed out waiting for ${fileName} to appear in Egress panel (timeout: ${timeout}ms)`,
     );
+  }
+
+  /** Call before `waitForTransferComplete` — the POST can precede the banner,
+   * and `waitForResponse` only sees future traffic. */
+  watchForTransferClear(timeout: number = 300_000): Promise<Response | null> {
+    return this.page
+      .waitForResponse((r) => TRANSFER_CLEAR_ROUTE.test(r.url()), { timeout })
+      .catch(() => null);
+  }
+
+  /** FCT2-21942. Pass `watchForTransferClear()` so the clear has settled before
+   * reloading, otherwise this races it. */
+  async verifySuccessBannerClearedOnReload(
+    clearSettled?: Promise<Response | null>,
+  ): Promise<void> {
+    const banner = this.page.getByTestId(
+      "transfer-success-notification-banner",
+    );
+    await expect(banner).toBeVisible();
+
+    const cleared = await (clearSettled ?? Promise.resolve(null));
+    if (cleared && !cleared.ok()) {
+      throw new Error(
+        `Transfer clear failed (${cleared.status()}) — ActiveTransferId is ` +
+          `still set, so the banner returns on refresh.`,
+      );
+    }
+
+    await this.page.reload();
+    await this.waitForEgressFiles();
+
+    await expect(
+      banner,
+      "success banner must not reappear after a refresh",
+    ).toBeHidden();
   }
 
   /** Standard "fixture missing" error for the NetApp / shared-drive panel. */

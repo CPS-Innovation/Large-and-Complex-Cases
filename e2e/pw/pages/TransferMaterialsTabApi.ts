@@ -1,3 +1,5 @@
+import type { Response } from "@playwright/test";
+
 /**
  * Screen-agnostic Transfer Materials contract, implemented by both
  * `TransferMaterialsTab` (old) and `TransferMaterialsTabV1` (new). Specs build
@@ -28,6 +30,11 @@ export interface TransferMaterialsTabApi {
    * initiated — the new screen's confirm button reads "<action> to <folder>". */
   confirmTransfer(action: "Copy" | "Move"): Promise<void>;
   waitForTransferComplete(timeout?: number): Promise<void>;
+  /** Call before `waitForTransferComplete`. */
+  watchForTransferClear(timeout?: number): Promise<Response | null>;
+  verifySuccessBannerClearedOnReload(
+    clearSettled?: Promise<Response | null>,
+  ): Promise<void>;
   /** Recover from a transfer error page back to case management so the tab can
    * be re-entered. No-op when not on an error page. */
   dismissTransferErrorIfPresent(): Promise<void>;
