@@ -2,7 +2,11 @@ using Microsoft.ApplicationInsights.Channel;
 using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.ApplicationInsights.Extensibility;
 
+#if HOST_TELEMETRY
+namespace CPS.ComplexCases.API.HttpTelemetry;
+#else
 namespace CPS.ComplexCases.Common.Telemetry;
+#endif
 
 public class HealthCheckTelemetryFilter(ITelemetryProcessor next) : ITelemetryProcessor
 {

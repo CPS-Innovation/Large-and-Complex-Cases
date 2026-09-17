@@ -16,8 +16,8 @@
     <PackageReference Include="Aspose.Imaging" Version="25.2.0" />
     <PackageReference Include="Aspose.PDF.Drawing" Version="25.1.0" />
     <PackageReference Include="Aspose.Slides.NET" Version="25.2.0" />
-    <PackageReference Include="Aspose.Words" Version="25.2.0" />    
-    <PackageReference Include="Ardalis.SmartEnum" Version="8.2.0" />    
+    <PackageReference Include="Aspose.Words" Version="25.2.0" />
+    <PackageReference Include="Ardalis.SmartEnum" Version="8.2.0" />
     <PackageReference Include="Azure.Storage.Blobs" Version="12.27.0" />
     <PackageReference Include="FluentValidation" Version="11.11.0" />
     <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="11.11.0" />
@@ -33,7 +33,7 @@
     <PackageReference Include="Microsoft.Extensions.Azure" Version="1.10.0" />
     <PackageReference Include="Microsoft.Extensions.Http.Resilience" Version="10.5.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.5" />
-    <PackageReference Include="CPS.ComplexCases.API.HttpTelemetry" Version="1.0.41" />
+    <PackageReference Include="CPS.ComplexCases.API.HttpTelemetry" Version="1.0.42" />
     <PackageReference Include="ThrottlingTroll.AzureFunctions" Version="9.1.0" />
   </ItemGroup>
   <ItemGroup>

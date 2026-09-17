@@ -24,6 +24,8 @@ public class Startup : IWebJobsStartup2
         builder.AddExtension<HttpTelemetryExtensionConfigProvider>();
         builder.Services.AddSingleton<ITelemetryInitializer, HttpTelemetryInitializer>();
         builder.Services.AddHttpContextAccessor();
+        // Runs in the Functions host process. The worker ITelemetryProcessor cannot see host Request/Invoke telemetry.
+        HealthCheckTelemetryHostRegistration.Register(builder.Services);
     }
 }
 
