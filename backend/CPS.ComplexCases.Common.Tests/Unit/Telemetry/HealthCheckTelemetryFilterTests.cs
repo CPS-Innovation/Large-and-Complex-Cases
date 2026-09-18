@@ -16,11 +16,15 @@ public class HealthCheckTelemetryFilterTests
         _sut = new HealthCheckTelemetryFilter(_next.Object);
     }
 
-    [Fact]
-    public void Process_FiltersRequest_WhenFunctionNameIsStatus()
+    [Theory]
+    [InlineData("Status")]
+    [InlineData("Functions.Status")]
+    [InlineData("functions.status")]
+    [InlineData(" Functions.Status ")]
+    public void Process_FiltersRequest_WhenFunctionNameIsStatus(string functionName)
     {
         var request = new RequestTelemetry { Name = "GetCase" };
-        request.Properties["AzureFunctions_FunctionName"] = "Status";
+        request.Properties["AzureFunctions_FunctionName"] = functionName;
 
         AssertFiltered(request);
     }
@@ -58,6 +62,7 @@ public class HealthCheckTelemetryFilterTests
 
     [Theory]
     [InlineData("Status")]
+    [InlineData("Functions.Status")]
     [InlineData("GET /api/status")]
     [InlineData("GET /api/health")]
     public void Process_FiltersRequest_WhenNameIsPeriodicHealthEndpoint(string name)
@@ -83,6 +88,8 @@ public class HealthCheckTelemetryFilterTests
     }
 
     [Theory]
+    [InlineData("Status")]
+    [InlineData("Functions.Status")]
     [InlineData("GET /api/status")]
     [InlineData("GET /api/health")]
     [InlineData("/api/status")]
@@ -109,6 +116,7 @@ public class HealthCheckTelemetryFilterTests
 
     [Theory]
     [InlineData("Status")]
+    [InlineData("Functions.Status")]
     [InlineData("GET /api/status")]
     [InlineData("GET /api/health")]
     public void Process_FiltersDependency_WhenOperationNameIsPeriodicHealthEndpoint(string operationName)
@@ -140,6 +148,15 @@ public class HealthCheckTelemetryFilterTests
     }
 
     [Fact]
+    public void Process_DoesNotFilterRequest_WhenFunctionNameIsPrefixedTransferStatus()
+    {
+        var request = new RequestTelemetry { Name = "GetTransferStatus" };
+        request.Properties["AzureFunctions_FunctionName"] = "Functions.GetTransferStatus";
+
+        AssertPassedThrough(request);
+    }
+
+    [Fact]
     public void Process_DoesNotFilterDependency_WhenDataIsTransferStatus()
     {
         var dependency = new DependencyTelemetry
@@ -152,6 +169,16 @@ public class HealthCheckTelemetryFilterTests
         dependency.Context.Operation.Name = "GetTransferStatus";
 
         AssertPassedThrough(dependency);
+    }
+
+    [Fact]
+    public void Process_DoesNotFilterDependency_WhenNameIsInvokeWithoutHealthOperation()
+    {
+        AssertPassedThrough(new DependencyTelemetry
+        {
+            Name = "Invoke",
+            Type = "InProc"
+        });
     }
 
     [Fact]

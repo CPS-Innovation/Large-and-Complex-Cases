@@ -17,6 +17,7 @@ public class HealthCheckTelemetryFilter(ITelemetryProcessor next) : ITelemetryPr
     ];
 
     private const string StatusFunctionName = "Status";
+    private const string FunctionsPrefix = "Functions.";
 
     private readonly ITelemetryProcessor _next = next;
 
@@ -62,15 +63,28 @@ public class HealthCheckTelemetryFilter(ITelemetryProcessor next) : ITelemetryPr
         if (item is DependencyTelemetry dependency)
         {
             return IsPeriodicHealthProbeValue(dependency.Data)
-                || IsPeriodicHealthProbeValue(dependency.Name)
+                || IsPeriodicHealthOperation(dependency.Name)
                 || IsPeriodicHealthProbeValue(dependency.Target);
         }
 
         return false;
     }
 
-    private static bool IsPeriodicHealthFunctionName(string? name) =>
-        string.Equals(name, StatusFunctionName, StringComparison.OrdinalIgnoreCase);
+    private static bool IsPeriodicHealthFunctionName(string? name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            return false;
+        }
+
+        var trimmed = name.Trim();
+        if (trimmed.StartsWith(FunctionsPrefix, StringComparison.OrdinalIgnoreCase))
+        {
+            trimmed = trimmed[FunctionsPrefix.Length..];
+        }
+
+        return string.Equals(trimmed, StatusFunctionName, StringComparison.OrdinalIgnoreCase);
+    }
 
     private static bool IsPeriodicHealthOperation(string? name) =>
         IsPeriodicHealthFunctionName(name) || IsPeriodicHealthProbeValue(name);

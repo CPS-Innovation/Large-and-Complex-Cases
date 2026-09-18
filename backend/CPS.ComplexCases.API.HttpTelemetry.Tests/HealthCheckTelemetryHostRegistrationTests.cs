@@ -30,7 +30,7 @@ public class HealthCheckTelemetryHostRegistrationTests
             Name = "Invoke",
             Type = "InProc"
         };
-        invokeDependency.Context.Operation.Name = "Status";
+        invokeDependency.Context.Operation.Name = "Functions.Status";
 
         client.TrackRequest(statusRequest);
         client.Track(invokeDependency);
