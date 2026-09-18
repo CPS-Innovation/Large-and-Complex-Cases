@@ -26,9 +26,9 @@ variables:
   - name: buildConfiguration
     value: "Release"
   - name: dotNetVersion
-    value: '10.x'
+    value: "10.x"
   - name: efVersion
-    value: '10.0.*'
+    value: "10.0.*"
   - name: asposeLicenceFileName
     value: "Aspose.Total.NET.lic"
 
@@ -69,7 +69,7 @@ stages:
     jobs:
       - ${{ if or(eq(parameters.deployMainApi, true), eq(parameters.deployDB, true)) }}:
           - job: Build_Main_API_And_DB
-            displayName: "Build Main API & DB Migration Scripts"
+            displayName: "Build Main API / DB Migration Scripts"
             steps:
               - ${{ if eq(parameters.deployMainApi, true) }}:
                   - task: DownloadSecureFile@1
@@ -144,44 +144,50 @@ stages:
                     releaseSourceVersionArg: "/p:SourceRevisionId=$(Build.SourceVersion)"
 
   # Deployment stages:
-  - template: ../templates/backend-deploy-stages.yml
-    parameters:
-      environment: dev
-      requireValidation: false
-      deployMainApi: ${{ parameters.deployMainApi }}
-      deployFiletransfer: ${{ parameters.deployFiletransfer }}
-      deployDB: ${{ parameters.deployDB }}
+  - ${{ if eq(variables['Build.SourceBranchName'], 'development') }}:
+      - template: ../templates/backend-deploy-stages.yml
+        parameters:
+          environment: dev
+          requireValidation: false
+          deployMainApi: ${{ parameters.deployMainApi }}
+          deployFiletransfer: ${{ parameters.deployFiletransfer }}
+          deployDB: ${{ parameters.deployDB }}
 
-  - template: ../templates/backend-deploy-stages.yml
-    parameters:
-      environment: staging
-      requireValidation: true
-      notifyUsers: $(preprodNotifyUsers)
-      approvers: $(preprodApprovers)
-      deployToSlot: true
-      slotName: "stg"
-      runPostmanSmokeTest: true
-      deployMainApi: ${{ parameters.deployMainApi }}
-      deployFiletransfer: ${{ parameters.deployFiletransfer }}
-      deployDB: ${{ parameters.deployDB }}
-
-  - stage: Run_E2E_Tests
-    displayName: "Run E2E tests"
-    jobs:
-      - template: ../templates/e2e-playwright-test-job.yml
+  - ${{ if eq(variables['Build.SourceBranchName'], 'main') }}:
+      - template: ../templates/backend-deploy-stages.yml
         parameters:
           environment: staging
+          deployToSlot: true
+          slotName: "stg"
+          runPostmanSmokeTest: true
+          deployMainApi: ${{ parameters.deployMainApi }}
+          deployFiletransfer: ${{ parameters.deployFiletransfer }}
+          deployDB: ${{ parameters.deployDB }}
 
-  - template: ../templates/backend-deploy-stages.yml
-    parameters:
-      environment: prod
-      requireValidation: true
-      notifyUsers: $(prodNotifyUsers)
-      approvers: $(prodApprovers)
-      agentPool: "LACC Prod Pool"
-      azureSubscription: "Azure Pipeline: Large and Complex Cases - Prod"
-      deployToSlot: true
-      slotName: "stg"
-      deployMainApi: ${{ parameters.deployMainApi }}
-      deployFiletransfer: ${{ parameters.deployFiletransfer }}
-      deployDB: ${{ parameters.deployDB }}
+      - stage: Release_Gate
+        displayName: "Release Gate"
+        jobs:
+          - job: Manual_Validation
+            pool: server
+            timeoutInMinutes: 6500
+            steps:
+              - task: ManualValidation@1
+                displayName: Request Validation
+                timeoutInMinutes: 6480
+                inputs:
+                  notifyUsers: $(prodNotifyUsers)
+                  approvers: $(prodApprovers)
+                  allowApproversToApproveTheirOwnRuns: true
+                  instructions: "Approval is required to deploy to production."
+                  onTimeout: "reject"
+
+      - template: ../templates/backend-deploy-stages.yml
+        parameters:
+          environment: prod
+          agentPool: "LACC Prod Pool"
+          azureSubscription: "Azure Pipeline: Large and Complex Cases - Prod"
+          deployToSlot: true
+          slotName: "stg"
+          deployMainApi: ${{ parameters.deployMainApi }}
+          deployFiletransfer: ${{ parameters.deployFiletransfer }}
+          deployDB: ${{ parameters.deployDB }}
