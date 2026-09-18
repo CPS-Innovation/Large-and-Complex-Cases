@@ -49,6 +49,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cps.ComplexCases.Data.Tests
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CPS.ComplexCases.API.Integration.Tests", "CPS.ComplexCases.API.Integration.Tests\CPS.ComplexCases.API.Integration.Tests.csproj", "{CDF9B98D-75FB-4F39-9AAD-AE3F7281153B}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CPS.ComplexCases.API.HttpTelemetry.Tests", "CPS.ComplexCases.API.HttpTelemetry.Tests\CPS.ComplexCases.API.HttpTelemetry.Tests.csproj", "{ABB60364-BC8B-42DA-8DA5-734C6380501B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -335,6 +337,18 @@ Global
 		{CDF9B98D-75FB-4F39-9AAD-AE3F7281153B}.Release|x64.Build.0 = Release|Any CPU
 		{CDF9B98D-75FB-4F39-9AAD-AE3F7281153B}.Release|x86.ActiveCfg = Release|Any CPU
 		{CDF9B98D-75FB-4F39-9AAD-AE3F7281153B}.Release|x86.Build.0 = Release|Any CPU
+		{ABB60364-BC8B-42DA-8DA5-734C6380501B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ABB60364-BC8B-42DA-8DA5-734C6380501B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ABB60364-BC8B-42DA-8DA5-734C6380501B}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{ABB60364-BC8B-42DA-8DA5-734C6380501B}.Debug|x64.Build.0 = Debug|Any CPU
+		{ABB60364-BC8B-42DA-8DA5-734C6380501B}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{ABB60364-BC8B-42DA-8DA5-734C6380501B}.Debug|x86.Build.0 = Debug|Any CPU
+		{ABB60364-BC8B-42DA-8DA5-734C6380501B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ABB60364-BC8B-42DA-8DA5-734C6380501B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{ABB60364-BC8B-42DA-8DA5-734C6380501B}.Release|x64.ActiveCfg = Release|Any CPU
+		{ABB60364-BC8B-42DA-8DA5-734C6380501B}.Release|x64.Build.0 = Release|Any CPU
+		{ABB60364-BC8B-42DA-8DA5-734C6380501B}.Release|x86.ActiveCfg = Release|Any CPU
+		{ABB60364-BC8B-42DA-8DA5-734C6380501B}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
