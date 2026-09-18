@@ -7,20 +7,17 @@ parameters:
   - name: environment
     displayName: 'Target Environment'
     type: string
-    default: 'dev'
     values:
       - dev
       - staging
       - prod
   - name: agentPool
     type: string
-    default: 'LACC PreProd Pool'
     values:
       - 'LACC PreProd Pool'
       - 'LACC Prod Pool'
   - name: azureSubscription
     type: string
-    default: 'Azure Pipeline: Large and Complex Cases - Pre-Prod'
     values:
       - 'Azure Pipeline: Large and Complex Cases - Pre-Prod'
       - 'Azure Pipeline: Large and Complex Cases - Prod'
