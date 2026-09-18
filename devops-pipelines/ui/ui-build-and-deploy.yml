@@ -13,34 +13,40 @@ variables:
   - group: lacc-deployment-global
 
 stages:
-  - template: ../templates/ui-build-and-deploy-stages.yml
-    parameters:
-      environment: dev
-      requireValidation: false
+  - ${{ if eq(variables['Build.SourceBranchName'], 'development') }}:
+      - template: ../templates/ui-build-and-deploy-stages.yml
+        parameters:
+          environment: dev
+          requireValidation: false
 
-  - template: ../templates/ui-build-and-deploy-stages.yml
-    parameters:
-      environment: staging
-      requireValidation: true
-      notifyUsers: $(preprodNotifyUsers)
-      approvers: $(preprodApprovers)
-      deployToSlot: true
-      slotName: "stg"
-
-  - stage: Run_E2E_Tests
-    displayName: "Run E2E tests"
-    jobs:
-      - template: ../templates/e2e-playwright-test-job.yml
+  - ${{ if eq(variables['Build.SourceBranchName'], 'main') }}:
+      - template: ../templates/ui-build-and-deploy-stages.yml
         parameters:
           environment: staging
+          deployToSlot: true
+          slotName: "stg"
 
-  - template: ../templates/ui-build-and-deploy-stages.yml
-    parameters:
-      environment: prod
-      requireValidation: true
-      notifyUsers: $(prodNotifyUsers)
-      approvers: $(prodApprovers)
-      agentPool: "LACC Prod Pool"
-      azureSubscription: "Azure Pipeline: Large and Complex Cases - Prod"
-      deployToSlot: true
-      slotName: "stg"
+      - stage: Release_Gate
+        displayName: "Release Gate"
+        jobs:
+          - job: Manual_Validation
+            pool: server
+            timeoutInMinutes: 6500
+            steps:
+              - task: ManualValidation@1
+                displayName: Request Validation
+                timeoutInMinutes: 6480
+                inputs:
+                  notifyUsers: $(prodNotifyUsers)
+                  approvers: $(prodApprovers)
+                  allowApproversToApproveTheirOwnRuns: true
+                  instructions: "Approval is required to deploy to production."
+                  onTimeout: "reject"
+
+      - template: ../templates/ui-build-and-deploy-stages.yml
+        parameters:
+          environment: prod
+          agentPool: "LACC Prod Pool"
+          azureSubscription: "Azure Pipeline: Large and Complex Cases - Prod"
+          deployToSlot: true
+          slotName: "stg"

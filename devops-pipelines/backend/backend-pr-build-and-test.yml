@@ -79,7 +79,7 @@ stages:
 
       - ${{ if or(eq(parameters.buildMainApi, true), eq(parameters.buildDB, true)) }}:
           - job: Build_Main_API_And_DB
-            displayName: "Build Main API & Data Project"
+            displayName: "Build Main API / Data Project"
             dependsOn: Build_And_Test_Solution
             steps:
               # Build and Main API - also required for generating database migration script
