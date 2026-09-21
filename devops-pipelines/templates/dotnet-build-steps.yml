@@ -1,17 +1,46 @@
 parameters:
-  projectPath: ""
-  projectName: ""
-  buildConfiguration: "Release"
-  dotNetVersion: "10.x"
-  useLocalNuGet: false
-  nugetArtifact: "localnuget"
-  nugetArtifactDownloadPath: "$(Build.SourcesDirectory)/localnuget"
-  publishOutput: false
-  runTests: false
-  checkFormatting: false
-  testResultsDirectory: ""
-  releaseVersionArg: ""
-  releaseSourceVersionArg: ""
+  - name: projectPath
+    type: string
+    default: ""
+  - name: projectName
+    type: string
+    default: ""
+  - name: buildConfiguration
+    type: string
+    default: "Release"
+    values:
+      - Release
+      - Debug
+  - name: dotNetVersion
+    type: string
+    default: "10.x"
+  - name: useLocalNuGet
+    type: boolean
+    default: false
+  - name: nugetArtifact
+    type: string
+    default: "localnuget"
+  - name: nugetArtifactDownloadPath
+    type: string
+    default: "$(Build.SourcesDirectory)/localnuget"
+  - name: publishOutput
+    type: boolean
+    default: false
+  - name: runTests
+    type: boolean
+    default: false
+  - name: checkFormatting
+    type: boolean
+    default: false
+  - name: testResultsDirectory
+    type: string
+    default: ""
+  - name: releaseVersionArg
+    type: string
+    default: ""
+  - name: releaseSourceVersionArg
+    type: string
+    default: ""
 
 steps:
   - task: UseDotNet@2

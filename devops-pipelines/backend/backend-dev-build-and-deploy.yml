@@ -2,7 +2,7 @@ trigger:
   batch: true
   branches:
     include:
-      - main
+      - development
   paths:
     include:
       - backend/*
@@ -21,7 +21,6 @@ parameters:
 pr: none
 
 variables:
-  - group: lacc-deployment-global
   - name: buildConfiguration
     value: "Release"
   - name: dotNetVersion
@@ -95,8 +94,6 @@ stages:
                   useLocalNuGet: true
                   ${{ if eq(parameters.deployMainApi, true) }}:
                     publishOutput: true
-                    releaseVersionArg: "/p:Version=$(releaseVersion)"
-                    releaseSourceVersionArg: "/p:SourceRevisionId=$(Build.SourceVersion)"
                   ${{ else }}:
                     publishOutput: false
                   runTests: false
@@ -137,44 +134,11 @@ stages:
                   useLocalNuGet: true
                   publishOutput: true
                   runTests: false
-                  releaseVersionArg: "/p:Version=$(releaseVersion)"
-                  releaseSourceVersionArg: "/p:SourceRevisionId=$(Build.SourceVersion)"
 
-  # Deployment stages:
+  # Deploy to the dev environment
   - template: ../templates/backend-deploy-stages.yml
     parameters:
-      environment: staging
-      deployToSlot: true
-      slotName: "stg"
-      runPostmanSmokeTest: true
-      deployMainApi: ${{ parameters.deployMainApi }}
-      deployFiletransfer: ${{ parameters.deployFiletransfer }}
-      deployDB: ${{ parameters.deployDB }}
-
-  - stage: Release_Gate
-    displayName: "Release Gate"
-    jobs:
-      - job: Manual_Validation
-        pool: server
-        timeoutInMinutes: 6500
-        steps:
-          - task: ManualValidation@1
-            displayName: Request Validation
-            timeoutInMinutes: 6480
-            inputs:
-              notifyUsers: $(prodNotifyUsers)
-              approvers: $(prodApprovers)
-              allowApproversToApproveTheirOwnRuns: true
-              instructions: "Approval is required to deploy to production."
-              onTimeout: "reject"
-
-  - template: ../templates/backend-deploy-stages.yml
-    parameters:
-      environment: prod
-      agentPool: "LACC Prod Pool"
-      azureSubscription: "Azure Pipeline: Large and Complex Cases - Prod"
-      deployToSlot: true
-      slotName: "stg"
+      environment: dev
       deployMainApi: ${{ parameters.deployMainApi }}
       deployFiletransfer: ${{ parameters.deployFiletransfer }}
       deployDB: ${{ parameters.deployDB }}
