@@ -356,7 +356,7 @@ public class DeleteFilesTests
     }
 
     [Fact]
-    public async Task Run_RecordsAllFilesAsDeletionErrors_WhenDeletedFilesIsEmpty()
+    public async Task Run_DoesNotRecordDeletionErrors_WhenDeletedFilesIsEmptyAndAllSuccessful()
     {
         var payload = CreateEgressToNetAppPayload();
         var items = CreateCompletedItems(("file1.txt", "f1"), ("file2.txt", "f2"));
@@ -373,19 +373,42 @@ public class DeleteFilesTests
             c => c.DeleteMovedItemsCompleted(
                 It.IsAny<DurableTaskClient>(),
                 payload.TransferId,
-                It.Is<List<DeletionError>>(errors =>
-                    errors.Count == 2 &&
-                    errors.Any(e => e.FileId == "f1") &&
-                    errors.Any(e => e.FileId == "f2")),
+                It.Is<List<DeletionError>>(errors => errors.Count == 0),
                 It.IsAny<CancellationToken>()),
             Times.Once);
 
         _telemetryClientMock.Verify(
             t => t.TrackEvent(It.Is<FilesDeletedEvent>(e =>
-                e.TotalFilesDeleted == 0 &&
-                e.TotalFilesFailedToDelete == 2 &&
-                !e.IsSuccessful &&
-                e.FailureReasons == "File was not confirmed deleted by Egress. (2)")),
+                e.TotalFilesDeleted == 2 &&
+                e.TotalFilesFailedToDelete == 0 &&
+                e.IsSuccessful &&
+                string.IsNullOrEmpty(e.FailureReasons))),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task Run_RecordsAllFilesAsDeletionErrors_WhenDeletedFilesIsEmptyAndNotAllSuccessful()
+    {
+        var payload = CreateEgressToNetAppPayload();
+        var items = CreateCompletedItems(("file1.txt", "f1"), ("file2.txt", "f2"));
+        SetupDeleteRun(payload, items, new DeleteFilesResult
+        {
+            AllSuccessful = false,
+            DeletedFiles = [],
+            FailedFiles = []
+        });
+
+        await _activity.Run(payload, _durableTaskClientStub, CancellationToken.None);
+
+        _transferEntityHelperMock.Verify(
+            c => c.DeleteMovedItemsCompleted(
+                It.IsAny<DurableTaskClient>(),
+                payload.TransferId,
+                It.Is<List<DeletionError>>(errors =>
+                    errors.Count == 2 &&
+                    errors.Any(e => e.FileId == "f1") &&
+                    errors.Any(e => e.FileId == "f2")),
+                It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -406,7 +429,7 @@ public class DeleteFilesTests
 
         SetupDeleteRun(payload, items, new DeleteFilesResult
         {
-            AllSuccessful = true,
+            AllSuccessful = false,
             DeletedFiles = items.Take(10).Select(x => x.FileId!).ToList(),
             FailedFiles = []
         });
@@ -477,7 +500,7 @@ public class DeleteFilesTests
         var items = CreateCompletedItems(("file1.txt", "f1"), ("file2.txt", "f2"), ("file3.txt", "f3"));
         SetupDeleteRun(payload, items, new DeleteFilesResult
         {
-            AllSuccessful = true,
+            AllSuccessful = false,
             DeletedFiles = ["deleted", "f2"],
             FailedFiles = []
         });
