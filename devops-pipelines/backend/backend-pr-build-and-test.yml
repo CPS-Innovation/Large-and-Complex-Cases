@@ -133,6 +133,6 @@ stages:
                   projectName: "lacc-filetransfer-api-drop"
                   buildConfiguration: $(buildConfiguration)
                   dotNetVersion: $(dotNetVersion)
-                  useLocalNuGet: false
+                  useLocalNuGet: true
                   publishOutput: false
                   runTests: false
