@@ -316,11 +316,12 @@ test.describe("Case Search/Results", async () => {
       ).not.toBeVisible();
       await expect(page.getByText("Loading...")).not.toBeVisible();
       await expect(page).toHaveURL("/unauthorised");
-      await expect(page.locator("h1")).toHaveText("Unauthorised");
-      await expect(page.getByText("Your session has timed out.")).toBeVisible();
+      await expect(page.locator("h1")).toHaveText(
+        "You cannot access this service",
+      );
       await expect(
         page.getByText(
-          "Please close this tab and re-launch the homepage screen from CMS Classic.",
+          "Close this tab and open the homepage again from CMS Classic.",
         ),
       ).toBeVisible();
     });
@@ -669,11 +670,12 @@ test.describe("Case Search/Results", async () => {
       await expect(page.getByText("Loading...")).toBeVisible();
       await expect(page.getByText("Loading...")).not.toBeVisible();
       await expect(page).toHaveURL("/unauthorised");
-      await expect(page.locator("h1")).toHaveText("Unauthorised");
-      await expect(page.getByText("Your session has timed out.")).toBeVisible();
+      await expect(page.locator("h1")).toHaveText(
+        "You cannot access this service",
+      );
       await expect(
         page.getByText(
-          "Please close this tab and re-launch the homepage screen from CMS Classic.",
+          "Close this tab and open the homepage again from CMS Classic.",
         ),
       ).toBeVisible();
     });
