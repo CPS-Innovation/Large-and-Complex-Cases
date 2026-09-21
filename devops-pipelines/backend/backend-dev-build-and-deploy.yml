@@ -29,7 +29,6 @@ variables:
     value: "10.0.*"
   - name: asposeLicenceFileName
     value: "Aspose.Total.NET.lic"
-  - group: lacc-deployment-global
 
 stages:
   - stage: Build_Local_NuGet
@@ -132,8 +131,6 @@ stages:
                   useLocalNuGet: true
                   publishOutput: true
                   runTests: false
-                  releaseVersionArg: "/p:Version=$(releaseVersion)"
-                  releaseSourceVersionArg: "/p:SourceRevisionId=$(Build.SourceVersion)"
 
   # Deploy to the dev environment
   - template: ../templates/backend-deploy-stages.yml
