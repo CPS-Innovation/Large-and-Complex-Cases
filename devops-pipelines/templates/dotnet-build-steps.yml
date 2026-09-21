@@ -5,13 +5,6 @@ parameters:
   - name: projectName
     type: string
     default: ""
-  - name: buildConfiguration
-    type: string
-    default: $(buildConfiguration)
-    values:
-      - $(buildConfiguration)
-      - Release
-      - Debug
   - name: dotNetVersion
     type: string
     default: "10.x"
@@ -44,10 +37,6 @@ parameters:
     default: ""
 
 steps:
-  - script: |
-      echo "Build configuration: ${{ parameters.buildConfiguration }}"
-    displayName: "Test input"
-
   - task: UseDotNet@2
     displayName: "Use .NET SDK"
     inputs:
@@ -135,7 +124,7 @@ steps:
       command: "build"
       projects: "${{ parameters.projectPath }}"
       arguments: >
-        --configuration ${{ parameters.buildConfiguration }}
+        --configuration $(buildConfiguration)
         --no-restore
         ${{ parameters.releaseSourceVersionArg }}
         ${{ parameters.releaseVersionArg }}
@@ -148,7 +137,7 @@ steps:
           command: "test"
           projects: "${{ parameters.projectPath }}"
           arguments: >
-            --configuration ${{ parameters.buildConfiguration }}
+            --configuration $(buildConfiguration)
             --no-build
             --collect "XPlat Code Coverage;Format=cobertura"
             --settings "$(Build.SourcesDirectory)/backend/CodeCoverage.runsettings"
@@ -175,7 +164,7 @@ steps:
           projects: "${{ parameters.projectPath }}"
           publishWebProjects: false
           arguments: >
-            --configuration ${{ parameters.buildConfiguration }}
+            --configuration $(buildConfiguration)
             --output $(Build.ArtifactStagingDirectory)/${{ parameters.projectName }}
             --no-restore
             --no-build

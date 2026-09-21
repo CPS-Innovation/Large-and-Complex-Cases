@@ -43,7 +43,6 @@ stages:
             parameters:
               projectPath: "backend/CPS.ComplexCases.API.HttpTelemetry/CPS.ComplexCases.API.HttpTelemetry.csproj"
               projectName: "HttpTelemetry"
-              buildConfiguration: $(buildConfiguration)
               dotNetVersion: $(dotNetVersion)
               useLocalNuGet: false
               publishOutput: false
@@ -87,7 +86,6 @@ stages:
                 parameters:
                   projectPath: "backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj"
                   projectName: "lacc-main-api-drop"
-                  buildConfiguration: $(buildConfiguration)
                   dotNetVersion: $(dotNetVersion)
                   useLocalNuGet: true
                   publishOutput: false
@@ -131,7 +129,6 @@ stages:
                 parameters:
                   projectPath: "backend/CPS.ComplexCases.FileTransfer.API/CPS.ComplexCases.FileTransfer.API.csproj"
                   projectName: "lacc-filetransfer-api-drop"
-                  buildConfiguration: $(buildConfiguration)
                   dotNetVersion: $(dotNetVersion)
                   useLocalNuGet: true
                   publishOutput: false
