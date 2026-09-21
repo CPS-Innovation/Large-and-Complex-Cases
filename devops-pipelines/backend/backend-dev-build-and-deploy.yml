@@ -29,6 +29,7 @@ variables:
     value: "10.0.*"
   - name: asposeLicenceFileName
     value: "Aspose.Total.NET.lic"
+  - group: lacc-deployment-global
 
 stages:
   - stage: Build_Local_NuGet
