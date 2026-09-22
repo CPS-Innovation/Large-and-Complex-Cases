@@ -273,20 +273,33 @@ public class EgressStorageClient(
             };
 
             var result = await SendRequestAsync<DeleteFilesResponse>(_egressRequestFactory.DeleteFilesRequest(deleteArg, token));
-            allSuccessful &= result.AllSuccessful;
-
             var files = result.Files ?? [];
+            var failedResults = files.Where(x => x.Code > 0).ToList();
 
-            deletedFiles.AddRange(files
-                .Where(x => x.Code == 0)
-                .Select(x => x.FileId ?? x.Filename ?? "deleted"));
-
-            failedFiles.AddRange(files.Where(x => x.Code > 0).Select(x => new FailedFileDeletion
+            failedFiles.AddRange(failedResults.Select(x => new FailedFileDeletion
             {
-                FileId = x.FileId ?? x.Filename ?? string.Empty,
+                FileId = x.ResolvedFileId ?? string.Empty,
                 Filename = x.Filename ?? string.Empty,
                 Reason = GetDeleteFailureReason(x)
             }));
+
+            if (result.AllSuccessful && failedResults.Count == 0)
+            {
+                // Egress often returns HTTP 200 / all_successful without per-file
+                // `file_id` values (it uses `id`, or omits the files array). Trust
+                // that overall success and treat the requested IDs as deleted so
+                // move transfers are not marked PartiallyCompleted.
+                deletedFiles.AddRange(chunk);
+                continue;
+            }
+
+            allSuccessful &= result.AllSuccessful;
+
+            deletedFiles.AddRange(files
+                .Where(x => x.Code == 0)
+                .Select(x => x.ResolvedFileId)
+                .Where(id => !string.IsNullOrEmpty(id))
+                .Select(id => id!));
         }
 
         return new DeleteFilesResult

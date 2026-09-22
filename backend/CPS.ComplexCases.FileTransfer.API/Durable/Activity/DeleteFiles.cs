@@ -79,10 +79,13 @@ public class DeleteFiles(ITransferEntityHelper transferEntityHelper, IStorageCli
             if (deletionErrors.Count != 0)
             {
                 _logger.LogWarning(
-                    "Failed to delete {FailedCount} of {RequestedCount} files for transfer ID {TransferId}.",
+                    "Failed to delete {FailedCount} of {RequestedCount} files for transfer ID {TransferId}. AllSuccessful={AllSuccessful}, DeletedIdentifiers={DeletedCount}, FailedIdentifiers={FailedApiCount}.",
                     deletionErrors.Count,
                     filesToDelete.Count,
-                    payload.TransferId);
+                    payload.TransferId,
+                    result.AllSuccessful,
+                    (result.DeletedFiles ?? []).Count,
+                    (result.FailedFiles ?? []).Count);
             }
             else
             {
@@ -153,7 +156,21 @@ public class DeleteFiles(ITransferEntityHelper transferEntityHelper, IStorageCli
             }
         }
 
-        foreach (var file in filesToDelete.Where(file => !IsAccountedFor(file, accountedIdentifiers)))
+        var unaccountedFiles = filesToDelete.Where(file => !IsAccountedFor(file, accountedIdentifiers)).ToList();
+        if (unaccountedFiles.Count == 0)
+        {
+            return deletionErrors;
+        }
+
+        // Egress confirms overall success (all_successful / no failed files) without
+        // returning identifiers we can match. Do not treat that as a source-delete
+        // failure — that incorrectly marks a successful move as PartiallyCompleted.
+        if (failedFiles.Count == 0 && result.AllSuccessful)
+        {
+            return deletionErrors;
+        }
+
+        foreach (var file in unaccountedFiles)
         {
             deletionErrors.Add(new DeletionError
             {

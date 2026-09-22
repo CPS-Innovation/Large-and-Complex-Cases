@@ -367,13 +367,12 @@ public class EgressStorageClientTests : IDisposable
         var result = await _client.DeleteFilesAsync(filesToDelete, workspaceId);
 
         Assert.True(result.AllSuccessful);
-        Assert.Equal(2, result.DeletedFiles!.Count);
-        Assert.Equal(["file1.txt", "file2.txt"], result.DeletedFiles);
+        Assert.Equal(["file-1", "file-2"], result.DeletedFiles);
         Assert.Empty(result.FailedFiles!);
     }
 
     [Fact]
-    public async Task DeleteFilesAsync_WithCodeZeroAndNullFileIdAndFilename_UsesDeletedFallback()
+    public async Task DeleteFilesAsync_WithCodeZeroAndNullFileIdAndFilename_UsesRequestedFileIds()
     {
         var workspaceId = _fixture.Create<string>();
         var token = _fixture.Create<string>();
@@ -397,7 +396,8 @@ public class EgressStorageClientTests : IDisposable
 
         var result = await _client.DeleteFilesAsync(filesToDelete, workspaceId);
 
-        Assert.Equal(["deleted"], result.DeletedFiles);
+        Assert.True(result.AllSuccessful);
+        Assert.Equal(["file-1"], result.DeletedFiles);
         Assert.Empty(result.FailedFiles!);
     }
 
@@ -711,7 +711,7 @@ public class EgressStorageClientTests : IDisposable
     }
 
     [Fact]
-    public async Task DeleteFilesAsync_WhenEgressOmitsFiles_ReturnsNotAllSuccessful()
+    public async Task DeleteFilesAsync_WhenEgressOmitsFiles_TreatsRequestedIdsAsDeleted()
     {
         var workspaceId = _fixture.Create<string>();
         var token = _fixture.Create<string>();
@@ -736,8 +736,61 @@ public class EgressStorageClientTests : IDisposable
 
         var result = await _client.DeleteFilesAsync(filesToDelete, workspaceId);
 
-        Assert.False(result.AllSuccessful);
-        Assert.Equal(["file-1"], result.DeletedFiles);
+        Assert.True(result.AllSuccessful);
+        Assert.Equal(["file-1", "file-2"], result.DeletedFiles);
+        Assert.Empty(result.FailedFiles!);
+    }
+
+    [Fact]
+    public async Task DeleteFilesAsync_WhenEgressOmitsFilesArray_TreatsRequestedIdsAsDeleted()
+    {
+        var workspaceId = _fixture.Create<string>();
+        var token = _fixture.Create<string>();
+        var filesToDelete = new List<DeletionEntityDto>
+        {
+            new() { Path = "folder/file1.txt", FileId = "6a7b09840b11b5e3185286b7" }
+        };
+
+        SetupTokenRequest(token);
+        SetupDeleteFilesRequest(workspaceId, token);
+        SetupHttpMockResponses(
+            ("token", new GetWorkspaceTokenResponse { Token = token }),
+            ("delete", new { all_successful = true }));
+
+        var result = await _client.DeleteFilesAsync(filesToDelete, workspaceId);
+
+        Assert.True(result.AllSuccessful);
+        Assert.Equal(["6a7b09840b11b5e3185286b7"], result.DeletedFiles);
+        Assert.Empty(result.FailedFiles!);
+    }
+
+    [Fact]
+    public async Task DeleteFilesAsync_WhenEgressReturnsIdInsteadOfFileId_TreatsRequestedIdsAsDeleted()
+    {
+        var workspaceId = _fixture.Create<string>();
+        var token = _fixture.Create<string>();
+        var filesToDelete = new List<DeletionEntityDto>
+        {
+            new() { Path = "1. ABEs for Transcript/Free_Test_Data_10.5MB_PDF.pdf", FileId = "6a7b09840b11b5e3185286b7" }
+        };
+
+        SetupTokenRequest(token);
+        SetupDeleteFilesRequest(workspaceId, token);
+        SetupHttpMockResponses(
+            ("token", new GetWorkspaceTokenResponse { Token = token }),
+            ("delete", new
+            {
+                all_successful = true,
+                files = new[]
+                {
+                    new { code = 0, id = "6a7b09840b11b5e3185286b7", filename = "Free_Test_Data_10.5MB_PDF.pdf", is_folder = false }
+                }
+            }));
+
+        var result = await _client.DeleteFilesAsync(filesToDelete, workspaceId);
+
+        Assert.True(result.AllSuccessful);
+        Assert.Equal(["6a7b09840b11b5e3185286b7"], result.DeletedFiles);
         Assert.Empty(result.FailedFiles!);
     }
 
