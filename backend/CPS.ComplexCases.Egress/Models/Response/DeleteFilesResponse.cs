@@ -8,7 +8,11 @@ public class DeleteFilesResponse
     public bool AllSuccessful { get; set; }
     [JsonPropertyName("files")]
     public List<DeletedFileResult> Files { get; set; } = [];
+    [JsonPropertyName("results")]
+    public List<DeletedFileResult> Results { get; set; } = [];
 
+    [JsonIgnore]
+    public List<DeletedFileResult> Items => Results.Count > 0 ? Results : Files;
 }
 
 public class DeletedFileResult
