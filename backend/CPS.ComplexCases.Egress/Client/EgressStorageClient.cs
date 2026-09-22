@@ -1,4 +1,5 @@
 using System.Net;
+using System.Text.Json;
 using CPS.ComplexCases.Common.Extensions;
 using CPS.ComplexCases.Common.Models.Domain;
 using CPS.ComplexCases.Common.Models.Domain.Dtos;
@@ -272,9 +273,25 @@ public class EgressStorageClient(
                 FileIds = [.. chunk]
             };
 
-            var result = await SendRequestAsync<DeleteFilesResponse>(_egressRequestFactory.DeleteFilesRequest(deleteArg, token));
-            var files = result.Files ?? [];
+            using var response = await SendRequestAsync(_egressRequestFactory.DeleteFilesRequest(deleteArg, token));
+            var responseContent = await response.Content.ReadAsStringAsync();
+            var result = JsonSerializer.Deserialize<DeleteFilesResponse>(responseContent)
+                         ?? throw new InvalidOperationException("Deserialization returned null.");
+            allSuccessful &= result.AllSuccessful;
+
+            var files = result.Items ?? [];
+            if (files.Count == 0)
+            {
+                _logger.LogWarning(
+                    "Egress bulk delete returned no per-file confirmations for workspace {WorkspaceId}. AllSuccessful={AllSuccessful}, RequestedCount={RequestedCount}, Response={Response}",
+                    workspaceId,
+                    result.AllSuccessful,
+                    chunk.Length,
+                    responseContent);
+            }
+
             var failedResults = files.Where(x => x.Code > 0).ToList();
+            var successfulResults = files.Where(x => x.Code == 0).ToList();
 
             failedFiles.AddRange(failedResults.Select(x => new FailedFileDeletion
             {
@@ -283,23 +300,24 @@ public class EgressStorageClient(
                 Reason = GetDeleteFailureReason(x)
             }));
 
-            if (result.AllSuccessful && failedResults.Count == 0)
-            {
-                // Egress often returns HTTP 200 / all_successful without per-file
-                // `file_id` values (it uses `id`, or omits the files array). Trust
-                // that overall success and treat the requested IDs as deleted so
-                // move transfers are not marked PartiallyCompleted.
-                deletedFiles.AddRange(chunk);
-                continue;
-            }
-
-            allSuccessful &= result.AllSuccessful;
-
-            deletedFiles.AddRange(files
-                .Where(x => x.Code == 0)
+            var identifiedDeleted = successfulResults
                 .Select(x => x.ResolvedFileId)
                 .Where(id => !string.IsNullOrEmpty(id))
-                .Select(id => id!));
+                .Select(id => id!)
+                .ToList();
+            deletedFiles.AddRange(identifiedDeleted);
+
+            // A code-0 file/result entry with no id still counts as a confirmed delete. Pair leftover
+            // requested ids to those unidentified successes. An empty files/results list does not —
+            // AllSuccessful with no per-file rows must not be treated as deleted
+            var unidentifiedSuccessCount = successfulResults.Count - identifiedDeleted.Count;
+            if (unidentifiedSuccessCount > 0)
+            {
+                var remainingRequestedIds = chunk.Where(id =>
+                    !identifiedDeleted.Contains(id, StringComparer.OrdinalIgnoreCase) &&
+                    failedResults.All(f => !id.Equals(f.ResolvedFileId, StringComparison.OrdinalIgnoreCase)));
+                deletedFiles.AddRange(remainingRequestedIds.Take(unidentifiedSuccessCount));
+            }
         }
 
         return new DeleteFilesResult

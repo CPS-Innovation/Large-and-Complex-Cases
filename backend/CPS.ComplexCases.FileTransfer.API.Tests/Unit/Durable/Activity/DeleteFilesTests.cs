@@ -356,7 +356,7 @@ public class DeleteFilesTests
     }
 
     [Fact]
-    public async Task Run_DoesNotRecordDeletionErrors_WhenDeletedFilesIsEmptyAndAllSuccessful()
+    public async Task Run_RecordsAllFilesAsDeletionErrors_WhenDeletedFilesIsEmpty()
     {
         var payload = CreateEgressToNetAppPayload();
         var items = CreateCompletedItems(("file1.txt", "f1"), ("file2.txt", "f2"));
@@ -373,16 +373,19 @@ public class DeleteFilesTests
             c => c.DeleteMovedItemsCompleted(
                 It.IsAny<DurableTaskClient>(),
                 payload.TransferId,
-                It.Is<List<DeletionError>>(errors => errors.Count == 0),
+                It.Is<List<DeletionError>>(errors =>
+                    errors.Count == 2 &&
+                    errors.Any(e => e.FileId == "f1") &&
+                    errors.Any(e => e.FileId == "f2")),
                 It.IsAny<CancellationToken>()),
             Times.Once);
 
         _telemetryClientMock.Verify(
             t => t.TrackEvent(It.Is<FilesDeletedEvent>(e =>
-                e.TotalFilesDeleted == 2 &&
-                e.TotalFilesFailedToDelete == 0 &&
-                e.IsSuccessful &&
-                string.IsNullOrEmpty(e.FailureReasons))),
+                e.TotalFilesDeleted == 0 &&
+                e.TotalFilesFailedToDelete == 2 &&
+                !e.IsSuccessful &&
+                e.FailureReasons == "File was not confirmed deleted by Egress. (2)")),
             Times.Once);
     }
 
@@ -429,7 +432,7 @@ public class DeleteFilesTests
 
         SetupDeleteRun(payload, items, new DeleteFilesResult
         {
-            AllSuccessful = false,
+            AllSuccessful = true,
             DeletedFiles = items.Take(10).Select(x => x.FileId!).ToList(),
             FailedFiles = []
         });
@@ -500,7 +503,7 @@ public class DeleteFilesTests
         var items = CreateCompletedItems(("file1.txt", "f1"), ("file2.txt", "f2"), ("file3.txt", "f3"));
         SetupDeleteRun(payload, items, new DeleteFilesResult
         {
-            AllSuccessful = false,
+            AllSuccessful = true,
             DeletedFiles = ["deleted", "f2"],
             FailedFiles = []
         });

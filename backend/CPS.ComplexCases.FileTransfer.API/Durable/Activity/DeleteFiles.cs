@@ -162,14 +162,8 @@ public class DeleteFiles(ITransferEntityHelper transferEntityHelper, IStorageCli
             return deletionErrors;
         }
 
-        // Egress confirms overall success (all_successful / no failed files) without
-        // returning identifiers we can match. Do not treat that as a source-delete
-        // failure — that incorrectly marks a successful move as PartiallyCompleted.
-        if (failedFiles.Count == 0 && result.AllSuccessful)
-        {
-            return deletionErrors;
-        }
-
+        // compare confirmed deletes against the requested count. AllSuccessful with
+        // no DeletedFiles (for example an unknown file id) must still record DeletionErrors.
         foreach (var file in unaccountedFiles)
         {
             deletionErrors.Add(new DeletionError
