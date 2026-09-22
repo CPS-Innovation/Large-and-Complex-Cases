@@ -390,6 +390,32 @@ public class DeleteFilesTests
     }
 
     [Fact]
+    public async Task Run_RecordsAllFilesAsDeletionErrors_WhenDeletedFilesIsEmptyAndNotAllSuccessful()
+    {
+        var payload = CreateEgressToNetAppPayload();
+        var items = CreateCompletedItems(("file1.txt", "f1"), ("file2.txt", "f2"));
+        SetupDeleteRun(payload, items, new DeleteFilesResult
+        {
+            AllSuccessful = false,
+            DeletedFiles = [],
+            FailedFiles = []
+        });
+
+        await _activity.Run(payload, _durableTaskClientStub, CancellationToken.None);
+
+        _transferEntityHelperMock.Verify(
+            c => c.DeleteMovedItemsCompleted(
+                It.IsAny<DurableTaskClient>(),
+                payload.TransferId,
+                It.Is<List<DeletionError>>(errors =>
+                    errors.Count == 2 &&
+                    errors.Any(e => e.FileId == "f1") &&
+                    errors.Any(e => e.FileId == "f2")),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
     public async Task Run_RecordsMissingFilesAsDeletionErrors_WhenDeletedFilesCountIsLessThanRequested()
     {
         var payload = CreateEgressToNetAppPayload();

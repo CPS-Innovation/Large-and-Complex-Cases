@@ -442,6 +442,69 @@ public class UpdateActivityLogTests
     }
 
     [Fact]
+    public async Task Run_MapsDeletionErrorFileIdToSourcePath_WhenSuccessfulItemExists()
+    {
+        var transferId = Guid.NewGuid();
+        var userName = _fixture.Create<string>();
+        var caseId = _fixture.Create<int>();
+        const string fileId = "6a7b09840b11b5e3185286b7";
+        const string sourcePath = "1. ABEs for Transcript/Free_Test_Data_10.5MB_PDF.pdf";
+
+        var entityState = new TransferEntity
+        {
+            Id = transferId,
+            CaseId = caseId,
+            Direction = TransferDirection.EgressToNetApp,
+            TransferType = TransferType.Move,
+            TotalFiles = 1,
+            BearerToken = _bearerToken,
+            SourcePaths = [new TransferSourcePath { FullFilePath = sourcePath, Path = sourcePath }],
+            SuccessfulItems =
+            [
+                new TransferItem
+                {
+                    SourcePath = sourcePath,
+                    FileId = fileId,
+                    Size = 11081517,
+                    IsRenamed = false,
+                    Status = TransferItemStatus.Completed
+                }
+            ],
+            DeletionErrors =
+            [
+                new DeletionError { FileId = fileId, ErrorMessage = "File was not confirmed deleted by Egress." }
+            ],
+            DestinationPath = "/dest/path",
+        };
+
+        _durableEntityClientStub.OnGetEntityAsync = (_, _) =>
+            Task.FromResult<EntityMetadata<TransferEntity>?>(new EntityMetadata<TransferEntity>(
+                new EntityInstanceId("TransferEntity", transferId.ToString()),
+                entityState
+            ));
+
+        var payload = new UpdateActivityLogPayload
+        {
+            TransferId = transferId.ToString(),
+            ActionType = ActionType.TransferCompleted,
+            UserName = userName
+        };
+
+        await _activity.Run(payload, _durableTaskClientStub);
+
+        _activityLogServiceMock.Verify(service => service.CreateActivityLogAsync(
+            payload.ActionType,
+            ResourceType.FileTransfer,
+            caseId,
+            entityState.Id.ToString(),
+            entityState.Direction.ToString(),
+            userName,
+            It.Is<JsonDocument>(doc =>
+                doc.RootElement.GetProperty("errors")[0].GetProperty("path").GetString() == sourcePath)
+        ), Times.Once);
+    }
+
+    [Fact]
     public async Task Run_DoesNotIncludeDeletionErrors_WhenTransferTypeIsCopy()
     {
         // Arrange

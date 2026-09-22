@@ -79,10 +79,13 @@ public class DeleteFiles(ITransferEntityHelper transferEntityHelper, IStorageCli
             if (deletionErrors.Count != 0)
             {
                 _logger.LogWarning(
-                    "Failed to delete {FailedCount} of {RequestedCount} files for transfer ID {TransferId}.",
+                    "Failed to delete {FailedCount} of {RequestedCount} files for transfer ID {TransferId}. AllSuccessful={AllSuccessful}, DeletedIdentifiers={DeletedCount}, FailedIdentifiers={FailedApiCount}.",
                     deletionErrors.Count,
                     filesToDelete.Count,
-                    payload.TransferId);
+                    payload.TransferId,
+                    result.AllSuccessful,
+                    (result.DeletedFiles ?? []).Count,
+                    (result.FailedFiles ?? []).Count);
             }
             else
             {
@@ -153,7 +156,15 @@ public class DeleteFiles(ITransferEntityHelper transferEntityHelper, IStorageCli
             }
         }
 
-        foreach (var file in filesToDelete.Where(file => !IsAccountedFor(file, accountedIdentifiers)))
+        var unaccountedFiles = filesToDelete.Where(file => !IsAccountedFor(file, accountedIdentifiers)).ToList();
+        if (unaccountedFiles.Count == 0)
+        {
+            return deletionErrors;
+        }
+
+        // compare confirmed deletes against the requested count. AllSuccessful with
+        // no DeletedFiles (for example an unknown file id) must still record DeletionErrors.
+        foreach (var file in unaccountedFiles)
         {
             deletionErrors.Add(new DeletionError
             {

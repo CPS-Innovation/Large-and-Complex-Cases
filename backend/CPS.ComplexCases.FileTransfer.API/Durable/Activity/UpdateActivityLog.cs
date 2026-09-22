@@ -116,7 +116,7 @@ public class UpdateActivityLog(IActivityLogService activityLogService, ILogger<U
         {
             deletionErrors = entity.State.DeletionErrors.Select(x => new FileTransferError
             {
-                Path = x.FileId,
+                Path = ResolveDeletionErrorPath(entity.State.SuccessfulItems, x.FileId),
                 ErrorMessage = x.ErrorMessage
             }).ToList();
             errorItems.AddRange(deletionErrors);
@@ -169,5 +169,14 @@ public class UpdateActivityLog(IActivityLogService activityLogService, ILogger<U
         }
 
         return $"{root}/{relative}";
+    }
+
+    private static string ResolveDeletionErrorPath(IEnumerable<TransferItem> successfulItems, string fileId)
+    {
+        var matchingItem = successfulItems.FirstOrDefault(item =>
+            !string.IsNullOrEmpty(item.FileId) &&
+            item.FileId.Equals(fileId, StringComparison.OrdinalIgnoreCase));
+
+        return matchingItem?.SourcePath ?? fileId;
     }
 }
