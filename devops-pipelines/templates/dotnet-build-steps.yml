@@ -31,10 +31,16 @@ parameters:
     default: ""
   - name: releaseVersionArg
     type: string
-    default: ""
+    default: " "
+    values:
+      - " "
+      - "/p:Version=$(releaseVersion)"
   - name: releaseSourceVersionArg
     type: string
-    default: ""
+    default: " "
+    values:
+      - " "
+      - "/p:SourceRevisionId=$(Build.SourceVersion)"
 
 steps:
   - task: UseDotNet@2
