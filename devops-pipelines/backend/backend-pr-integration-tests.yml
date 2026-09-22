@@ -3,7 +3,6 @@ trigger: none
 pr:
   branches:
     include:
-      - main
       - development
   paths:
     include:
