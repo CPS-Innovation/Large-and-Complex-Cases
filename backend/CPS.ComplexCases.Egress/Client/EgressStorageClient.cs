@@ -309,7 +309,7 @@ public class EgressStorageClient(
 
             // A code-0 file/result entry with no id still counts as a confirmed delete. Pair leftover
             // requested ids to those unidentified successes. An empty files/results list does not —
-            // AllSuccessful with no per-file rows must not be treated as deleted (AC 2).
+            // AllSuccessful with no per-file rows must not be treated as deleted
             var unidentifiedSuccessCount = successfulResults.Count - identifiedDeleted.Count;
             if (unidentifiedSuccessCount > 0)
             {

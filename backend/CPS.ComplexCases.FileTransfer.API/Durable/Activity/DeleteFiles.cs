@@ -162,7 +162,7 @@ public class DeleteFiles(ITransferEntityHelper transferEntityHelper, IStorageCli
             return deletionErrors;
         }
 
-        // AC 2: compare confirmed deletes against the requested count. AllSuccessful with
+        // compare confirmed deletes against the requested count. AllSuccessful with
         // no DeletedFiles (for example an unknown file id) must still record DeletionErrors.
         foreach (var file in unaccountedFiles)
         {
