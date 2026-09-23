@@ -8,7 +8,11 @@ public class DeleteFilesResponse
     public bool AllSuccessful { get; set; }
     [JsonPropertyName("files")]
     public List<DeletedFileResult> Files { get; set; } = [];
+    [JsonPropertyName("results")]
+    public List<DeletedFileResult> Results { get; set; } = [];
 
+    [JsonIgnore]
+    public List<DeletedFileResult> Items => Results.Count > 0 ? Results : Files;
 }
 
 public class DeletedFileResult
@@ -21,6 +25,16 @@ public class DeletedFileResult
     public string? Filename { get; set; }
     [JsonPropertyName("file_id")]
     public string? FileId { get; set; }
+    // Egress list/document APIs identify files as `id`. Bulk delete responses
+    // use the same field; `file_id` is kept for compatibility if it is sent.
+    [JsonPropertyName("id")]
+    public string? Id { get; set; }
     [JsonPropertyName("is_folder")]
     public bool IsFolder { get; set; }
+
+    [JsonIgnore]
+    public string? ResolvedFileId =>
+        !string.IsNullOrWhiteSpace(FileId) ? FileId
+        : !string.IsNullOrWhiteSpace(Id) ? Id
+        : Filename;
 }

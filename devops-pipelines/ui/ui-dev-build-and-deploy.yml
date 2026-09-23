@@ -1,0 +1,14 @@
+trigger:
+  branches:
+    include:
+      - development
+  paths:
+    include:
+      - ui-spa/*
+
+pr: none
+
+stages:
+  - template: ../templates/ui-build-and-deploy-stages.yml
+    parameters:
+      environment: dev

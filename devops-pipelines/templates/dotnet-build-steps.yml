@@ -1,15 +1,46 @@
 parameters:
-  projectPath: ""
-  projectName: ""
-  buildConfiguration: "Release"
-  dotNetVersion: "10.x"
-  useLocalNuGet: false
-  nugetArtifact: "localnuget"
-  nugetArtifactDownloadPath: "$(Build.SourcesDirectory)/localnuget"
-  publishOutput: false
-  runTests: false
-  checkFormatting: false
-  testResultsDirectory: ""
+  - name: projectPath
+    type: string
+    default: ""
+  - name: projectName
+    type: string
+    default: ""
+  - name: dotNetVersion
+    type: string
+    default: "10.x"
+  - name: useLocalNuGet
+    type: boolean
+    default: false
+  - name: nugetArtifact
+    type: string
+    default: "localnuget"
+  - name: nugetArtifactDownloadPath
+    type: string
+    default: "$(Build.SourcesDirectory)/localnuget"
+  - name: publishOutput
+    type: boolean
+    default: false
+  - name: runTests
+    type: boolean
+    default: false
+  - name: checkFormatting
+    type: boolean
+    default: false
+  - name: testResultsDirectory
+    type: string
+    default: ""
+  - name: releaseVersionArg
+    type: string
+    default: " "
+    values:
+      - " "
+      - "/p:Version=$(releaseVersion)"
+  - name: releaseSourceVersionArg
+    type: string
+    default: " "
+    values:
+      - " "
+      - "/p:SourceRevisionId=$(Build.SourceVersion)"
 
 steps:
   - task: UseDotNet@2
@@ -98,7 +129,11 @@ steps:
     inputs:
       command: "build"
       projects: "${{ parameters.projectPath }}"
-      arguments: "--configuration ${{ parameters.buildConfiguration }} --no-restore"
+      arguments: >
+        --configuration $(buildConfiguration)
+        --no-restore
+        ${{ parameters.releaseSourceVersionArg }}
+        ${{ parameters.releaseVersionArg }}
 
   # Run tests if enabled
   - ${{ if eq(parameters.runTests, true) }}:
@@ -108,7 +143,7 @@ steps:
           command: "test"
           projects: "${{ parameters.projectPath }}"
           arguments: >
-            --configuration ${{ parameters.buildConfiguration }}
+            --configuration $(buildConfiguration)
             --no-build
             --collect "XPlat Code Coverage;Format=cobertura"
             --settings "$(Build.SourcesDirectory)/backend/CodeCoverage.runsettings"
@@ -126,7 +161,7 @@ steps:
           failIfCoverageEmpty: true
         condition: succeededOrFailed()
 
-  # Publish if enabled
+  # Publish if enabled, no build or restore as these are already done in previous steps
   - ${{ if eq(parameters.publishOutput, true) }}:
       - task: DotNetCoreCLI@2
         displayName: "Dotnet Publish ${{ parameters.projectName }}"
@@ -135,12 +170,12 @@ steps:
           projects: "${{ parameters.projectPath }}"
           publishWebProjects: false
           arguments: >
-            --configuration ${{ parameters.buildConfiguration }}
+            --configuration $(buildConfiguration)
             --output $(Build.ArtifactStagingDirectory)/${{ parameters.projectName }}
             --no-restore
+            --no-build
             --self-contained false
             /p:PublishReadyToRun=false
-            /p:SourceRevisionId=$(Build.SourceVersion)
 
       - publish: "$(Build.ArtifactStagingDirectory)/${{ parameters.projectName }}"
         artifact: "${{ parameters.projectName }}-drop"
