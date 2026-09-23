@@ -1,6 +1,6 @@
 schedules:
-  - cron: "0 5 * * Tue-Sat"
-    displayName: "Weekday 5am UTC Api Test"
+  - cron: "0 3 * * Tue-Sat"
+    displayName: "Weekday 3am UTC Api Test"
     branches:
       include:
         - main
