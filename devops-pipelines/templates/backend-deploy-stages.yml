@@ -38,6 +38,7 @@ parameters:
 stages:
   - stage: Deploy_Backend_${{ parameters.environment }}
     displayName: "${{ parameters.environment }} - Deploy Backend Services"
+    dependsOn: ${{ parameters.dependsOn }}
     variables:
       - template: ./variables/backend-deploy-vars.yml
         parameters:

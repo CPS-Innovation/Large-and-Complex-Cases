@@ -136,6 +136,7 @@ stages:
   - template: ../templates/backend-deploy-stages.yml
     parameters:
       environment: dev
+      dependsOn: Build_Backend
       deployMainApi: ${{ parameters.deployMainApi }}
       deployFiletransfer: ${{ parameters.deployFiletransfer }}
       deployDB: ${{ parameters.deployDB }}
