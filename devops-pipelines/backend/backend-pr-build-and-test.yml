@@ -4,20 +4,10 @@ pr:
   branches:
     include:
       - main
+      - development
   paths:
     include:
       - backend/*
-
-parameters:
-  - name: buildDB
-    type: boolean
-    default: true
-  - name: buildMainApi
-    type: boolean
-    default: true
-  - name: buildFiletransfer
-    type: boolean
-    default: true
 
 variables:
   - name: buildConfiguration
@@ -42,7 +32,6 @@ stages:
             parameters:
               projectPath: "backend/CPS.ComplexCases.API.HttpTelemetry/CPS.ComplexCases.API.HttpTelemetry.csproj"
               projectName: "HttpTelemetry"
-              buildConfiguration: $(buildConfiguration)
               dotNetVersion: $(dotNetVersion)
               useLocalNuGet: false
               publishOutput: false
@@ -68,7 +57,6 @@ stages:
             parameters:
               projectPath: "backend/CPS.ComplexCases.sln"
               projectName: "Backend Solution"
-              buildConfiguration: "$(buildConfiguration)"
               dotNetVersion: $(dotNetVersion)
               useLocalNuGet: true
               publishOutput: false

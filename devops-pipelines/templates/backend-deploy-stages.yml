@@ -13,15 +13,6 @@ parameters:
     values:
       - "LACC PreProd Pool"
       - "LACC Prod Pool"
-  - name: requireValidation
-    type: boolean
-    default: false
-  - name: notifyUsers
-    type: string
-    default: ""
-  - name: approvers
-    type: string
-    default: ""
   - name: azureSubscription
     type: string
     default: "Azure Pipeline: Large and Complex Cases - Pre-Prod"
@@ -34,9 +25,9 @@ parameters:
   - name: runPostmanSmokeTest
     type: boolean
     default: false
-  - name: buildStageName
+  - name: dependsOn
     type: string
-    default: "Build_Backend"
+    default: ""
   - name: deployDB
     type: boolean
   - name: deployMainApi
@@ -45,26 +36,9 @@ parameters:
     type: boolean
 
 stages:
-  - ${{ if eq(parameters.requireValidation, true) }}:
-      - stage: Approve_Deployment_${{ parameters.environment }}
-        displayName: "${{ parameters.environment }} - Approve Deployment"
-        jobs:
-          - template: ./manual-validation-jobs.yml
-            parameters:
-              instructions: "Please verify the deployment to the lower environment worked as expected before approving deployment to ${{parameters.environment}}."
-              notifyUsers: ${{ parameters.notifyUsers }}
-              approvers: ${{ parameters.approvers }}
-              agentPool: ${{ parameters.agentPool }}
-
   - stage: Deploy_Backend_${{ parameters.environment }}
-    ${{ if eq(parameters.requireValidation, true) }}:
-      dependsOn:
-        - Approve_Deployment_${{ parameters.environment }}
-        - ${{ parameters.buildStageName }}
-    ${{ else }}:
-      dependsOn:
-        - ${{ parameters.buildStageName }}
     displayName: "${{ parameters.environment }} - Deploy Backend Services"
+    dependsOn: ${{ parameters.dependsOn }}
     variables:
       - template: ./variables/backend-deploy-vars.yml
         parameters:
