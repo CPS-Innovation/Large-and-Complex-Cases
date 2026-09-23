@@ -25,9 +25,9 @@ parameters:
   - name: runPostmanSmokeTest
     type: boolean
     default: false
-  - name: buildStageName
+  - name: dependsOn
     type: string
-    default: "Build_Backend"
+    default: ""
   - name: deployDB
     type: boolean
   - name: deployMainApi
@@ -37,8 +37,6 @@ parameters:
 
 stages:
   - stage: Deploy_Backend_${{ parameters.environment }}
-    dependsOn:
-      - ${{ parameters.buildStageName }}
     displayName: "${{ parameters.environment }} - Deploy Backend Services"
     variables:
       - template: ./variables/backend-deploy-vars.yml

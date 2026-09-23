@@ -9,17 +9,6 @@ pr:
     include:
       - backend/*
 
-parameters:
-  - name: buildDB
-    type: boolean
-    default: true
-  - name: buildMainApi
-    type: boolean
-    default: true
-  - name: buildFiletransfer
-    type: boolean
-    default: true
-
 variables:
   - name: buildConfiguration
     value: "Release"
