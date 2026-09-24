@@ -19,22 +19,11 @@ variables:
   - name: covDir
     value: "coverage"
   - name: prSourceBranch
-    value: variables['System.PullRequest.SourceBranch']
+    value: $[variables['System.PullRequest.SourceBranch']]
   - name: prTargetBranch
-    value: variables['System.PullRequest.TargetBranch']
+    value: $[variables['System.PullRequest.TargetBranch']]
 
 stages:
-  - stage: Test_variables
-    condition: and(
-      eq(variables.prSourceBranch, 'task/FCT2-22102_Phase2-Revise-CICD-for-new-branching-strategy' ),
-      eq(variables.prTargetBranch, 'development' )
-      )
-    jobs:
-      - job: Print_Message
-        steps:
-          - script: |
-              echo "condition met"
-
   - stage: Build_and_Test_UI
     condition: ne(variables.prSourceBranch, 'development' )
     displayName: "Build & Test UI SPA"

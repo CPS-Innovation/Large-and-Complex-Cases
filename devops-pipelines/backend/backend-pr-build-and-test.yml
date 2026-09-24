@@ -19,7 +19,7 @@ variables:
   - name: testResultsDirectory
     value: "$(Agent.TempDirectory)/TestResults"
   - name: prSourceBranch
-    value: variables['System.PullRequest.SourceBranch']
+    value: $[variables['System.PullRequest.SourceBranch']]
 
 pool: "LACC PreProd Pool"
 
