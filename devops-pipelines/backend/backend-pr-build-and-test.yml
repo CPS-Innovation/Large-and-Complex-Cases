@@ -25,7 +25,10 @@ pool: "LACC PreProd Pool"
 
 stages:
   - stage: Build_And_Test_Backend
-    condition: ne(variables.prSourceBranch, 'development' )
+    condition: and(
+      ne(variables.prSourceBranch, 'development' ),
+      ne(variables.prSourceBranch, 'main')
+      )
     displayName: "Build, Test & Package"
     jobs:
       - job: Package_NuGet

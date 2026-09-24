@@ -25,7 +25,10 @@ variables:
 
 stages:
   - stage: Build_and_Test_UI
-    condition: ne(variables.prSourceBranch, 'development' )
+    condition: and(
+      ne(variables.prSourceBranch, 'development' ),
+      ne(variables.prSourceBranch, 'main')
+      )
     displayName: "Build & Test UI SPA"
     jobs:
       - job: Build_and_Test
