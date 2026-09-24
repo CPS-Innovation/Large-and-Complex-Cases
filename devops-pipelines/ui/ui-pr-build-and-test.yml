@@ -20,10 +20,12 @@ variables:
     value: "coverage"
   - name: prSourceBranch
     value: variables['System.PullRequest.SourceBranch']
+  - name: prTargetBranch
+    value: variables['System.PullRequest.TargetBranch']
 
 stages:
   - stage: Build_and_Test_UI
-    condition: ne(variables.prSourceBranch, 'refs/heads/development' )
+    condition: ne(variables.prSourceBranch, 'development' )
     displayName: "Build & Test UI SPA"
     jobs:
       - job: Build_and_Test
@@ -147,8 +149,12 @@ stages:
               summaryFileLocation: "$(workingDir)/$(covDir)/merged/Cobertura.xml"
               failIfCoverageEmpty: true
 
+  # On PR development -> main, run the E2E tests in dev
   - stage: Run_E2E_tests
-    condition: eq(variables.prSourceBranch, 'refs/heads/development' )
+    condition: and(
+      eq(variables.prSourceBranch, 'development' ),
+      eq(variables.prTargetBranch, 'main' )
+      )
     displayName: "Run E2E Test on Dev"
     jobs:
       - template: ../templates/e2e-playwright-test-job.yml
