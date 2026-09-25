@@ -21,7 +21,7 @@ stages:
       - template: ../templates/variables/fa-config-dev.yml
       - group: lacc-automated-testing-dev
     jobs:
-     - template: ../templates/backend-integration-test-job.yml
+      - template: ../templates/backend-integration-test-job.yml
 
   - stage: Test_for_Staging
     dependsOn: []
@@ -33,4 +33,4 @@ stages:
       - template: ../templates/variables/fa-config-staging.yml
       - group: lacc-automated-testing-staging
     jobs:
-     - template: ../templates/backend-integration-test-job.yml
+      - template: ../templates/backend-integration-test-job.yml
