@@ -4,124 +4,58 @@ pr:
   branches:
     include:
       - development
+      - main
   paths:
     include:
       - backend/*
 
+parameters:
+  - name: environment
+    displayName: "Target Environment"
+    type: string
+    default: "dev"
+    values:
+      - dev
+      - staging
+
 variables:
-  - template: ../templates/variables/backend-deploy-vars.yml
-    parameters:
-      environment: "dev"
-  - template: ../templates/variables/fa-config-dev.yml
-  - group: lacc-automated-testing-dev
-  - name: buildConfiguration
-    value: "Release"
-  - name: dotNetVersion
-    value: "10.x"
-  - name: efVersion
-    value: "10.0.*"
-  - name: testResultsDirectory
-    value: "$(Agent.TempDirectory)/TestResults"
+  prTargetBranch: $[ variables['System.PullRequest.TargetBranch'] ]
+  isManualTrigger: $[ eq(variables['Build.Reason'], 'Manual') ]
 
 pool: "LACC PreProd Pool"
 
-jobs:
-  - job: Run_Integration_Tests
-    displayName: "Run Integration Test"
+stages:
+  - stage: Test_for_Dev
+    condition: or(
+        eq(variables.prTargetBranch, 'development'),
+        and(
+          variables.isManualTrigger,
+          ${{ eq(parameters.environment, 'dev') }}
+        )
+      )
     variables:
-      projectDir: "backend/CPS.ComplexCases.API.Integration.Tests"
-      Egress.Url: $(EgressOptionsUrl)
-      Egress.Username: $(EgressOptionsUsername)
-      Egress.Email: $(EgressEmail)
-      Egress.Password: $(EgressOptionsPassword)
-      Egress.WorkspaceId: $(EgressWorkspaceId)
-      Egress.WorkspaceName: $(EgressWorkspaceName)
-      Egress.TestDestinationPath: "integration-tests"
-      DDEI.BaseUrl: $[ replace( variables['DDEIOptionsBaseUrl'], '/api', '' ) ]
-      DDEI.AccessKey: $(DDEIOptionsAccessKey)
-      DDEI.Username: $(CmsUserName)
-      DDEI.Password: $(CmsUserPassword)
-      DDEI.TestCaseId: $(CmsTestCaseId)
-      DDEI.TestUrn: $(CmsTestUrn)
-      DDEI.TestOperationName: $(CmsTestOperationName)
-      DDEI.TestDefendantLastName: $(CmsTestDefendantLastName)
-      DDEI:TestCmsAreaCode: $(CmsTestCmsAreaCode)
-      Azure.TenantId: $(TenantId)
-      Azure.ClientId: $(CallingAppValidAudience)
-      Azure.ClientSecret: $(AadClientSecret)
-      Azure.UserScope: "api://$(CallingAppValidAudience)/user_impersonation"
-      Azure.TestUserEmail: $(AadUserName)
-      Azure.TestUserPassword: $(AadUserPassword)
-      NetApp.Url: $(NetAppOptionsUrl)
-      NetApp.ClusterUrl: $(NetAppOptionsClusterUrl)
-      NetApp.BucketName: $(NetAppOptionsBucketName)
-      NetApp.S3ServiceUuid: $(NetAppOptionsS3ServiceUuid)
-      NetApp.SessionDurationSeconds: $(NetAppOptionsSessionDurationSeconds)
-      NetApp.PepperVersion: $(NetAppOptionsPepperVersion)
-      NetApp.TestFolderPrefix: "integration-tests"
-      KeyVault.Url: "https://$(keyVaultName).vault.azure.net/"
-      ConnectionStrings.CaseManagementDatastoreConnection: $(DbConnectionString)
-      Postgres.AuthMode: "AAD"
-      Postgres.DbUserName: $(DbUserName)
-    steps:
-      - task: Bash@3
-        displayName: "Ensure Azure CLI"
-        inputs:
-          targetType: "inline"
-          script: |
-            echo "Checking if Azure CLI is installed..."
+      - template: ../templates/variables/backend-deploy-vars.yml
+        parameters:
+          environment: "dev"
+      - template: ../templates/variables/fa-config-dev.yml
+      - group: lacc-automated-testing-dev
+    jobs:
+      - template: ../templates/backend-integration-test-job.yml
 
-            # Check if az command exists
-            if command -v az &> /dev/null; then
-              echo "Azure CLI is already installed"
-              az --version
-              exit 0
-            fi
-
-            echo "Azure CLI not found, installing..."
-            bash $(scripts_directory)/installAzureCli.sh
-
-      - task: UseDotNet@2
-        displayName: "Use .NET SDK"
-        inputs:
-          packageType: "sdk"
-          version: $(dotNetVersion)
-
-      - task: FileTransform@2
-        displayName: "Write App Settings to File"
-        inputs:
-          folderPath: "$(projectDir)"
-          enableXmlTransform: false
-          jsonTargetFiles: appsettings.template.json
-
-      - script: mv $(projectDir)/appsettings.template.json $(projectDir)/appsettings.json
-        displayName: "Rename Appsettings File"
-
-      - task: AzureCLI@2
-        displayName: "Run Integration Tests"
-        inputs:
-          azureSubscription: "Azure Pipeline: Large and Complex Cases - Pre-Prod"
-          scriptType: bash
-          scriptLocation: inlineScript
-          addSpnToEnvironment: true
-          workingDirectory: "$(Build.SourcesDirectory)"
-          inlineScript: |
-            dotnet test $(projectDir)/CPS.ComplexCases.API.Integration.Tests.csproj \
-              --configuration $(buildConfiguration) \
-              --collect:"XPlat Code Coverage;Format=cobertura" \
-              --settings backend/CodeCoverage.runsettings \
-              --logger "trx;LogFileName=integration-tests.trx" \
-              --results-directory $(testResultsDirectory)
-
-      - task: PublishTestResults@2
-        inputs:
-          testResultsFormat: "VSTest"
-          testResultsFiles: "$(testResultsDirectory)/integration-tests.trx"
-        condition: succeededOrFailed()
-
-      - task: PublishCodeCoverageResults@2
-        displayName: "Publish Code Coverage"
-        inputs:
-          summaryFileLocation: "$(Agent.TempDirectory)/**/coverage.cobertura.xml"
-          failIfCoverageEmpty: true
-        condition: succeededOrFailed()
+  - stage: Test_for_Staging
+    dependsOn: []
+    condition: or(
+        eq(variables.prTargetBranch, 'main'),
+        and(
+          variables.isManualTrigger,
+          ${{ eq(parameters.environment, 'staging') }}
+        )
+      )
+    variables:
+      - template: ../templates/variables/backend-deploy-vars.yml
+        parameters:
+          environment: "staging"
+      - template: ../templates/variables/fa-config-staging.yml
+      - group: lacc-automated-testing-staging
+    jobs:
+      - template: ../templates/backend-integration-test-job.yml
