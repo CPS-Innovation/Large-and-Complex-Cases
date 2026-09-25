@@ -27,10 +27,10 @@ pool: "LACC PreProd Pool"
 
 stages:
   - stage: Build_And_Test_Backend
-    condition: and(
-      ne(variables.prSourceBranch, 'development' ),
-      ne(variables.prTargetBranch, 'main')
-      )
+    condition: not(and(
+        eq(variables.prSourceBranch, 'development' ),
+        eq(variables.prTargetBranch, 'main')
+      ))
     displayName: "Build, Test & Package"
     jobs:
       - job: Package_NuGet

@@ -25,10 +25,10 @@ variables:
 
 stages:
   - stage: Build_and_Test_UI
-    condition: and(
-      ne(variables.prSourceBranch, 'development' ),
-      ne(variables.prTargetBranch, 'main')
-      )
+    condition: not(and(
+        eq(variables.prSourceBranch, 'development' ),
+        eq(variables.prTargetBranch, 'main')
+      ))
     displayName: "Build & Test UI SPA"
     jobs:
       - job: Build_and_Test
@@ -155,9 +155,10 @@ stages:
   # On PR development -> main, run the E2E tests in dev
   - stage: Run_E2E_tests
     condition: and(
-      eq(variables.prSourceBranch, 'development' ),
-      eq(variables.prTargetBranch, 'main' )
+        eq(variables.prSourceBranch, 'development' ),
+        eq(variables.prTargetBranch, 'main' )
       )
+    dependsOn: []
     displayName: "Run E2E Test on Dev"
     jobs:
       - template: ../templates/e2e-playwright-test-job.yml
