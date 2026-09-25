@@ -9,11 +9,30 @@ pr:
     include:
       - backend/*
 
+parameters:
+  - name: environment
+    displayName: "Target Environment"
+    type: string
+    default: "dev"
+    values:
+      - dev
+      - staging
+
+variables:
+  prTargetBranch: $[ variables['System.PullRequest.TargetBranch'] ]
+  isManualTrigger: $[ eq(variables['Build.Reason'], 'Manual') ]
+
 pool: "LACC PreProd Pool"
 
 stages:
   - stage: Test_for_Dev
-    condition: $[ eq(variables['System.PullRequest.TargetBranch'], 'development') ]
+    condition: or(
+        eq(variables.prTargetBranch, 'development'),
+        and(
+          variables.isManualTrigger,
+          ${{ eq(parameters.environment, 'dev') }}
+        )
+      )
     variables:
       - template: ../templates/variables/backend-deploy-vars.yml
         parameters:
@@ -25,7 +44,13 @@ stages:
 
   - stage: Test_for_Staging
     dependsOn: []
-    condition: $[ eq(variables['System.PullRequest.TargetBranch'], 'main') ]
+    condition: or(
+        eq(variables.prTargetBranch, 'main'),
+        and(
+          variables.isManualTrigger,
+          ${{ eq(parameters.environment, 'staging') }}
+        )
+      )
     variables:
       - template: ../templates/variables/backend-deploy-vars.yml
         parameters:
