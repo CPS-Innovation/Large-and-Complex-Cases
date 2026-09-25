@@ -18,11 +18,19 @@ variables:
     value: '10.0.*'
   - name: testResultsDirectory
     value: "$(Agent.TempDirectory)/TestResults"
+  - name: prSourceBranch
+    value: $[variables['System.PullRequest.SourceBranch']]
+  - name: prTargetBranch
+    value: $[variables['System.PullRequest.TargetBranch']]
 
 pool: "LACC PreProd Pool"
 
 stages:
   - stage: Build_And_Test_Backend
+    condition: not(and(
+        eq(variables.prSourceBranch, 'development' ),
+        eq(variables.prTargetBranch, 'main')
+      ))
     displayName: "Build, Test & Package"
     jobs:
       - job: Package_NuGet
