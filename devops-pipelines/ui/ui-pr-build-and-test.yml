@@ -18,9 +18,17 @@ variables:
     value: ui-spa
   - name: covDir
     value: "coverage"
+  - name: prSourceBranch
+    value: $[variables['System.PullRequest.SourceBranch']]
+  - name: prTargetBranch
+    value: $[variables['System.PullRequest.TargetBranch']]
 
 stages:
   - stage: Build_and_Test_UI
+    condition: not(and(
+        eq(variables.prSourceBranch, 'development' ),
+        eq(variables.prTargetBranch, 'main')
+      ))
     displayName: "Build & Test UI SPA"
     jobs:
       - job: Build_and_Test
@@ -143,3 +151,16 @@ stages:
             inputs:
               summaryFileLocation: "$(workingDir)/$(covDir)/merged/Cobertura.xml"
               failIfCoverageEmpty: true
+
+  # On PR development -> main, run the E2E tests in dev
+  - stage: Run_E2E_tests
+    condition: and(
+        eq(variables.prSourceBranch, 'development' ),
+        eq(variables.prTargetBranch, 'main' )
+      )
+    dependsOn: []
+    displayName: "Run E2E Test on Dev"
+    jobs:
+      - template: ../templates/e2e-playwright-test-job.yml
+        parameters:
+          environment: "dev"
