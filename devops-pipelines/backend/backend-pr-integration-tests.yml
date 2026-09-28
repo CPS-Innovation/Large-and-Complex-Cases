@@ -20,7 +20,7 @@ parameters:
 
 variables:
   prTargetBranch: $[ variables['System.PullRequest.TargetBranch'] ]
-  isManualTrigger: $[ eq(variables['Build.Reason'], 'Manual') ]
+  buildReason: $[ variables['Build.Reason'] ]
 
 pool: "LACC PreProd Pool"
 
@@ -29,7 +29,7 @@ stages:
     condition: or(
         eq(variables.prTargetBranch, 'development'),
         and(
-          eq(variables.isManualTrigger, 'True'),
+          eq(variables.buildReason, 'Manual'),
           ${{ eq(parameters.environment, 'dev') }}
         )
       )
@@ -40,29 +40,22 @@ stages:
       - template: ../templates/variables/fa-config-dev.yml
       - group: lacc-automated-testing-dev
     jobs:
-      - job: debug
-        variables:
-          trigger: $[variables['Build.Reason']]
-        steps:
-          - script: |
-              echo "Build.Reason: $(trigger)"
-              echo "isManualTrigger: $(isManualTrigger)"
-      # - template: ../templates/backend-integration-test-job.yml
+      - template: ../templates/backend-integration-test-job.yml
 
-  # - stage: Test_for_Staging
-  #   dependsOn: []
-  #   condition: or(
-  #       eq(variables.prTargetBranch, 'main'),
-  #       and(
-  #         variables.isManualTrigger,
-  #         ${{ eq(parameters.environment, 'staging') }}
-  #       )
-  #     )
-  #   variables:
-  #     - template: ../templates/variables/backend-deploy-vars.yml
-  #       parameters:
-  #         environment: "staging"
-  #     - template: ../templates/variables/fa-config-staging.yml
-  #     - group: lacc-automated-testing-staging
-  #   jobs:
-  #     - template: ../templates/backend-integration-test-job.yml
+  - stage: Test_for_Staging
+    dependsOn: []
+    condition: or(
+        eq(variables.prTargetBranch, 'main'),
+        and(
+          eq(variables.buildReason, 'Manual'),
+          ${{ eq(parameters.environment, 'staging') }}
+        )
+      )
+    variables:
+      - template: ../templates/variables/backend-deploy-vars.yml
+        parameters:
+          environment: "staging"
+      - template: ../templates/variables/fa-config-staging.yml
+      - group: lacc-automated-testing-staging
+    jobs:
+      - template: ../templates/backend-integration-test-job.yml
