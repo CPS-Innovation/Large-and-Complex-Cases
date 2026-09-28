@@ -20,7 +20,7 @@ parameters:
 
 variables:
   prTargetBranch: $[ variables['System.PullRequest.TargetBranch'] ]
-  isManualTrigger: $[ eq(variables['Build.Reason'], 'Manual') ]
+  buildReason: $[ variables['Build.Reason'] ]
 
 pool: "LACC PreProd Pool"
 
@@ -29,7 +29,7 @@ stages:
     condition: or(
         eq(variables.prTargetBranch, 'development'),
         and(
-          variables.isManualTrigger,
+          eq(variables.buildReason, 'Manual'),
           ${{ eq(parameters.environment, 'dev') }}
         )
       )
@@ -47,7 +47,7 @@ stages:
     condition: or(
         eq(variables.prTargetBranch, 'main'),
         and(
-          variables.isManualTrigger,
+          eq(variables.buildReason, 'Manual'),
           ${{ eq(parameters.environment, 'staging') }}
         )
       )
