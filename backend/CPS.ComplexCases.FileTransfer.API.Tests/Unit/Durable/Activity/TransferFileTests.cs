@@ -1664,6 +1664,7 @@ public class TransferFileTests
             var result = await activity.Run(payload);
 
             Assert.True(result.IsSuccess);
+            Assert.Equal(1, result.SuccessfulItem!.TotalPartsCount);
             Assert.True(_capturedTransferEvents[^1].IsMultipart);
             requestFactory.Verify(
                 f => f.UploadChunkRequest(It.IsAny<UploadChunkArg>(), It.IsAny<string>()),
@@ -1675,6 +1676,46 @@ public class TransferFileTests
                 f => f.UploadFileContentRequest(It.IsAny<UploadFileContentArg>(), It.IsAny<string>()),
                 Times.Never);
             VerifyInformationLog("multipart upload");
+        }
+    }
+
+    [Fact]
+    public async Task Run_NetAppToEgress_MultipartWithSeveralChunks_ReportsActualPartCount()
+    {
+        var payload = CreatePayload();
+        payload.TransferDirection = TransferDirection.NetAppToEgress;
+        var content = Encoding.UTF8.GetBytes("0123456789");
+        var activity = new TransferFile(
+            _storageClientFactoryMock.Object,
+            _loggerMock.Object,
+            Options.Create(new SizeConfig { MinMultipartSizeBytes = 4, ChunkSizeBytes = 4 }),
+            _egressOptions,
+            _initializationHandlerMock.Object,
+            _telemetryClientMock.Object);
+        var (destination, requestFactory, httpClient) = CreateEgressDestination("upload-chunked");
+        using (httpClient)
+        {
+            _storageClientFactoryMock
+                .Setup(x => x.GetClientsForDirection(payload.TransferDirection))
+                .Returns((_sourceClientMock.Object, destination));
+            _sourceClientMock
+                .Setup(x => x.OpenReadStreamAsync(payload.SourcePath.Path,
+                    payload.WorkspaceId,
+                    payload.SourcePath.FileId,
+                    payload.BearerToken,
+                    payload.BucketName))
+                .ReturnsAsync((new MemoryStream(content), (long)content.Length));
+
+            var result = await activity.Run(payload);
+
+            // 10 bytes at a 4 byte chunk size is three parts (4 + 4 + 2).
+            Assert.True(result.IsSuccess);
+            Assert.Equal(3, result.SuccessfulItem!.TotalPartsCount);
+            Assert.Equal(3, _capturedTransferEvents[^1].TotalPartsCount);
+            Assert.True(_capturedTransferEvents[^1].IsMultipart);
+            requestFactory.Verify(
+                f => f.UploadChunkRequest(It.IsAny<UploadChunkArg>(), It.IsAny<string>()),
+                Times.Exactly(3));
         }
     }
 

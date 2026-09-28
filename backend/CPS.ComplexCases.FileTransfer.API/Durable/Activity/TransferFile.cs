@@ -248,7 +248,7 @@ public class TransferFile(
         telemetryEvent.TransferEndTime =
             result.SuccessfulItem?.EndTime ?? result.SkippedItem?.EndTime ?? DateTime.UtcNow;
         telemetryEvent.IsSuccessful = result.IsSuccess || result.IsSkipped;
-        telemetryEvent.IsMultipart = result.IsSuccess && result.SuccessfulItem!.TotalPartsCount > 1;
+        telemetryEvent.IsMultipart = result.IsSuccess && result.SuccessfulItem!.IsMultipart;
         telemetryEvent.TotalPartsCount = result.IsSuccess ? result.SuccessfulItem!.TotalPartsCount : 0;
 
         if (!result.IsSuccess && !result.IsSkipped && result.FailedItem != null)
@@ -550,7 +550,7 @@ public class TransferFile(
                 sourceFilePath,
                 totalSize,
                 startTime,
-                partNumber,
+                uploadTasks.Count,
                 md5,
                 uploadedEtags);
         }
@@ -695,7 +695,7 @@ public class TransferFile(
         string sourceFilePath,
         long totalSize,
         DateTime startTime,
-        int partNumber,
+        int totalParts,
         System.Security.Cryptography.MD5? md5,
         Dictionary<int, string> uploadedEtags)
     {
@@ -718,7 +718,7 @@ public class TransferFile(
         _logger.LogInformation("Completed parallel multipart transfer for {Source} -> {Dest}",
             payload.SourcePath.Path, payload.DestinationPath);
 
-        return CreateSuccessResult(payload, totalSize, startTime, partNumber);
+        return CreateSuccessResult(payload, totalSize, startTime, totalParts, isMultipart: true);
     }
 
     private static async Task<bool> CompleteUpload(
@@ -742,7 +742,7 @@ public class TransferFile(
     }
 
     private static TransferResult CreateSuccessResult(TransferFilePayload payload, long totalSize, DateTime startTime,
-        int totalParts = 1)
+        int totalParts = 1, bool isMultipart = false)
     {
         var endTime = DateTime.UtcNow;
 
@@ -755,7 +755,8 @@ public class TransferFile(
             FileId = payload.SourcePath.FileId,
             StartTime = startTime,
             EndTime = endTime,
-            TotalPartsCount = totalParts
+            TotalPartsCount = totalParts,
+            IsMultipart = isMultipart
         };
 
         return new TransferResult { IsSuccess = true, SuccessfulItem = item };
