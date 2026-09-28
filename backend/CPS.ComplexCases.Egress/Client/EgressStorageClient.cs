@@ -328,11 +328,87 @@ public class EgressStorageClient(
         };
     }
 
-    public Task UploadFileAsync(string destinationPath, Stream fileStream, long contentLength, string? workspaceId = null, string? relativePath = null, string? sourceRootFolderPath = null, string? bearerToken = null, string? bucketName = null)
+    public async Task UploadFileAsync(string destinationPath, Stream fileStream, long contentLength, string? workspaceId = null, string? relativePath = null, string? sourceRootFolderPath = null, string? bearerToken = null, string? bucketName = null)
     {
-        // This shares an interface with NetAppStorageClient but isn't required for Egress
-        // Egress always uses chunked uploads via InitiateUploadAsync, UploadChunkAsync, and CompleteUploadAsync
-        throw new NotImplementedException();
+        var fileBytes = await ReadUploadBytesAsync(fileStream, contentLength);
+
+        var session = await InitiateUploadAsync(
+            destinationPath,
+            contentLength,
+            relativePath ?? string.Empty,
+            workspaceId,
+            relativePath,
+            sourceRootFolderPath,
+            bearerToken,
+            bucketName);
+
+        var token = await GetWorkspaceToken();
+        var uploadArg = new UploadFileContentArg
+        {
+            UploadId = session.UploadId ?? throw new ArgumentNullException(nameof(session.UploadId), "Upload ID cannot be null."),
+            WorkspaceId = session.WorkspaceId ?? throw new ArgumentNullException(nameof(session.WorkspaceId), "Workspace ID cannot be null."),
+            FileContent = fileBytes
+        };
+
+        _logger.LogInformation(
+            "Uploading {ByteCount} bytes for upload {UploadId} via Egress single-upload.",
+            fileBytes.Length,
+            session.UploadId);
+
+        var maxAttempts = Math.Max(1, _egressOptions.MaxChunkUploadAttempts);
+        var transferTimeout = TimeSpan.FromSeconds(_egressOptions.TransferTimeoutSeconds);
+
+        for (var attempt = 1; attempt <= maxAttempts; attempt++)
+        {
+            try
+            {
+                // Rebuild the request on every attempt: the body is MultipartFormDataContent,
+                // which cannot be re-sent, so a retry must construct a fresh HttpRequestMessage.
+                await SendRequestAsync(
+                    _egressRequestFactory.UploadFileContentRequest(uploadArg, token),
+                    timeout: transferTimeout);
+                return;
+            }
+            catch (Exception ex) when (attempt < maxAttempts && IsRetryableChunkError(ex))
+            {
+                var delay = GetChunkRetryDelay(attempt);
+                _logger.LogWarning(ex,
+                    "Single-upload for upload {UploadId} failed with a retryable error (attempt {Attempt}/{MaxAttempts}). Retrying in {DelayMs}ms.",
+                    session.UploadId, attempt, maxAttempts, delay.TotalMilliseconds);
+                await Task.Delay(delay);
+            }
+        }
+
+        throw new InvalidOperationException(
+            $"Single-upload for upload {session.UploadId} failed after {maxAttempts} attempts.");
+    }
+
+    private static async Task<byte[]> ReadUploadBytesAsync(Stream fileStream, long contentLength)
+    {
+        if (contentLength < 0 || contentLength > int.MaxValue)
+        {
+            throw new InvalidOperationException($"Single-upload content length {contentLength} is not supported.");
+        }
+
+        var buffer = new byte[contentLength];
+        var offset = 0;
+        while (offset < buffer.Length)
+        {
+            var read = await fileStream.ReadAsync(buffer.AsMemory(offset, buffer.Length - offset));
+            if (read == 0)
+            {
+                break;
+            }
+
+            offset += read;
+        }
+
+        if (offset != buffer.Length)
+        {
+            throw new InvalidOperationException($"Unexpected end of stream at position {offset}.");
+        }
+
+        return buffer;
     }
 
     public async Task<bool> FileExistsAsync(string path, string? workspaceId = null, string? bearerToken = null, string? bucketName = null, string? fileId = null)

@@ -122,6 +122,39 @@ public class TransferEntityState : TaskEntity<TransferEntity>
         State.UpdatedAt = DateTime.UtcNow;
     }
 
+    public void ApplyResultBatch(TransferResultBatch batch)
+    {
+        foreach (var item in batch.SuccessfulItems ?? [])
+        {
+            if (batch.IsRetry)
+            {
+                AddSuccessfulRetryItem(item);
+            }
+            else
+            {
+                AddSuccessfulItem(item);
+            }
+        }
+
+        // Skipped items have no retry variant. A skip still counts as processed.
+        foreach (var item in batch.SkippedItems ?? [])
+        {
+            AddSkippedItem(item);
+        }
+
+        foreach (var item in batch.FailedItems ?? [])
+        {
+            if (batch.IsRetry)
+            {
+                AddFailedRetryItem(item);
+            }
+            else
+            {
+                AddFailedItem(item);
+            }
+        }
+    }
+
     public TransferEntity CurrentState => State;
 
 }

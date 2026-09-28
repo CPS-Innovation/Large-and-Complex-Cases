@@ -541,10 +541,7 @@ public class TransferOrchestratorTests
             .Returns(Task.CompletedTask)
             .Callback<EntityInstanceId, string, object, CallEntityOptions>((_, operation, payload, __) =>
             {
-                if (operation == nameof(TransferEntityState.AddFailedItem) && payload is TransferFailedItem failedItem)
-                {
-                    failedItems.Add(failedItem);
-                }
+                CaptureFailedItems(operation, payload, failedItems);
             });
 
         // Act
@@ -637,8 +634,7 @@ public class TransferOrchestratorTests
             .Returns(Task.CompletedTask)
             .Callback<EntityInstanceId, string, object, CallEntityOptions>((_, operation, p, __) =>
             {
-                if (operation == nameof(TransferEntityState.AddFailedItem) && p is TransferFailedItem fi)
-                    failedItems.Add(fi);
+                CaptureFailedItems(operation, p, failedItems);
             });
 
         // Act
@@ -959,8 +955,7 @@ public class TransferOrchestratorTests
             .Returns(Task.CompletedTask)
             .Callback<EntityInstanceId, string, object, CallEntityOptions>((_, operation, payload, __) =>
             {
-                if (operation == nameof(TransferEntityState.AddFailedItem) && payload is TransferFailedItem failedItem)
-                    failedItems.Add(failedItem);
+                CaptureFailedItems(operation, payload, failedItems);
             });
 
         await _orchestrator.RunOrchestrator(_contextMock.Object);
@@ -1050,8 +1045,7 @@ public class TransferOrchestratorTests
             .Returns(Task.CompletedTask)
             .Callback<EntityInstanceId, string, object, CallEntityOptions>((_, operation, payload, __) =>
             {
-                if (operation == nameof(TransferEntityState.AddFailedItem) && payload is TransferFailedItem failedItem)
-                    failedItems.Add(failedItem);
+                CaptureFailedItems(operation, payload, failedItems);
             });
 
         await _orchestrator.RunOrchestrator(_contextMock.Object);
@@ -1101,8 +1095,7 @@ public class TransferOrchestratorTests
             .Returns(Task.CompletedTask)
             .Callback<EntityInstanceId, string, object, CallEntityOptions>((_, operation, payload, __) =>
             {
-                if (operation == nameof(TransferEntityState.AddFailedItem) && payload is TransferFailedItem failedItem)
-                    failedItems.Add(failedItem);
+                CaptureFailedItems(operation, payload, failedItems);
             });
 
         await _orchestrator.RunOrchestrator(_contextMock.Object);
@@ -1150,8 +1143,7 @@ public class TransferOrchestratorTests
             .Returns(Task.CompletedTask)
             .Callback<EntityInstanceId, string, object, CallEntityOptions>((_, operation, payload, __) =>
             {
-                if (operation == nameof(TransferEntityState.AddFailedItem) && payload is TransferFailedItem failedItem)
-                    failedItems.Add(failedItem);
+                CaptureFailedItems(operation, payload, failedItems);
             });
 
         await _orchestrator.RunOrchestrator(_contextMock.Object);
@@ -1292,6 +1284,20 @@ public class TransferOrchestratorTests
             IsRetry = _fixture.Create<bool>(),
             CorrelationId = _fixture.Create<Guid>()
         };
+    }
+
+    private static void CaptureFailedItems(string operation, object? payload, List<TransferFailedItem> failedItems)
+    {
+        if (operation == nameof(TransferEntityState.AddFailedItem) && payload is TransferFailedItem failedItem)
+        {
+            failedItems.Add(failedItem);
+            return;
+        }
+
+        if (operation == nameof(TransferEntityState.ApplyResultBatch) && payload is TransferResultBatch batch)
+        {
+            failedItems.AddRange(batch.FailedItems);
+        }
     }
 
 }
