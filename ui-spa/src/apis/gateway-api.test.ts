@@ -219,10 +219,17 @@ describe("gateway apis", () => {
       });
 
       await expect(getCaseDivisionsOrAreas()).rejects.toThrow(
-        new ApiError(`Getting case areas failed`, "gateway_url/api/v1/areas", {
-          status: 500,
-          statusText: "Internal Server Error",
-        }),
+        new ApiError(
+          `Getting case areas failed`,
+          "gateway_url/api/v1/areas",
+          {
+            status: 500,
+            statusText: "Internal Server Error",
+          },
+          {
+            correlationId: "id_123",
+          },
+        ),
       );
       expect(fetch).toHaveBeenCalledWith(
         `gateway_url/api/v1/areas`,
@@ -366,6 +373,9 @@ describe("gateway apis", () => {
           {
             status: 500,
             statusText: "Internal Server Error",
+          },
+          {
+            correlationId: "id_123",
           },
         ),
       );
@@ -653,6 +663,9 @@ describe("gateway apis", () => {
             status: 500,
             statusText: "Internal Server Error",
           },
+          {
+            correlationId: "id_123",
+          },
         ),
       );
 
@@ -766,6 +779,9 @@ describe("gateway apis", () => {
             status: 500,
             statusText: "Internal Server Error",
           },
+          {
+            correlationId: "id_123",
+          },
         ),
       );
 
@@ -865,6 +881,9 @@ describe("gateway apis", () => {
             status: 500,
             statusText: "Internal Server Error",
           },
+          {
+            correlationId: "id_123",
+          },
         ),
       );
       expect(fetch).toHaveBeenCalledWith(
@@ -937,7 +956,7 @@ describe("gateway apis", () => {
       });
 
       await expect(getCaseMetaData("12")).rejects.toBeInstanceOf(ApiError);
-      
+
       await expect(getCaseMetaData("12")).rejects.toThrow(
         "An error occurred contacting the server at gateway_url/api/v1/cases/12: response schema validation failed; status - OK (200)",
       );
@@ -1054,6 +1073,9 @@ describe("gateway apis", () => {
           {
             status: 500,
             statusText: "Internal Server Error",
+          },
+          {
+            correlationId: "id_123",
           },
         ),
       );
@@ -1308,6 +1330,9 @@ describe("gateway apis", () => {
             status: 500,
             statusText: "Internal Server Error",
           },
+          {
+            correlationId: "id_123",
+          },
         ),
       );
 
@@ -1476,6 +1501,9 @@ describe("gateway apis", () => {
           {
             status: 500,
             statusText: "Internal Server Error",
+          },
+          {
+            correlationId: "id_123",
           },
         ),
       );
@@ -1653,6 +1681,9 @@ describe("gateway apis", () => {
           {
             status: 500,
             statusText: "Internal Server Error",
+          },
+          {
+            correlationId: "id_123",
           },
         ),
       );
@@ -1882,6 +1913,9 @@ describe("gateway apis", () => {
             status: 500,
             statusText: "Internal Server Error",
           },
+          {
+            correlationId: "id_123",
+          },
         ),
       );
       expect(fetch).toHaveBeenCalledWith(
@@ -1985,6 +2019,9 @@ describe("gateway apis", () => {
             status: 500,
             statusText: "Internal Server Error",
           },
+          {
+            correlationId: "id_123",
+          },
         ),
       );
 
@@ -2066,6 +2103,9 @@ describe("gateway apis", () => {
           {
             status: 500,
             statusText: "Internal Server Error",
+          },
+          {
+            correlationId: "id_123",
           },
         ),
       );
@@ -2183,6 +2223,9 @@ describe("gateway apis", () => {
             status: 500,
             statusText: "Internal Server Error",
           },
+          {
+            correlationId: "id_123",
+          },
         ),
       );
       expect(fetch).toHaveBeenCalledWith(
@@ -2230,12 +2273,19 @@ describe("gateway apis", () => {
         statusText: "Internal Server Error",
       });
 
-      const result = await disconnectNetAppFolder(123);
-      expect(result).toEqual({
-        ok: false,
-        status: 500,
-        statusText: "Internal Server Error",
-      });
+      await expect(disconnectNetAppFolder(123)).rejects.toThrow(
+        new ApiError(
+          `Disconnecting NetApp folder failed`,
+          "gateway_url/api/v1/netapp/connections?case-id=123",
+          {
+            status: 500,
+            statusText: "Internal Server Error",
+          },
+          {
+            correlationId: "id_123",
+          },
+        ),
+      );
       expect(fetch).toHaveBeenCalledWith(
         `gateway_url/api/v1/netapp/connections?case-id=123`,
         expect.objectContaining({

@@ -13,7 +13,7 @@ function App() {
   return (
     <BrowserRouter>
       <MainStateProvider>
-        <ErrorBoundary fallbackRender={ErrorBoundaryFallback}>
+        <ErrorBoundary FallbackComponent={ErrorBoundaryFallback}>
           <QueryClientProvider client={queryClient}>
             <Auth>
               <Layout>
