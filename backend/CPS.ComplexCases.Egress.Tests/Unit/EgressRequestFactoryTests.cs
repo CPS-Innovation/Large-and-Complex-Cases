@@ -64,4 +64,25 @@ public class EgressRequestFactoryTests
         Assert.Equal(HttpMethod.Head, request.Method);
         Assert.Equal("/api/v1/workspaces/ws-1/files/file-9", request.RequestUri?.ToString());
     }
+
+    [Fact]
+    public void UploadFileContentRequest_UsesPatchWithFileFormKeyAndNoContentRange()
+    {
+        var arg = new UploadFileContentArg
+        {
+            WorkspaceId = "ws-1",
+            UploadId = "upload-1",
+            FileContent = [1, 2, 3, 4]
+        };
+
+        using var request = _sut.UploadFileContentRequest(arg, "token");
+        var multipart = Assert.IsType<MultipartFormDataContent>(request.Content);
+        var part = Assert.Single(multipart);
+
+        Assert.Equal(HttpMethod.Patch, request.Method);
+        Assert.Equal("/api/v1/workspaces/ws-1/uploads/upload-1/", request.RequestUri?.ToString());
+        Assert.Null(request.Content.Headers.ContentRange);
+        Assert.Null(part.Headers.ContentRange);
+        Assert.Equal("file", part.Headers.ContentDisposition!.Name);
+    }
 }
