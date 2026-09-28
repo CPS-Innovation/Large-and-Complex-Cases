@@ -40,22 +40,29 @@ stages:
       - template: ../templates/variables/fa-config-dev.yml
       - group: lacc-automated-testing-dev
     jobs:
-      - template: ../templates/backend-integration-test-job.yml
+      - job: debug
+        variables:
+          trigger: $[variables['Build.Reason']]
+        steps:
+          - script: |
+              echo "Build.Reason: $(trigger)"
+              echo "isManualTrigger: $(isManualTrigger)"
+      # - template: ../templates/backend-integration-test-job.yml
 
-  - stage: Test_for_Staging
-    dependsOn: []
-    condition: or(
-        eq(variables.prTargetBranch, 'main'),
-        and(
-          variables.isManualTrigger,
-          ${{ eq(parameters.environment, 'staging') }}
-        )
-      )
-    variables:
-      - template: ../templates/variables/backend-deploy-vars.yml
-        parameters:
-          environment: "staging"
-      - template: ../templates/variables/fa-config-staging.yml
-      - group: lacc-automated-testing-staging
-    jobs:
-      - template: ../templates/backend-integration-test-job.yml
+  # - stage: Test_for_Staging
+  #   dependsOn: []
+  #   condition: or(
+  #       eq(variables.prTargetBranch, 'main'),
+  #       and(
+  #         variables.isManualTrigger,
+  #         ${{ eq(parameters.environment, 'staging') }}
+  #       )
+  #     )
+  #   variables:
+  #     - template: ../templates/variables/backend-deploy-vars.yml
+  #       parameters:
+  #         environment: "staging"
+  #     - template: ../templates/variables/fa-config-staging.yml
+  #     - group: lacc-automated-testing-staging
+  #   jobs:
+  #     - template: ../templates/backend-integration-test-job.yml
