@@ -29,7 +29,7 @@ stages:
     condition: or(
         eq(variables.prTargetBranch, 'development'),
         and(
-          variables.isManualTrigger,
+          eq(variables.isManualTrigger, 'True',
           ${{ eq(parameters.environment, 'dev') }}
         )
       )
