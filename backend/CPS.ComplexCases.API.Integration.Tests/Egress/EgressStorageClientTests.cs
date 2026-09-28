@@ -710,7 +710,7 @@ public class EgressStorageClientTests : IClassFixture<IntegrationTestFixture>
     }
 
     [SkippableFact]
-    public async Task UploadFileAsync_ThrowsNotImplementedException()
+    public async Task UploadFileAsync_WithNullRelativePath_ThrowsArgumentNullException()
     {
         Skip.If(!_fixture.IsEgressConfigured, "Egress not configured");
 
@@ -718,13 +718,14 @@ public class EgressStorageClientTests : IClassFixture<IntegrationTestFixture>
         using var stream = new MemoryStream(new byte[100]);
 
         // Act & Assert
-        // EgressStorageClient does not implement UploadFileAsync - it uses chunked uploads instead
-        await Assert.ThrowsAsync<NotImplementedException>(
+        var exception = await Assert.ThrowsAsync<ArgumentNullException>(
             async () => await _fixture.EgressStorageClient!.UploadFileAsync(
                 destinationPath: "test-path",
                 fileStream: stream,
                 contentLength: 100,
                 workspaceId: _fixture.EgressWorkspaceId));
+
+        Assert.Equal("relativePath", exception.ParamName);
     }
 }
 
