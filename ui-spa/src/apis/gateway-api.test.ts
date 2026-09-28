@@ -1798,7 +1798,11 @@ describe("gateway apis", () => {
       });
 
       const result = await getTransferStatus("transfer_id_1");
-      expect(result).toEqual({ data: mockData, etag: null });
+      expect(result).toEqual({
+        correlationId: "id_123",
+        data: mockData,
+        etag: null,
+      });
       expect(fetch).toHaveBeenCalledWith(
         `gateway_url/api/v1/filetransfer/transfer_id_1/status`,
         expect.objectContaining({
@@ -1842,7 +1846,11 @@ describe("gateway apis", () => {
       });
 
       const result = await getTransferStatus("transfer_id_1");
-      expect(result).toEqual({ data: mockData, etag: '"12345"' });
+      expect(result).toEqual({
+        correlationId: "id_123",
+        data: mockData,
+        etag: '"12345"',
+      });
     });
 
     it("getTransferStatus - should return null data on 304 Not Modified", async () => {
@@ -1855,7 +1863,11 @@ describe("gateway apis", () => {
       });
 
       const result = await getTransferStatus("transfer_id_1", '"12345"');
-      expect(result).toEqual({ data: null, etag: '"12345"' });
+      expect(result).toEqual({
+        correlationId: "id_123",
+        data: null,
+        etag: '"12345"',
+      });
     });
 
     it("getTransferStatus - should send If-None-Match header when etag is provided", async () => {
