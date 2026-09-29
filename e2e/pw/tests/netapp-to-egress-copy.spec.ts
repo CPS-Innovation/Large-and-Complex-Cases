@@ -1,5 +1,4 @@
 import { test } from "../fixtures/test-fixtures-register-case";
-import { loadEnvConfig } from "../helpers/env-config";
 import { CaseSearchPage } from "../pages/CaseSearchPage";
 import { SearchResultsPage } from "../pages/SearchResultsPage";
 import { CaseManagementPage } from "../pages/CaseManagementPage";
@@ -54,25 +53,13 @@ test.describe("NetApp to Egress Copy", () => {
     // repeat runs don't collide).
     const clearSettled = transferTab.watchForTransferClear();
 
-    if (loadEnvConfig().transferMaterialsV1) {
-      // New screen: no second panel — Copy selected navigates to the
-      // destination-tree page where the target folder is chosen.
-      await transferTab.selectAction("Copy", "netAppToEgress");
-      await new TransferDestinationPage(page).chooseFolder("Copy", [
-        "2. Counsel only",
-        uploadSubfolder!,
-      ]);
-    } else {
-      // Old screen: navigate the Egress panel to the destination, then confirm.
-      await transferTab.navigateToFolder("2. Counsel only");
-      await transferTab.waitForEgressFiles();
-      if (uploadSubfolder) {
-        await transferTab.navigateToFolder(uploadSubfolder);
-        await transferTab.waitForEgressFiles();
-      }
-      await transferTab.selectAction("Copy", "netAppToEgress");
-      await transferTab.confirmTransfer("Copy");
-    }
+    // No second panel — Copy selected navigates to the destination-tree
+    // page where the target folder is chosen.
+    await transferTab.selectAction("Copy", "netAppToEgress");
+    await new TransferDestinationPage(page).chooseFolder("Copy", [
+      "2. Counsel only",
+      uploadSubfolder!,
+    ]);
     await transferTab.waitForTransferComplete();
 
     // Banner must not survive a refresh (FCT2-21942)

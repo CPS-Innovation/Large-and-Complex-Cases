@@ -7,15 +7,13 @@ import { BaseTransferMaterialsTab } from "./BaseTransferMaterialsTab";
 // duplicate-rejected transfer (used to detect + recover from the error page).
 const TRANSFER_ERROR_ROUTE =
   /\/case\/\d+\/case-management\/(transfer-errors|transfer-permissions-error|transfer-resolve-file-path)/;
-
 /**
- * New-screen (v1) Transfer Materials page object, selected by
- * `getTransferMaterialsTab` when `TRANSFER_MATERIALS_V1` is on. Differs from the
- * old screen: NetApp table renamed "shared drive"; Copy/Move are
- * `Copy selected` / `Move selected` buttons; direction toggles via a
- * `View Shared Drive` / `View Egress` link; no confirm modal (Copy/Move navigate
- * to a destination-tree page, driven by `TransferDestinationPage`); errors use
- * the routes above. Egress-side helpers come from `BaseTransferMaterialsTab`.
+ * Transfer Materials page object, built by `getTransferMaterialsTab`. The
+ * NetApp table is labelled "shared drive"; Copy/Move are `Copy selected` /
+ * `Move selected` buttons; direction toggles via a `View Shared Drive` /
+ * `View Egress` link; there is no confirm modal (Copy/Move navigate to a
+ * destination-tree page, driven by `TransferDestinationPage`); errors use the
+ * routes above. Egress-side helpers come from `BaseTransferMaterialsTab`.
  */
 export class TransferMaterialsTabV1
   extends BaseTransferMaterialsTab
