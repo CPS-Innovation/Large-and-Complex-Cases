@@ -2,11 +2,19 @@ trigger:
   branches:
     include:
       - main
+  paths:
+    include:
+      - backend
+      - ui-spa
 
 pr:
   branches:
     include:
       - main
+  paths:
+    include:
+      - backend
+      - ui-spa
 
 variables:
   - group: lacc-deployment-global
@@ -68,6 +76,6 @@ steps:
       git tag -f $(newTag)
 
       git push origin refs/tags/$(newTag)
-    # only tag repo on merge to main:
+    # only tag repo on merge to main
     condition: and(succeeded(), eq(variables.buildReason, 'IndividualCI'))
     displayName: "Tag Repository"
