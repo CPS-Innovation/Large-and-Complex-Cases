@@ -29,27 +29,36 @@ steps:
 
       newTag="v$(releaseVersion)"
 
-      # get all tags from origin and sort by version (ignore annotated tags peeled references)
+      # get the highest release tag from origin
+      # ignore peeled references produced for annotated tags
       latestTag=$(git ls-remote --tags origin 'refs/tags/v*' |
         awk '$2 !~ /\^\{\}$/ {sub("refs/tags/", "", $2); print $2}' |
         sort -V |
         tail -n 1)
 
-      if [[ ! "$latestTag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-        echo "##vso[task.logissue type=error]The latest tag found in the remote repository has an unexpected format: $latestTag. Expected format: vMAJOR.MINOR.PATCH."
-        exit 1
-      fi
-
-      echo "Latest tag: $latestTag"
-      echo "New tag: $newTag"
-
-      if [[ "$(printf '%s\n%s\n' "$latestTag" "$newTag" | sort -V | tail -n1)" == "$latestTag" ]]; then
-        echo "##vso[task.logissue type=error]The semver value of variable releaseVersion: $(releaseVersion) must be greater than ${latestTag#v}."
-        exit 1
+      if [[ -z "$latestTag" ]]; then
+        echo "##vso[task.logissue type=warning]No release tags found in the remote repository."
       else
-        echo "The respository will be tagged with the new release version $newTag"
-        echo "##vso[task.setvariable variable=newTag;]$newTag"
+        echo "Latest remote tag: $latestTag"
+        echo "New release tag: $newTag"
+
+        # validate the latest remote tag format
+        if [[ ! "$latestTag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+          echo "##vso[task.logissue type=error]The latest tag found in the remote repository has an unexpected format: $latestTag. Expected format: vMAJOR.MINOR.PATCH."
+          exit 1
+        fi
+
+        # fail if newTag is less than or equal to latestTag.
+        highestVersion=$(printf '%s\n%s\n' "$latestTag" "$newTag" | sort -V | tail -n 1)
+
+        if [[ "$highestVersion" == "$latestTag" ]]; then
+          echo "##vso[task.logissue type=error]The semver value of variable releaseVersion: $(releaseVersion) must be greater than ${latestTag#v}."
+          exit 1
+        fi
       fi
+
+      echo "The respository will be tagged with the new release version $newTag"
+      echo "##vso[task.setvariable variable=newTag;]$newTag"
     displayName: "Validate releaseVersion Tag"
 
   - script: |
