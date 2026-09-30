@@ -68,9 +68,9 @@ steps:
       set -euo pipefail
 
       # overwrite any local tags. We are only interested in the remote:
-      git tag -f $NEW_TAG
+      git tag -f "$NEW_TAG"
 
-      git push origin refs/tags/$NEW_TAG
+      git push origin "refs/tags/$NEW_TAG"
     # only tag repo on merge to main
     condition: and(succeeded(), in(variables['Build.Reason'], 'IndividualCI', 'BatchedCI'))
     displayName: "Tag Repository"
