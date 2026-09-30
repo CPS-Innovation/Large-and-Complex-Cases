@@ -16,15 +16,11 @@ export interface TransferMaterialsTabApi {
   sortNetAppByDateDescending(): Promise<void>;
   selectEgressFileByName(fileName: string): Promise<void>;
   /**
-   * Initiate a transfer in the given direction (default Egress → NetApp).
-   * `direction` is accepted for call-site clarity but ignored — the screen has
-   * a single shared Copy/Move control and the direction is implied by the
-   * current source.
+   * Initiate a Copy or Move of the selected files. The screen has a single
+   * shared Copy/Move control; the direction is set by the current view
+   * (see `switchToNetAppSource`), not by this call.
    */
-  selectAction(
-    action: "Copy" | "Move",
-    direction?: "egressToNetApp" | "netAppToEgress",
-  ): Promise<void>;
+  selectAction(action: "Copy" | "Move"): Promise<void>;
   /** Confirm the pending transfer. `action` must match the Copy/Move just
    * initiated — the confirm button reads "<action> to <folder>". */
   confirmTransfer(action: "Copy" | "Move"): Promise<void>;

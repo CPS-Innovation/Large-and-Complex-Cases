@@ -127,10 +127,7 @@ export class TransferMaterialsTabV1
     await checkbox.check({ force: true });
   }
 
-  async selectAction(
-    action: "Copy" | "Move",
-    _direction?: "egressToNetApp" | "netAppToEgress",
-  ): Promise<void> {
+  async selectAction(action: "Copy" | "Move"): Promise<void> {
     // Direction is implied by the current source (Move renders only when Egress
     // is the source). On the older layout, click "<action> selected" to advance
     // to the destination-tree page (confirmTransfer finishes the choice). On the

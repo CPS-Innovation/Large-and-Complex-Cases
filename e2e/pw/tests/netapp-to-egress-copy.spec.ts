@@ -55,7 +55,7 @@ test.describe("NetApp to Egress Copy", () => {
 
     // No second panel — Copy selected navigates to the destination-tree
     // page where the target folder is chosen.
-    await transferTab.selectAction("Copy", "netAppToEgress");
+    await transferTab.selectAction("Copy");
     await new TransferDestinationPage(page).chooseFolder("Copy", [
       "2. Counsel only",
       uploadSubfolder!,
