@@ -214,6 +214,45 @@ public class EgressStorageClientTests : IClassFixture<IntegrationTestFixture>
     }
 
     [SkippableFact]
+    public async Task UploadFileAsync_SmallFile_LandsInWorkspaceWithoutComplete()
+    {
+        Skip.If(!_fixture.IsEgressConfigured, "Egress not configured");
+
+        var testFileName = TestDataHelper.GenerateTestFileName();
+        var testContent = TestDataHelper.GenerateTestContent(256);
+        var workspaceId = _fixture.EgressWorkspaceId!;
+        var destinationPath = TestDataHelper.GenerateTestFolderPath();
+
+        await _fixture.EgressStorageClient!.CreateFolderAsync(destinationPath, workspaceId);
+
+        using var stream = new MemoryStream(testContent);
+        await _fixture.EgressStorageClient.UploadFileAsync(
+            destinationPath,
+            stream,
+            testContent.Length,
+            workspaceId,
+            testFileName);
+
+        List<string> landedPaths = [];
+        for (var attempt = 1; attempt <= 5; attempt++)
+        {
+            await Task.Delay(TimeSpan.FromSeconds(3));
+
+            landedPaths =
+                (await _fixture.EgressStorageClient.GetAllFilesFromFolderAsync(destinationPath, workspaceId))
+                .Select(f => f.FullFilePath?.Replace('\\', '/') ?? string.Empty)
+                .ToList();
+
+            if (landedPaths.Any(p => p.EndsWith(testFileName, StringComparison.OrdinalIgnoreCase)))
+            {
+                break;
+            }
+        }
+
+        Assert.Contains(landedPaths, p => p.EndsWith(testFileName, StringComparison.OrdinalIgnoreCase));
+    }
+
+    [SkippableFact]
     public async Task UploadFlow_WithSourceRootFolderPath_PreservesRelativePath()
     {
         Skip.If(!_fixture.IsEgressConfigured, "Egress not configured");
@@ -671,7 +710,7 @@ public class EgressStorageClientTests : IClassFixture<IntegrationTestFixture>
     }
 
     [SkippableFact]
-    public async Task UploadFileAsync_ThrowsNotImplementedException()
+    public async Task UploadFileAsync_WithNullRelativePath_ThrowsArgumentNullException()
     {
         Skip.If(!_fixture.IsEgressConfigured, "Egress not configured");
 
@@ -679,13 +718,14 @@ public class EgressStorageClientTests : IClassFixture<IntegrationTestFixture>
         using var stream = new MemoryStream(new byte[100]);
 
         // Act & Assert
-        // EgressStorageClient does not implement UploadFileAsync - it uses chunked uploads instead
-        await Assert.ThrowsAsync<NotImplementedException>(
+        var exception = await Assert.ThrowsAsync<ArgumentNullException>(
             async () => await _fixture.EgressStorageClient!.UploadFileAsync(
                 destinationPath: "test-path",
                 fileStream: stream,
                 contentLength: 100,
                 workspaceId: _fixture.EgressWorkspaceId));
+
+        Assert.Equal("relativePath", exception.ParamName);
     }
 }
 

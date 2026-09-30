@@ -36,7 +36,7 @@ variables:
   - name: SessionTimeoutMinutes
     value: "60"
   - name: SizeConfigBatchSize
-    value: "4"
+    value: "12"
   - name: SizeConfigMaxConcurrentPartUploads
     value: "2"
   - name: SizeConfigChunkSizeBytes

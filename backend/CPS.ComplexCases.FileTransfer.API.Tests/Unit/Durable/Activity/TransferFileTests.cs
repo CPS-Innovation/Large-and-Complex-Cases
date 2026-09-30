@@ -11,7 +11,11 @@ using CPS.ComplexCases.Common.Models.Requests;
 using CPS.ComplexCases.Common.Services;
 using CPS.ComplexCases.Common.Storage;
 using CPS.ComplexCases.Common.Telemetry;
+using CPS.ComplexCases.Egress.Client;
+using CPS.ComplexCases.Egress.Factories;
 using CPS.ComplexCases.Egress.Models;
+using CPS.ComplexCases.Egress.Models.Args;
+using CPS.ComplexCases.Egress.Models.Response;
 using CPS.ComplexCases.FileTransfer.API.Durable.Activity;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads;
 using CPS.ComplexCases.FileTransfer.API.Factories;
@@ -24,6 +28,7 @@ using CPS.ComplexCases.NetApp.Models.Args;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
+using Moq.Protected;
 
 namespace CPS.ComplexCases.FileTransfer.API.Tests.Unit.Durable.Activity;
 
@@ -1580,6 +1585,206 @@ public class TransferFileTests
         Assert.Contains("Transient stream timeout", GetLastTransferEventErrorMessage());
 
         Assert.True(elapsed < TimeSpan.FromSeconds(30), $"Stalled single PUT read took {elapsed} to fail.");
+    }
+
+    [Theory]
+    [InlineData(0, false)]
+    [InlineData(1, false)]
+    [InlineData(2, true)]
+    public void ShouldSettleAfterParts_OnlyWhenMoreThanOnePart(int uploadTaskCount, bool expected)
+    {
+        Assert.Equal(expected, TransferFile.ShouldSettleAfterParts(uploadTaskCount));
+    }
+
+    [Fact]
+    public async Task Run_NetAppToEgress_FileAtOrUnderFiveMb_UsesSingleUploadAndSkipsMultipart()
+    {
+        var payload = CreatePayload();
+        payload.TransferDirection = TransferDirection.NetAppToEgress;
+        var content = Encoding.UTF8.GetBytes("small-file");
+        var (destination, requestFactory, httpClient) = CreateEgressDestination("upload-small");
+        using (httpClient)
+        {
+            _storageClientFactoryMock
+                .Setup(x => x.GetClientsForDirection(payload.TransferDirection))
+                .Returns((_sourceClientMock.Object, destination));
+            _sourceClientMock
+                .Setup(x => x.OpenReadStreamAsync(payload.SourcePath.Path,
+                    payload.WorkspaceId,
+                    payload.SourcePath.FileId,
+                    payload.BearerToken,
+                    payload.BucketName))
+                .ReturnsAsync((new MemoryStream(content), (long)content.Length));
+
+            var result = await _activity.Run(payload);
+
+            Assert.True(result.IsSuccess);
+            Assert.Equal(1, result.SuccessfulItem!.TotalPartsCount);
+            Assert.False(_capturedTransferEvents[^1].IsMultipart);
+            requestFactory.Verify(
+                f => f.UploadFileContentRequest(It.IsAny<UploadFileContentArg>(), It.IsAny<string>()),
+                Times.Once);
+            requestFactory.Verify(
+                f => f.UploadChunkRequest(It.IsAny<UploadChunkArg>(), It.IsAny<string>()),
+                Times.Never);
+            requestFactory.Verify(
+                f => f.CompleteUploadRequest(It.IsAny<CompleteUploadArg>(), It.IsAny<string>()),
+                Times.Never);
+            VerifyInformationLog("Egress single-upload");
+        }
+    }
+
+    [Fact]
+    public async Task Run_NetAppToEgress_FileOverMultipartThreshold_UsesMultipartUpload()
+    {
+        var payload = CreatePayload();
+        payload.TransferDirection = TransferDirection.NetAppToEgress;
+        var content = Encoding.UTF8.GetBytes("0123456789");
+        var activity = new TransferFile(
+            _storageClientFactoryMock.Object,
+            _loggerMock.Object,
+            Options.Create(new SizeConfig { MinMultipartSizeBytes = 4, ChunkSizeBytes = 1024 }),
+            _egressOptions,
+            _initializationHandlerMock.Object,
+            _telemetryClientMock.Object);
+        var (destination, requestFactory, httpClient) = CreateEgressDestination("upload-large");
+        using (httpClient)
+        {
+            _storageClientFactoryMock
+                .Setup(x => x.GetClientsForDirection(payload.TransferDirection))
+                .Returns((_sourceClientMock.Object, destination));
+            _sourceClientMock
+                .Setup(x => x.OpenReadStreamAsync(payload.SourcePath.Path,
+                    payload.WorkspaceId,
+                    payload.SourcePath.FileId,
+                    payload.BearerToken,
+                    payload.BucketName))
+                .ReturnsAsync((new MemoryStream(content), (long)content.Length));
+
+            var result = await activity.Run(payload);
+
+            Assert.True(result.IsSuccess);
+            Assert.Equal(1, result.SuccessfulItem!.TotalPartsCount);
+            Assert.True(_capturedTransferEvents[^1].IsMultipart);
+            requestFactory.Verify(
+                f => f.UploadChunkRequest(It.IsAny<UploadChunkArg>(), It.IsAny<string>()),
+                Times.Once);
+            requestFactory.Verify(
+                f => f.CompleteUploadRequest(It.IsAny<CompleteUploadArg>(), It.IsAny<string>()),
+                Times.Once);
+            requestFactory.Verify(
+                f => f.UploadFileContentRequest(It.IsAny<UploadFileContentArg>(), It.IsAny<string>()),
+                Times.Never);
+            VerifyInformationLog("multipart upload");
+        }
+    }
+
+    [Fact]
+    public async Task Run_NetAppToEgress_MultipartWithSeveralChunks_ReportsActualPartCount()
+    {
+        var payload = CreatePayload();
+        payload.TransferDirection = TransferDirection.NetAppToEgress;
+        var content = Encoding.UTF8.GetBytes("0123456789");
+        var activity = new TransferFile(
+            _storageClientFactoryMock.Object,
+            _loggerMock.Object,
+            Options.Create(new SizeConfig { MinMultipartSizeBytes = 4, ChunkSizeBytes = 4 }),
+            _egressOptions,
+            _initializationHandlerMock.Object,
+            _telemetryClientMock.Object);
+        var (destination, requestFactory, httpClient) = CreateEgressDestination("upload-chunked");
+        using (httpClient)
+        {
+            _storageClientFactoryMock
+                .Setup(x => x.GetClientsForDirection(payload.TransferDirection))
+                .Returns((_sourceClientMock.Object, destination));
+            _sourceClientMock
+                .Setup(x => x.OpenReadStreamAsync(payload.SourcePath.Path,
+                    payload.WorkspaceId,
+                    payload.SourcePath.FileId,
+                    payload.BearerToken,
+                    payload.BucketName))
+                .ReturnsAsync((new MemoryStream(content), (long)content.Length));
+
+            var result = await activity.Run(payload);
+
+            // 10 bytes at a 4 byte chunk size is three parts (4 + 4 + 2).
+            Assert.True(result.IsSuccess);
+            Assert.Equal(3, result.SuccessfulItem!.TotalPartsCount);
+            Assert.Equal(3, _capturedTransferEvents[^1].TotalPartsCount);
+            Assert.True(_capturedTransferEvents[^1].IsMultipart);
+            requestFactory.Verify(
+                f => f.UploadChunkRequest(It.IsAny<UploadChunkArg>(), It.IsAny<string>()),
+                Times.Exactly(3));
+        }
+    }
+
+    private static (EgressStorageClient Client, Mock<IEgressRequestFactory> Factory, HttpClient HttpClient) CreateEgressDestination(string uploadId)
+    {
+        var handler = new Mock<HttpMessageHandler>();
+        var httpClient = new HttpClient(handler.Object) { BaseAddress = new Uri("https://example.test") };
+        var requestFactory = new Mock<IEgressRequestFactory>();
+        var client = new EgressStorageClient(
+            Mock.Of<ILogger<EgressStorageClient>>(),
+            Options.Create(new EgressOptions
+            {
+                Username = "test",
+                Password = "test",
+                Url = "https://example.test",
+                TransferTimeoutSeconds = 30
+            }),
+            httpClient,
+            requestFactory.Object,
+            Mock.Of<ITelemetryClient>());
+
+        requestFactory
+            .Setup(f => f.GetWorkspaceTokenRequest(It.IsAny<string>(), It.IsAny<string>()))
+            .Returns(() => new HttpRequestMessage(HttpMethod.Get, "https://example.test/api/v1/auth"));
+        requestFactory
+            .Setup(f => f.CreateUploadRequest(It.IsAny<CreateUploadArg>(), It.IsAny<string>()))
+            .Returns(() => new HttpRequestMessage(HttpMethod.Post, "https://example.test/api/v1/uploads"));
+        requestFactory
+            .Setup(f => f.UploadFileContentRequest(It.IsAny<UploadFileContentArg>(), It.IsAny<string>()))
+            .Returns(() => new HttpRequestMessage(HttpMethod.Patch, $"https://example.test/api/v1/uploads/{uploadId}/"));
+        requestFactory
+            .Setup(f => f.UploadChunkRequest(It.IsAny<UploadChunkArg>(), It.IsAny<string>()))
+            .Returns(() => new HttpRequestMessage(HttpMethod.Patch, $"https://example.test/api/v1/uploads/{uploadId}/chunk"));
+        requestFactory
+            .Setup(f => f.CompleteUploadRequest(It.IsAny<CompleteUploadArg>(), It.IsAny<string>()))
+            .Returns(() => new HttpRequestMessage(HttpMethod.Put, $"https://example.test/api/v1/uploads/{uploadId}/complete"));
+
+        handler.Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>())
+            .Returns<HttpRequestMessage, CancellationToken>((request, _) =>
+            {
+                var json = request.Method == HttpMethod.Get
+                    ? System.Text.Json.JsonSerializer.Serialize(new GetWorkspaceTokenResponse { Token = "token", Expiration = 300 })
+                    : request.Method == HttpMethod.Post
+                        ? System.Text.Json.JsonSerializer.Serialize(new CreateUploadResponse { Id = uploadId })
+                        : "{}";
+
+                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent(json, Encoding.UTF8, "application/json")
+                });
+            });
+
+        return (client, requestFactory, httpClient);
+    }
+
+    private void VerifyInformationLog(string messageFragment)
+    {
+        _loggerMock.Verify(
+            x => x.Log(
+                LogLevel.Information,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, _) => v.ToString()!.Contains(messageFragment)),
+                It.IsAny<Exception?>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.AtLeastOnce);
     }
 
     // Stream that reports a length but whose ReadAsync never completes until the supplied token is
