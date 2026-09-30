@@ -1814,6 +1814,104 @@ public class EgressStorageClientTests : IDisposable
             Times.Once);
     }
 
+    [Fact]
+    public async Task UploadFileAsync_SmallFile_UsesFileFormKeyAndDoesNotComplete()
+    {
+        var workspaceId = "ws-1";
+        var uploadId = "upload-1";
+        var token = "token-1";
+        var destinationPath = "folder";
+        var relativePath = "file.txt";
+        var fileBytes = Encoding.UTF8.GetBytes("hello");
+        var expectedFolder = EgressStorageClient.GetDestinationFolderPath(destinationPath, relativePath, null);
+
+        SetupTokenRequest(token);
+        SetupCreateUploadRequest(expectedFolder, fileBytes.Length, workspaceId, relativePath, token);
+        SetupUploadFileContentRequest(uploadId, workspaceId, fileBytes, token);
+        SetupHttpMockResponses(
+            ("token", new GetWorkspaceTokenResponse { Token = token, Expiration = 300 }),
+            ("create", new CreateUploadResponse { Id = uploadId }),
+            ("patch", new { accepted = true }));
+
+        using var stream = new MemoryStream(fileBytes);
+        await _client.UploadFileAsync(destinationPath, stream, fileBytes.Length, workspaceId, relativePath);
+
+        VerifyCreateUploadRequest(expectedFolder, fileBytes.Length, workspaceId, relativePath, token);
+        _requestFactoryMock.Verify(
+            f => f.UploadFileContentRequest(
+                It.Is<UploadFileContentArg>(arg =>
+                    arg.UploadId == uploadId &&
+                    arg.WorkspaceId == workspaceId &&
+                    arg.FileContent.SequenceEqual(fileBytes)),
+                token),
+            Times.Once);
+        _requestFactoryMock.Verify(
+            f => f.UploadChunkRequest(It.IsAny<UploadChunkArg>(), It.IsAny<string>()),
+            Times.Never);
+        _requestFactoryMock.Verify(
+            f => f.CompleteUploadRequest(It.IsAny<CompleteUploadArg>(), It.IsAny<string>()),
+            Times.Never);
+        VerifyLoggedInformation("Egress single-upload");
+    }
+
+    [Fact]
+    public async Task UploadFileAsync_WhenPatchReturns500ThenSucceeds_RetriesAndDoesNotComplete()
+    {
+        var workspaceId = "ws-1";
+        var uploadId = "upload-1";
+        var token = "token-1";
+        var fileBytes = Encoding.UTF8.GetBytes("hello");
+        var client = CreateClientWithChunkRetryOptions(maxAttempts: 2, baseDelaySeconds: 1);
+
+        SetupTokenRequest(token);
+        _requestFactoryMock
+            .Setup(f => f.CreateUploadRequest(It.IsAny<CreateUploadArg>(), It.IsAny<string>()))
+            .Returns(() => new HttpRequestMessage(HttpMethod.Post, $"{TestUrl}/api/v1/uploads"));
+        _requestFactoryMock
+            .Setup(f => f.UploadFileContentRequest(It.IsAny<UploadFileContentArg>(), It.IsAny<string>()))
+            .Returns(() => new HttpRequestMessage(HttpMethod.Patch, $"{TestUrl}/api/v1/workspaces/{workspaceId}/uploads/{uploadId}/"));
+
+        SetupHttpMockResponsesWithStatus(
+            ("token", new GetWorkspaceTokenResponse { Token = token, Expiration = 300 }, HttpStatusCode.OK),
+            ("create", new CreateUploadResponse { Id = uploadId }, HttpStatusCode.OK),
+            ("patchFail", "Internal Server Error", HttpStatusCode.InternalServerError),
+            ("patchOk", new { accepted = true }, HttpStatusCode.OK));
+
+        using var stream = new MemoryStream(fileBytes);
+        await client.UploadFileAsync("folder", stream, fileBytes.Length, workspaceId, "file.txt");
+
+        _requestFactoryMock.Verify(
+            f => f.UploadFileContentRequest(It.IsAny<UploadFileContentArg>(), It.IsAny<string>()),
+            Times.Exactly(2));
+        _requestFactoryMock.Verify(
+            f => f.CompleteUploadRequest(It.IsAny<CompleteUploadArg>(), It.IsAny<string>()),
+            Times.Never);
+    }
+
+    private void SetupUploadFileContentRequest(string uploadId, string workspaceId, byte[] fileBytes, string token)
+    {
+        _requestFactoryMock
+            .Setup(f => f.UploadFileContentRequest(
+                It.Is<UploadFileContentArg>(arg =>
+                    arg.UploadId == uploadId &&
+                    arg.WorkspaceId == workspaceId &&
+                    arg.FileContent.SequenceEqual(fileBytes)),
+                token))
+            .Returns(() => new HttpRequestMessage(HttpMethod.Patch, $"{TestUrl}/api/v1/workspaces/{workspaceId}/uploads/{uploadId}/"));
+    }
+
+    private void VerifyLoggedInformation(string messageFragment)
+    {
+        _loggerMock.Verify(
+            x => x.Log(
+                LogLevel.Information,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, _) => v.ToString()!.Contains(messageFragment)),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.AtLeastOnce);
+    }
+
     private EgressStorageClient CreateClientWithChunkRetryOptions(int maxAttempts, int baseDelaySeconds)
     {
         var egressOptions = new EgressOptions

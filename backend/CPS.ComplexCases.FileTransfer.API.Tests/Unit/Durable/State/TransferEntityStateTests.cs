@@ -517,4 +517,70 @@ public class TransferEntityStateTests
         Assert.Equal(TransferStatus.InProgress, state.CurrentState.Status);
         Assert.Equal("existing error", state.CurrentState.ErrorMessage);
     }
+
+    [Fact]
+    public void ApplyResultBatch_MixedResults_UpdatesEachCounterOnce()
+    {
+        var state = new TransferEntityState();
+        state.Initialize(new TransferEntity { DestinationPath = "dest", BearerToken = "fakeBearerToken" });
+
+        state.ApplyResultBatch(new TransferResultBatch
+        {
+            IsRetry = false,
+            SuccessfulItems =
+            [
+                new TransferItem { SourcePath = "ok.txt", Status = TransferItemStatus.Completed, IsRenamed = false, Size = 10 }
+            ],
+            SkippedItems =
+            [
+                new TransferItem { SourcePath = "empty.txt", Status = TransferItemStatus.Skipped, IsRenamed = false, Size = 0 }
+            ],
+            FailedItems =
+            [
+                new TransferFailedItem { SourcePath = "bad.txt", ErrorCode = TransferErrorCode.GeneralError, ErrorMessage = "failed" }
+            ]
+        });
+
+        Assert.Equal(1, state.CurrentState.SuccessfulFiles);
+        Assert.Equal(1, state.CurrentState.SkippedFiles);
+        Assert.Equal(1, state.CurrentState.FailedFiles);
+        Assert.Equal(3, state.CurrentState.ProcessedFiles);
+        Assert.Single(state.CurrentState.SuccessfulItems);
+        Assert.Single(state.CurrentState.SkippedItems);
+        Assert.Single(state.CurrentState.FailedItems);
+    }
+
+    [Fact]
+    public void ApplyResultBatch_Retry_DoesNotIncrementProcessedFiles()
+    {
+        var state = new TransferEntityState();
+        state.Initialize(new TransferEntity { DestinationPath = "dest", BearerToken = "fakeBearerToken" });
+
+        state.AddFailedItem(new TransferFailedItem
+        {
+            SourcePath = "file1",
+            ErrorCode = TransferErrorCode.Transient,
+            ErrorMessage = "S3 500"
+        });
+        state.RemoveTransientFailures();
+
+        state.ApplyResultBatch(new TransferResultBatch
+        {
+            IsRetry = true,
+            SuccessfulItems =
+            [
+                new TransferItem { SourcePath = "file1", Status = TransferItemStatus.Completed, IsRenamed = false, Size = 20 }
+            ],
+            FailedItems =
+            [
+                new TransferFailedItem { SourcePath = "file2", ErrorCode = TransferErrorCode.GeneralError, ErrorMessage = "still failed" }
+            ]
+        });
+
+        Assert.Equal(1, state.CurrentState.ProcessedFiles);
+        Assert.Equal(1, state.CurrentState.SuccessfulFiles);
+        Assert.Equal(1, state.CurrentState.FailedFiles);
+        Assert.Single(state.CurrentState.SuccessfulItems);
+        Assert.Equal("file2", state.CurrentState.FailedItems[0].SourcePath);
+    }
 }

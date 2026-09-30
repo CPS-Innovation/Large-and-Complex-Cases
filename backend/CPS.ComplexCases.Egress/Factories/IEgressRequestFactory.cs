@@ -13,6 +13,7 @@ public interface IEgressRequestFactory
     HttpRequestMessage GetWorkspaceDocumentHeadRequest(GetWorkspaceDocumentArg arg, string token);
     HttpRequestMessage CreateUploadRequest(CreateUploadArg arg, string token);
     HttpRequestMessage UploadChunkRequest(UploadChunkArg arg, string token);
+    HttpRequestMessage UploadFileContentRequest(UploadFileContentArg arg, string token);
     HttpRequestMessage CompleteUploadRequest(CompleteUploadArg arg, string token);
     HttpRequestMessage CreateFolderRequest(CreateFolderArg arg, string token);
     HttpRequestMessage DeleteFilesRequest(DeleteFilesArg arg, string token);
