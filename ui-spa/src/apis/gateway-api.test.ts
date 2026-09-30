@@ -16,10 +16,12 @@ import {
   getActivityLog,
   downloadActivityLog,
   disconnectNetAppFolder,
+  logTelemetryEvent,
 } from "./gateway-api";
 import { ApiError } from "../common/errors/ApiError";
 import { v4 } from "uuid";
 import { getAccessToken } from "../auth";
+
 vi.mock("uuid", () => ({
   v4: vi.fn(),
 }));
@@ -34,10 +36,16 @@ vi.mock("../config", () => ({
 }));
 
 describe("gateway apis", () => {
+  let consoleWarnMock: any;
   global.fetch = vi.fn();
 
   beforeEach(() => {
-    vi.resetAllMocks();
+    consoleWarnMock = vi.spyOn(console, "warn").mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
+    consoleWarnMock.mockRestore();
   });
 
   describe("getCaseSearchResults", () => {
@@ -119,7 +127,7 @@ describe("gateway apis", () => {
       await expect(
         getCaseSearchResults({ "defendant-name": "husband&wife", area: "10" }),
       ).rejects.toThrow(
-        "An error occurred contacting the server at gateway_url/api/v1/case-search?defendant-name=husband%26wife&area=10: SyntaxError: Unexpected token < in JSON",
+        "API Error: gateway_url/api/v1/case-search?defendant-name=husband%26wife&area=10 returned 200 OK - SyntaxError: Unexpected token < in JSON",
       );
     });
     it("getCaseSearchResults - response schema validation failed", async () => {
@@ -147,7 +155,7 @@ describe("gateway apis", () => {
       await expect(
         getCaseSearchResults({ "defendant-name": "husband&wife", area: "10" }),
       ).rejects.toThrow(
-        "An error occurred contacting the server at gateway_url/api/v1/case-search?defendant-name=husband%26wife&area=10: response schema validation failed; status - OK (200)",
+        "API Error: gateway_url/api/v1/case-search?defendant-name=husband%26wife&area=10 returned 200 OK - response schema validation failed",
       );
     });
     it("getCaseSearchResults - response schema validation should fail if both operationName and leadDefendantName are null", async () => {
@@ -175,7 +183,18 @@ describe("gateway apis", () => {
       await expect(
         getCaseSearchResults({ urn: "45EL7752025" }),
       ).rejects.toThrow(
-        "An error occurred contacting the server at gateway_url/api/v1/case-search?urn=45EL7752025: response schema validation failed; status - OK (200)",
+        "API Error: gateway_url/api/v1/case-search?urn=45EL7752025 returned 200 OK - response schema validation failed",
+      );
+    });
+    it("getCaseSearchResults - catches network/auth errors and warns", async () => {
+      (globalThis.fetch as any).mockRejectedValue(new Error("network down"));
+      await expect(
+        getCaseSearchResults({
+          "defendant-name": "husband&wife",
+          area: "10",
+        }),
+      ).rejects.toThrow(
+        "API Error: gateway_url/api/v1/case-search?defendant-name=husband%26wife&area=10 returned 0 Network Error - Error: network down",
       );
     });
   });
@@ -254,7 +273,7 @@ describe("gateway apis", () => {
 
       await expect(getCaseDivisionsOrAreas()).rejects.toBeInstanceOf(ApiError);
       await expect(getCaseDivisionsOrAreas()).rejects.toThrow(
-        "An error occurred contacting the server at gateway_url/api/v1/areas: SyntaxError: Unexpected token < in JSON; status - OK (200)",
+        "API Error: gateway_url/api/v1/areas returned 200 OK - SyntaxError: Unexpected token < in JSON",
       );
     });
     it("getCaseDivisionsOrAreas - response schema validation failed", async () => {
@@ -272,7 +291,13 @@ describe("gateway apis", () => {
 
       await expect(getCaseDivisionsOrAreas()).rejects.toBeInstanceOf(ApiError);
       await expect(getCaseDivisionsOrAreas()).rejects.toThrow(
-        "An error occurred contacting the server at gateway_url/api/v1/areas: response schema validation failed; status - OK (200)",
+        "API Error: gateway_url/api/v1/areas returned 200 OK - response schema validation failed",
+      );
+    });
+    it("getCaseDivisionsOrAreas - catches network/auth errors and warns", async () => {
+      (globalThis.fetch as any).mockRejectedValue(new Error("network down"));
+      await expect(getCaseDivisionsOrAreas()).rejects.toThrow(
+        "API Error: gateway_url/api/v1/areas returned 0 Network Error - Error: network down",
       );
     });
   });
@@ -407,7 +432,7 @@ describe("gateway apis", () => {
       await expect(
         getEgressSearchResults("thunder", 0, 50, []),
       ).rejects.toThrow(
-        "An error occurred contacting the server at gateway_url/api/v1/egress/workspaces: SyntaxError: Unexpected token < in JSON",
+        "API Error: gateway_url/api/v1/egress/workspaces returned 200 OK - SyntaxError: Unexpected token < in JSON",
       );
     });
     it("getEgressSearchResults -  response schema validation failed", async () => {
@@ -435,7 +460,15 @@ describe("gateway apis", () => {
       await expect(
         getEgressSearchResults("thunder", 0, 50, []),
       ).rejects.toThrow(
-        "An error occurred contacting the server at gateway_url/api/v1/egress/workspaces: response schema validation failed; status - OK (200)",
+        "API Error: gateway_url/api/v1/egress/workspaces returned 200 OK - response schema validation failed",
+      );
+    });
+    it("getEgressSearchResults - catches network/auth errors and warns", async () => {
+      (globalThis.fetch as any).mockRejectedValue(new Error("network down"));
+      await expect(
+        getEgressSearchResults("thunder", 0, 50, []),
+      ).rejects.toThrow(
+        "API Error: gateway_url/api/v1/egress/workspaces?workspace-name=thunder&skip=0&take=50 returned 0 Network Error - Error: network down",
       );
     });
   });
@@ -532,6 +565,18 @@ describe("gateway apis", () => {
       );
 
       warnSpy.mockRestore();
+    });
+    it("connectEgressWorkspace - catches network/auth errors and warns", async () => {
+      (globalThis.fetch as any).mockRejectedValue(new Error("network down"));
+      await expect(
+        connectEgressWorkspace({
+          workspaceId: "thunder_1",
+          workspaceName: "thunder",
+          caseId: "123",
+        }),
+      ).rejects.toThrow(
+        "API Error: gateway_url/api/v1/egress/connections returned 0 Network Error - Error: network down",
+      );
     });
   });
   describe("getConnectNetAppFolders", () => {
@@ -696,7 +741,7 @@ describe("gateway apis", () => {
       await expect(
         getConnectNetAppFolders("thunder", "/netapp", 50, "", []),
       ).rejects.toThrow(
-        "An error occurred contacting the server at gateway_url/api/v1/netapp/folders: SyntaxError: Unexpected token < in JSON",
+        "API Error: gateway_url/api/v1/netapp/folders returned 200 OK - SyntaxError: Unexpected token < in JSON",
       );
     });
     it("getConnectNetAppFolders -  response schema validation failed", async () => {
@@ -721,7 +766,15 @@ describe("gateway apis", () => {
       await expect(
         getConnectNetAppFolders("thunder", "/netapp", 50, "", []),
       ).rejects.toThrow(
-        "An error occurred contacting the server at gateway_url/api/v1/netapp/folders: response schema validation failed; status - OK (200)",
+        "API Error: gateway_url/api/v1/netapp/folders returned 200 OK - response schema validation failed",
+      );
+    });
+    it("getConnectNetAppFolders - catches network/auth errors and warns", async () => {
+      (globalThis.fetch as any).mockRejectedValue(new Error("network down"));
+      await expect(
+        getConnectNetAppFolders("thunder", "/netapp", 50, "", []),
+      ).rejects.toThrow(
+        "API Error: gateway_url/api/v1/netapp/folders?operation-name=thunder&path=%2Fnetapp&take=50&continuation-token= returned 0 Network Error - Error: network down",
       );
     });
   });
@@ -828,6 +881,18 @@ describe("gateway apis", () => {
 
       warnSpy.mockRestore();
     });
+    it("connectNetAppFolder - catches network/auth errors and warns", async () => {
+      (globalThis.fetch as any).mockRejectedValue(new Error("network down"));
+      await expect(
+        connectNetAppFolder({
+          operationName: "thunder",
+          folderPath: "netapp/",
+          caseId: "123",
+        }),
+      ).rejects.toThrow(
+        "API Error: gateway_url/api/v1/netapp/connections returned 0 Network Error - Error: network down",
+      );
+    });
   });
   describe("getCaseMetaData", () => {
     it("getCaseMetaData - should return case meta data when fetch is successful", async () => {
@@ -910,7 +975,7 @@ describe("gateway apis", () => {
 
       await expect(getCaseMetaData("12")).rejects.toBeInstanceOf(ApiError);
       await expect(getCaseMetaData("12")).rejects.toThrow(
-        "An error occurred contacting the server at gateway_url/api/v1/cases/12: SyntaxError: Unexpected token < in JSON",
+        "API Error: gateway_url/api/v1/cases/12 returned 200 OK - SyntaxError: Unexpected token < in JSON",
       );
     });
 
@@ -932,7 +997,7 @@ describe("gateway apis", () => {
 
       await expect(getCaseMetaData("12")).rejects.toBeInstanceOf(ApiError);
       await expect(getCaseMetaData("12")).rejects.toThrow(
-        "An error occurred contacting the server at gateway_url/api/v1/cases/12: response schema validation failed; status - OK (200)",
+        "API Error: gateway_url/api/v1/cases/12 returned 200 OK - response schema validation failed",
       );
     });
     it("getCaseMetaData - response schema validation should fail if both operationName and leadDefendantName are null", async () => {
@@ -958,7 +1023,13 @@ describe("gateway apis", () => {
       await expect(getCaseMetaData("12")).rejects.toBeInstanceOf(ApiError);
 
       await expect(getCaseMetaData("12")).rejects.toThrow(
-        "An error occurred contacting the server at gateway_url/api/v1/cases/12: response schema validation failed; status - OK (200)",
+        "API Error: gateway_url/api/v1/cases/12 returned 200 OK - response schema validation failed",
+      );
+    });
+    it("getCaseMetaData - catches network/auth errors and warns", async () => {
+      (globalThis.fetch as any).mockRejectedValue(new Error("network down"));
+      await expect(getCaseMetaData("12")).rejects.toThrow(
+        "API Error: gateway_url/api/v1/cases/12 returned 0 Network Error - Error: network down",
       );
     });
   });
@@ -1108,7 +1179,7 @@ describe("gateway apis", () => {
       await expect(
         getEgressFolders("thunder", "folder-1", "folder-id", 0, 50, []),
       ).rejects.toThrow(
-        "An error occurred contacting the server at gateway_url/api/v1/egress/workspaces/thunder/files?folder-id=folder-1&skip=0&take=50: SyntaxError: Unexpected token < in JSON",
+        "API Error: gateway_url/api/v1/egress/workspaces/thunder/files?folder-id=folder-1&skip=0&take=50 returned 200 OK - SyntaxError: Unexpected token < in JSON",
       );
     });
 
@@ -1137,7 +1208,16 @@ describe("gateway apis", () => {
       await expect(
         getEgressFolders("thunder", "folder-1", "folder-id", 0, 50, []),
       ).rejects.toThrow(
-        "An error occurred contacting the server at gateway_url/api/v1/egress/workspaces/thunder/files?folder-id=folder-1&skip=0&take=50: response schema validation failed; status - OK (200)",
+        "API Error: gateway_url/api/v1/egress/workspaces/thunder/files?folder-id=folder-1&skip=0&take=50 returned 200 OK - response schema validation failed",
+      );
+    });
+
+    it("getEgressFolders - catches network/auth errors and warns", async () => {
+      (globalThis.fetch as any).mockRejectedValue(new Error("network down"));
+      await expect(
+        getEgressFolders("thunder", "folder-1", "folder-id", 0, 50, []),
+      ).rejects.toThrow(
+        "API Error: gateway_url/api/v1/egress/workspaces/thunder/files?folder-id=folder-1&skip=0&take=50 returned 0 Network Error - Error: network down",
       );
     });
   });
@@ -1361,7 +1441,7 @@ describe("gateway apis", () => {
         getNetAppFolders("/netapp", 50, "", []),
       ).rejects.toBeInstanceOf(ApiError);
       await expect(getNetAppFolders("/netapp", 50, "", [])).rejects.toThrow(
-        "An error occurred contacting the server at gateway_url/api/v1/netapp/files: SyntaxError: Unexpected token < in JSON; status - OK (200)",
+        "API Error: gateway_url/api/v1/netapp/files returned 200 OK - SyntaxError: Unexpected token < in JSON",
       );
     });
     it("getNetAppFolders -  response schema validation failed", async () => {
@@ -1405,7 +1485,14 @@ describe("gateway apis", () => {
         getNetAppFolders("/netapp", 50, "", []),
       ).rejects.toBeInstanceOf(ApiError);
       await expect(getNetAppFolders("/netapp", 50, "", [])).rejects.toThrow(
-        "An error occurred contacting the server at gateway_url/api/v1/netapp/files: response schema validation failed; status - OK (200)",
+        "API Error: gateway_url/api/v1/netapp/files returned 200 OK - response schema validation failed",
+      );
+    });
+
+    it("getNetAppFolders - catches network/auth errors and warns", async () => {
+      (globalThis.fetch as any).mockRejectedValue(new Error("network down"));
+      await expect(getNetAppFolders("/netapp", 50, "", [])).rejects.toThrow(
+        "API Error: gateway_url/api/v1/netapp/files?path=%2Fnetapp&take=50&continuation-token= returned 0 Network Error - Error: network down",
       );
     });
   });
@@ -1563,7 +1650,7 @@ describe("gateway apis", () => {
         ApiError,
       );
       await expect(indexingFileTransfer(payload)).rejects.toThrow(
-        "An error occurred contacting the server at gateway_url/api/v1/filetransfer/files: response schema validation failed; status - OK (200)",
+        "API Error: gateway_url/api/v1/filetransfer/files returned 200 OK - response schema validation failed",
       );
     });
 
@@ -1616,6 +1703,27 @@ describe("gateway apis", () => {
       );
 
       warnSpy.mockRestore();
+    });
+
+    it("indexingFileTransfer - catches network/auth errors and warns", async () => {
+      const payload = {
+        caseId: 12,
+        transferDirection: "EgressToNetApp" as const,
+        transferType: "Copy" as const,
+        sourcePaths: [
+          {
+            fileId: "1",
+            path: "abc/def",
+            isFolder: true,
+          },
+        ],
+        sourceRootFolderPath: "abc/",
+        destinationPath: "netapp/",
+      };
+      (globalThis.fetch as any).mockRejectedValue(new Error("network down"));
+      await expect(indexingFileTransfer(payload)).rejects.toThrow(
+        "API Error: gateway_url/api/v1/filetransfer/files returned 0 Network Error - Error: network down",
+      );
     });
   });
   describe("initiateFileTransfer", () => {
@@ -1728,7 +1836,7 @@ describe("gateway apis", () => {
         ApiError,
       );
       await expect(initiateFileTransfer(payload)).rejects.toThrow(
-        "An error occurred contacting the server at gateway_url/api/v1/filetransfer/initiate: response schema validation failed; status - OK (200)",
+        "API Error: gateway_url/api/v1/filetransfer/initiate returned 200 OK - response schema validation failed",
       );
     });
     it("initiateFileTransfer - should not call fetch and throw Error and console.warn when request schema validation fails ", async () => {
@@ -1767,6 +1875,22 @@ describe("gateway apis", () => {
       );
 
       warnSpy.mockRestore();
+    });
+    it("initiateFileTransfer - catches network/auth errors and warns", async () => {
+      const payload = {
+        isRetry: false,
+        caseId: 12,
+        workspaceId: "thuderstruck",
+        transferType: "Copy" as const,
+        transferDirection: "EgressToNetApp" as const,
+        sourcePaths: [],
+        destinationPath: "netapp/",
+        sourceRootFolderPath: "egress/",
+      };
+      (globalThis.fetch as any).mockRejectedValue(new Error("network down"));
+      await expect(initiateFileTransfer(payload)).rejects.toThrow(
+        "API Error: gateway_url/api/v1/filetransfer/initiate returned 0 Network Error - Error: network down",
+      );
     });
   });
   describe("getTransferStatus", () => {
@@ -1957,7 +2081,7 @@ describe("gateway apis", () => {
         ApiError,
       );
       await expect(getTransferStatus("transfer_id_1")).rejects.toThrow(
-        "An error occurred contacting the server at gateway_url/api/v1/filetransfer/transfer_id_1/status: SyntaxError: Unexpected token < in JSON; status - OK (200)",
+        "API Error: gateway_url/api/v1/filetransfer/transfer_id_1/status returned 200 OK - SyntaxError: Unexpected token < in JSON",
       );
     });
     it("getTransferStatus -  response schema validation failed", async () => {
@@ -1988,7 +2112,14 @@ describe("gateway apis", () => {
         ApiError,
       );
       await expect(getTransferStatus("transfer_id_1")).rejects.toThrow(
-        "An error occurred contacting the server at gateway_url/api/v1/filetransfer/transfer_id_1/status: response schema validation failed; status - OK (200)",
+        "API Error: gateway_url/api/v1/filetransfer/transfer_id_1/status returned 200 OK - response schema validation failed",
+      );
+    });
+
+    it("getTransferStatus - catches network/auth errors and warns", async () => {
+      (globalThis.fetch as any).mockRejectedValue(new Error("network down"));
+      await expect(getTransferStatus("transfer_id_1")).rejects.toThrow(
+        "API Error: gateway_url/api/v1/filetransfer/transfer_id_1/status returned 0 Network Error - Error: network down",
       );
     });
   });
@@ -2047,6 +2178,13 @@ describe("gateway apis", () => {
             "Correlation-Id": "id_123",
           },
         }),
+      );
+    });
+
+    it("handleFileTransferClear - catches network/auth errors and warns", async () => {
+      (globalThis.fetch as any).mockRejectedValue(new Error("network down"));
+      await expect(handleFileTransferClear("mock_transfer_Id")).rejects.toThrow(
+        "API Error: gateway_url/api/v1/filetransfer/mock_transfer_Id/clear returned 0 Network Error - Error: network down",
       );
     });
   });
@@ -2147,7 +2285,7 @@ describe("gateway apis", () => {
         ApiError,
       );
       await expect(getActivityLog("test_case_id")).rejects.toThrow(
-        "An error occurred contacting the server at gateway_url/api/v1/activity/logs?case-id=test_case_id: SyntaxError: Unexpected token < in JSON; status - OK (200)",
+        "API Error: gateway_url/api/v1/activity/logs?case-id=test_case_id returned 200 OK - SyntaxError: Unexpected token < in JSON",
       );
     });
     it("getTransferStatus -  response schema validation failed", async () => {
@@ -2188,7 +2326,13 @@ describe("gateway apis", () => {
         ApiError,
       );
       await expect(getActivityLog("test_case_id")).rejects.toThrow(
-        "An error occurred contacting the server at gateway_url/api/v1/activity/logs?case-id=test_case_id: response schema validation failed; status - OK (200)",
+        "API Error: gateway_url/api/v1/activity/logs?case-id=test_case_id returned 200 OK - response schema validation failed",
+      );
+    });
+    it("getTransferStatus - catches network/auth errors and warns", async () => {
+      (globalThis.fetch as any).mockRejectedValue(new Error("network down"));
+      await expect(getTransferStatus("mock_transfer_Id")).rejects.toThrow(
+        "API Error: gateway_url/api/v1/filetransfer/mock_transfer_Id/status returned 0 Network Error - Error: network down",
       );
     });
   });
@@ -2252,6 +2396,13 @@ describe("gateway apis", () => {
         }),
       );
     });
+
+    it("downloadActivityLog - catches network/auth errors and warns", async () => {
+      (globalThis.fetch as any).mockRejectedValue(new Error("network down"));
+      await expect(downloadActivityLog("mock_activity_Id")).rejects.toThrow(
+        "API Error: gateway_url/api/v1/activity/mock_activity_Id/logs/download returned 0 Network Error - Error: network down",
+      );
+    });
   });
   describe("disconnectNetAppFolder", () => {
     it("disconnectNetAppFolder - should return correct response if the DELETE request is successful", async () => {
@@ -2308,6 +2459,86 @@ describe("gateway apis", () => {
             "Correlation-Id": "id_123",
           },
         }),
+      );
+    });
+
+    it("disconnectNetAppFolder - catches network/auth errors and warns", async () => {
+      (globalThis.fetch as any).mockRejectedValue(new Error("network down"));
+      await expect(disconnectNetAppFolder(123)).rejects.toThrow(
+        "API Error: gateway_url/api/v1/netapp/connections?case-id=123 returned 0 Network Error - Error: network down",
+      );
+    });
+  });
+
+  describe("logTelemetryEvent", async () => {
+    it("logTelemetryEvent - posts payload to gateway telemetry endpoint with common headers", async () => {
+      const mockRequest = { mockRequestData: {} } as any;
+
+      (globalThis.fetch as any).mockResolvedValue({
+        ok: true,
+      });
+      await logTelemetryEvent(mockRequest);
+
+      expect(fetch).toHaveBeenCalledWith(
+        "gateway_url/api/v1/telemetry",
+        expect.objectContaining({
+          method: "POST",
+          credentials: "include",
+          headers: {
+            Authorization: "Bearer access_token",
+            "Correlation-Id": "id_123",
+          },
+        }),
+      );
+      expect(fetch).toHaveBeenCalledTimes(1);
+      expect(consoleWarnMock).not.toHaveBeenCalled();
+    });
+
+    it("logTelemetryEvent - logs a warning when response is not ok", async () => {
+      const mockRequest = { mockRequestData: {} } as any;
+      (globalThis.fetch as any).mockResolvedValue({
+        ok: false,
+        status: 500,
+      });
+      await logTelemetryEvent(mockRequest);
+
+      expect(fetch).toHaveBeenCalledWith(
+        "gateway_url/api/v1/telemetry",
+        expect.objectContaining({
+          method: "POST",
+          credentials: "include",
+          headers: {
+            Authorization: "Bearer access_token",
+            "Correlation-Id": "id_123",
+          },
+        }),
+      );
+      expect(fetch).toHaveBeenCalledTimes(1);
+      expect(consoleWarnMock).toHaveBeenCalledWith(
+        "Logging telemetry event failed with status: 500",
+      );
+    });
+
+    it("logTelemetryEvent - catches network/auth errors and warns", async () => {
+      const mockRequest = { mockRequestData: {} } as any;
+      (globalThis.fetch as any).mockRejectedValue(new Error("network down"));
+      await logTelemetryEvent(mockRequest);
+
+      expect(fetch).toHaveBeenCalledWith(
+        "gateway_url/api/v1/telemetry",
+        expect.objectContaining({
+          method: "POST",
+          credentials: "include",
+          headers: {
+            Authorization: "Bearer access_token",
+            "Correlation-Id": "id_123",
+          },
+        }),
+      );
+      expect(fetch).toHaveBeenCalledTimes(1);
+      expect(consoleWarnMock).toHaveBeenCalledWith(
+        "Logging telemetry event failed due to network or auth error:",
+        Error("network down"),
       );
     });
   });

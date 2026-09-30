@@ -182,11 +182,6 @@ test.describe("egress meta data issues", () => {
     await expect(
       page.getByText("Contact the product team and give them the error code."),
     ).toBeVisible();
-    await expect(
-      page.getByText(
-        "Getting egress folders failed; status - Internal Server Error (500)",
-      ),
-    ).toBeVisible();
   });
 });
 

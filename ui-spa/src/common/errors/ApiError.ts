@@ -15,9 +15,7 @@ export class ApiError extends Error {
       correlationId?: string;
     },
   ) {
-    super(
-      `An error occurred contacting the server at ${path}: ${message}; status - ${statusText} (${status})`,
-    );
+    super(`API Error: ${path} returned ${status} ${statusText} - ${message}`);
     this.path = path;
     this.code = status;
     this.customProperties = properties?.customProperties;

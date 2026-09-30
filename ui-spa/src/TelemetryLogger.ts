@@ -49,7 +49,12 @@ export class TelemetryService {
 
   async trackException(
     error: Error,
-    properties: Record<string, unknown>[] = [],
+    properties: [
+      { referenceId: string },
+      { errorSource: "API_ERROR" | "UI_UNHANDLED_EXCEPTION" },
+      { route: string },
+      ...Record<string, unknown>[],
+    ],
   ): Promise<void> {
     const payload: TelemetryPayload = {
       telemetryType: TelemetryType.Exception,

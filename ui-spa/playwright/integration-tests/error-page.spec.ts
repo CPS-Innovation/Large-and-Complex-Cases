@@ -25,11 +25,10 @@ test("Should show the error page with correlation id if api fails", async ({
   await expect(
     page.getByText("Contact the product team and give them the error code."),
   ).toBeVisible();
-  await expect(page.getByTestId("txt-error-correlation-id")).toBeVisible();
-  await expect(page.getByTestId("txt-error-correlation-id")).toHaveText(
+  await expect(page.getByTestId("error-reference")).toBeVisible();
+  await expect(page.getByTestId("error-reference")).toHaveText(
     `Error code: ${correlationId}`,
   );
-  await expect(page.getByTestId("txt-error-message")).not.toBeVisible();
 });
 
 test("Should show the error page with error message if any other error happens", async ({
@@ -37,10 +36,9 @@ test("Should show the error page with error message if any other error happens",
   worker,
 }) => {
   await worker.use(
-    http.get("https://mocked-out-api/api/v1/areas", async (req: any) => {
+    http.get("https://mocked-out-api/api/v1/areas", async () => {
       await delay(200);
-      //this way we try to access unavailable property so that worker will fail to return a response which is caught
-      return req.headers.abc;
+      return HttpResponse.error();
     }),
   );
 
@@ -54,9 +52,5 @@ test("Should show the error page with error message if any other error happens",
   await expect(
     page.getByText("Contact the product team and give them the error code."),
   ).toBeVisible();
-  await expect(page.getByTestId("txt-error-message")).toBeVisible();
-  await expect(page.getByTestId("txt-error-message")).toHaveText(
-    `Error code: Failed to fetch`,
-  );
-  await expect(page.getByTestId("txt-error-correlation-id")).not.toBeVisible();
+  await expect(page.getByTestId("error-reference")).toBeVisible();
 });

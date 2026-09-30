@@ -166,12 +166,6 @@ test.describe("transfer-error-handling", () => {
     );
     await transferMaterialsDestinationPage.clickTransferActionButton();
 
-    // await expect(page.getByTestId("transfer-spinner")).toBeVisible();
-    // await expect(page.getByTestId("egress-table-wrapper")).not.toBeVisible();
-    // await expect(page.getByTestId("netapp-table-wrapper")).not.toBeVisible();
-    // await expect(
-    //   page.getByTestId("tab-content-transfer-materials"),
-    // ).toContainText("Indexing transfer from Egress to Shared Drive...");
     await expect(page.locator("h1")).toHaveText(
       "Sorry, there is a problem with the service",
     );
