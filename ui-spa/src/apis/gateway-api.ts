@@ -43,6 +43,7 @@ import {
 } from "../schemas";
 import { type CaseSearchParams } from "../common/types/CaseSearchParams";
 import { ApiError } from "../common/errors/ApiError";
+import { type TelemetryPayload } from "../TelemetryLogger";
 
 export const CORRELATION_ID = "Correlation-Id";
 
@@ -58,22 +59,54 @@ export const parseAndValidateResponse = async <T>(
   url: string,
   schema: z.ZodType<T>,
   contextText: string,
+  correlationId: string,
 ): Promise<T> => {
   let parsedJson: unknown;
   try {
     parsedJson = await response.json();
   } catch (error) {
-    throw new ApiError(`${error}`, url, response);
+    throw new ApiError(`${error}`, url, response, {
+      correlationId,
+    });
   }
 
   const result = schema.safeParse(parsedJson);
 
   if (!result.success) {
     console.warn(`${contextText} validation failed`, result.error);
-    throw new ApiError(`response schema validation failed`, url, response);
+    throw new ApiError(`response schema validation failed`, url, response, {
+      correlationId,
+    });
   }
 
   return result.data;
+};
+
+const fetchOrThrow = async (
+  url: string,
+  headers: Record<string, string>,
+  method: "GET" | "POST" | "PUT" | "DELETE",
+  stringifiedPayload?: string,
+): Promise<Response> => {
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      method,
+      credentials: "include",
+      headers,
+      ...(stringifiedPayload ? { body: stringifiedPayload } : {}),
+    });
+  } catch (networkError) {
+    throw new ApiError(
+      `${networkError}`,
+      url,
+      { status: 0, statusText: "Network Error" },
+      {
+        correlationId: headers[CORRELATION_ID],
+      },
+    );
+  }
+  return response;
 };
 
 export const getCaseSearchResults = async (
@@ -81,39 +114,34 @@ export const getCaseSearchResults = async (
 ): Promise<SearchResultData> => {
   const params = new URLSearchParams(searchParams);
   const url = `${GATEWAY_BASE_URL}/api/v1/case-search?${params}`;
+  const headers = await buildCommonHeaders();
 
-  const response = await fetch(url, {
-    method: "GET",
-    credentials: "include",
-    headers: {
-      ...(await buildCommonHeaders()),
-    },
-  });
+  const response = await fetchOrThrow(url, headers, "GET");
   if (!response.ok) {
-    throw new ApiError(`Searching for cases failed`, url, response);
+    throw new ApiError(`Searching for cases failed`, url, response, {
+      correlationId: headers[CORRELATION_ID],
+    });
   }
   const result = await parseAndValidateResponse<SearchResultData>(
     response,
     url,
     searchResultDataSchema,
     "searchResultDataSchema",
+    headers[CORRELATION_ID],
   );
   return result;
 };
 
 export const getCaseDivisionsOrAreas = async () => {
   const url = `${GATEWAY_BASE_URL}/api/v1/areas`;
+  const headers = await buildCommonHeaders();
 
-  const response = await fetch(url, {
-    method: "GET",
-    credentials: "include",
-    headers: {
-      ...(await buildCommonHeaders()),
-    },
-  });
+  const response = await fetchOrThrow(url, headers, "GET");
 
   if (!response.ok) {
-    throw new ApiError(`Getting case areas failed`, url, response);
+    throw new ApiError(`Getting case areas failed`, url, response, {
+      correlationId: headers[CORRELATION_ID],
+    });
   }
 
   const result = await parseAndValidateResponse<CaseDivisionsOrAreaResponse>(
@@ -121,6 +149,7 @@ export const getCaseDivisionsOrAreas = async () => {
     url,
     caseDivisionsOrAreaResponseSchema,
     "caseDivisionsOrAreaResponseSchema",
+    headers[CORRELATION_ID],
   );
   return result;
 };
@@ -132,20 +161,22 @@ export const getEgressSearchResults = async (
   collected: EgressSearchResultData = [],
 ): Promise<EgressSearchResultData> => {
   const url = `${GATEWAY_BASE_URL}/api/v1/egress/workspaces`;
+  const headers = await buildCommonHeaders();
   const params = new URLSearchParams({
     "workspace-name": workspaceName,
     skip: `${skip}`,
     take: `${take}`,
   });
-  const response = await fetch(`${url}?${params}`, {
-    method: "GET",
-    credentials: "include",
-    headers: {
-      ...(await buildCommonHeaders()),
-    },
-  });
+  const response = await fetchOrThrow(`${url}?${params}`, headers, "GET");
   if (!response.ok) {
-    throw new ApiError(`Searching for Egress workspaces failed`, url, response);
+    throw new ApiError(
+      `Searching for Egress workspaces failed`,
+      url,
+      response,
+      {
+        correlationId: headers[CORRELATION_ID],
+      },
+    );
   }
 
   const result = await parseAndValidateResponse<EgressSearchResultResponse>(
@@ -153,6 +184,7 @@ export const getEgressSearchResults = async (
     url,
     egressSearchResultResponseSchema,
     "egressSearchResultResponseSchema",
+    headers[CORRELATION_ID],
   );
 
   const { data, pagination } = result;
@@ -186,17 +218,18 @@ export const connectEgressWorkspace = async ({
   }
 
   const url = `${GATEWAY_BASE_URL}/api/v1/egress/connections`;
-  const response = await fetch(url, {
-    method: "POST",
-    credentials: "include",
-    headers: {
-      ...(await buildCommonHeaders()),
-    },
-    body: JSON.stringify(payload),
-  });
+  const headers = await buildCommonHeaders();
+  const response = await fetchOrThrow(
+    url,
+    headers,
+    "POST",
+    JSON.stringify(payload),
+  );
 
   if (!response.ok) {
-    throw new ApiError(`Connecting to Egress workspace failed`, url, response);
+    throw new ApiError(`Connecting to Egress workspace failed`, url, response, {
+      correlationId: headers[CORRELATION_ID],
+    });
   }
   return response;
 };
@@ -209,27 +242,25 @@ export const getConnectNetAppFolders = async (
   collectedFolders: ConnectNetAppFolder[] = [],
 ): Promise<ConnectNetAppFolderData> => {
   const url = `${GATEWAY_BASE_URL}/api/v1/netapp/folders`;
+  const headers = await buildCommonHeaders();
   const params = new URLSearchParams({
     "operation-name": operationName,
     path: folderPath,
     take: `${take}`,
     "continuation-token": continuationToken,
   });
-  const response = await fetch(`${url}?${params}`, {
-    method: "GET",
-    credentials: "include",
-    headers: {
-      ...(await buildCommonHeaders()),
-    },
-  });
+  const response = await fetchOrThrow(`${url}?${params}`, headers, "GET");
   if (!response.ok) {
-    throw new ApiError(`getting netapp folders failed`, url, response);
+    throw new ApiError(`getting netapp folders failed`, url, response, {
+      correlationId: headers[CORRELATION_ID],
+    });
   }
   const result = await parseAndValidateResponse<ConnectNetAppFolderResponse>(
     response,
     url,
     connectNetAppFolderResponseSchema,
     "connectNetAppFolderResponseSchema",
+    headers[CORRELATION_ID],
   );
 
   const { data, pagination } = result;
@@ -272,53 +303,51 @@ export const connectNetAppFolder = async ({
   }
 
   const url = `${GATEWAY_BASE_URL}/api/v1/netapp/connections`;
-  const response = await fetch(url, {
-    method: "POST",
-    credentials: "include",
-    headers: {
-      ...(await buildCommonHeaders()),
-    },
-    body: JSON.stringify(payload),
-  });
+  const headers = await buildCommonHeaders();
+  const response = await fetchOrThrow(
+    url,
+    headers,
+    "POST",
+    JSON.stringify(payload),
+  );
 
   if (!response.ok) {
-    throw new ApiError(`Connecting to NetApp folder failed`, url, response);
+    throw new ApiError(`Connecting to NetApp folder failed`, url, response, {
+      correlationId: headers[CORRELATION_ID],
+    });
   }
   return response;
 };
 
 export const disconnectNetAppFolder = async (caseId: number) => {
   const url = `${GATEWAY_BASE_URL}/api/v1/netapp/connections?case-id=${caseId}`;
-  const response = await fetch(url, {
-    method: "DELETE",
-    credentials: "include",
-    headers: {
-      ...(await buildCommonHeaders()),
-    },
-  });
+  const headers = await buildCommonHeaders();
+  const response = await fetchOrThrow(url, headers, "DELETE");
 
+  if (!response.ok) {
+    throw new ApiError(`Disconnecting NetApp folder failed`, url, response, {
+      correlationId: headers[CORRELATION_ID],
+    });
+  }
   return response;
 };
 
 export const getCaseMetaData = async (caseId: string) => {
   const url = `${GATEWAY_BASE_URL}/api/v1/cases/${caseId}`;
-
-  const response = await fetch(url, {
-    method: "GET",
-    credentials: "include",
-    headers: {
-      ...(await buildCommonHeaders()),
-    },
-  });
+  const headers = await buildCommonHeaders();
+  const response = await fetchOrThrow(url, headers, "GET");
 
   if (!response.ok) {
-    throw new ApiError(`Getting case metadata failed`, url, response);
+    throw new ApiError(`Getting case metadata failed`, url, response, {
+      correlationId: headers[CORRELATION_ID],
+    });
   }
   const result = await parseAndValidateResponse<CaseMetaDataResponse>(
     response,
     url,
     caseMetaDataResponseSchema,
     "caseMetaDataResponseSchema",
+    headers[CORRELATION_ID],
   );
   return result;
 };
@@ -343,15 +372,13 @@ export const getEgressFolders = async (
     take: `${take}`,
   });
   const url = `${GATEWAY_BASE_URL}/api/v1/egress/workspaces/${workspaceId}/files?${params}`;
-  const response = await fetch(url, {
-    method: "GET",
-    credentials: "include",
-    headers: {
-      ...(await buildCommonHeaders()),
-    },
-  });
+  const headers = await buildCommonHeaders();
+  const response = await fetchOrThrow(url, headers, "GET");
+
   if (!response.ok) {
-    throw new ApiError(`Getting egress folders failed`, url, response);
+    throw new ApiError(`Getting egress folders failed`, url, response, {
+      correlationId: headers[CORRELATION_ID],
+    });
   }
 
   const result = await parseAndValidateResponse<EgressFolderResponse>(
@@ -359,6 +386,7 @@ export const getEgressFolders = async (
     url,
     egressFolderResponseSchema,
     "egressFolderResponseSchema",
+    headers[CORRELATION_ID],
   );
 
   const { data, pagination } = result;
@@ -384,26 +412,24 @@ export const getNetAppFolders = async (
   collectedFiles: NetAppFile[] = [],
 ): Promise<NetAppFolderDataResponse> => {
   const url = `${GATEWAY_BASE_URL}/api/v1/netapp/files`;
+  const headers = await buildCommonHeaders();
   const params = new URLSearchParams({
     path: folderPath,
     take: `${take}`,
     "continuation-token": continuationToken,
   });
-  const response = await fetch(`${url}?${params}`, {
-    method: "GET",
-    credentials: "include",
-    headers: {
-      ...(await buildCommonHeaders()),
-    },
-  });
+  const response = await fetchOrThrow(`${url}?${params}`, headers, "GET");
   if (!response.ok) {
-    throw new ApiError(`getting netapp files/folders failed`, url, response);
+    throw new ApiError(`getting netapp files/folders failed`, url, response, {
+      correlationId: headers[CORRELATION_ID],
+    });
   }
   const result = await parseAndValidateResponse<NetAppFolderResponse>(
     response,
     url,
     netAppFolderResponseSchema,
     "netAppFolderResponseSchema",
+    headers[CORRELATION_ID],
   );
 
   const { data, pagination } = result;
@@ -435,18 +461,19 @@ export const indexingFileTransfer = async (
     throw new Error(`Invalid indexing file transfer request payload`);
   }
   const url = `${GATEWAY_BASE_URL}/api/v1/filetransfer/files`;
+  const headers = await buildCommonHeaders();
 
-  const response = await fetch(url, {
-    method: "POST",
-    credentials: "include",
-    headers: {
-      ...(await buildCommonHeaders()),
-    },
-    body: JSON.stringify(payload),
-  });
+  const response = await fetchOrThrow(
+    url,
+    headers,
+    "POST",
+    JSON.stringify(payload),
+  );
 
   if (!response.ok) {
-    throw new ApiError(`indexing file transfer api failed`, url, response);
+    throw new ApiError(`indexing file transfer api failed`, url, response, {
+      correlationId: headers[CORRELATION_ID],
+    });
   }
 
   const result = await parseAndValidateResponse<IndexingFileTransferResponse>(
@@ -454,6 +481,7 @@ export const indexingFileTransfer = async (
     url,
     indexingFileTransferResponseSchema,
     "indexingFileTransferResponseSchema",
+    headers[CORRELATION_ID],
   );
   return result;
 };
@@ -470,18 +498,19 @@ export const initiateFileTransfer = async (
   }
 
   const url = `${GATEWAY_BASE_URL}/api/v1/filetransfer/initiate`;
+  const headers = await buildCommonHeaders();
 
-  const response = await fetch(url, {
-    method: "POST",
-    credentials: "include",
-    headers: {
-      ...(await buildCommonHeaders()),
-    },
-    body: JSON.stringify(payload),
-  });
+  const response = await fetchOrThrow(
+    url,
+    headers,
+    "POST",
+    JSON.stringify(payload),
+  );
 
   if (!response.ok) {
-    throw new ApiError(`initiate file transfer failed`, url, response);
+    throw new ApiError(`initiate file transfer failed`, url, response, {
+      correlationId: headers[CORRELATION_ID],
+    });
   }
 
   const result = await parseAndValidateResponse<InitiateFileTransferResponse>(
@@ -489,6 +518,7 @@ export const initiateFileTransfer = async (
     url,
     initiateFileTransferResponseSchema,
     "initiateFileTransferResponseSchema",
+    headers[CORRELATION_ID],
   );
   return result;
 };
@@ -496,24 +526,31 @@ export const initiateFileTransfer = async (
 export const getTransferStatus = async (
   transferId: string,
   etag?: string,
-): Promise<{ data: TransferStatusResponse | null; etag: string | null }> => {
+): Promise<{
+  data: TransferStatusResponse | null;
+  etag: string | null;
+  correlationId: string;
+}> => {
   const url = `${GATEWAY_BASE_URL}/api/v1/filetransfer/${transferId}/status`;
-
-  const response = await fetch(url, {
-    method: "GET",
-    credentials: "include",
-    headers: {
-      ...(await buildCommonHeaders()),
-      ...(etag ? { "If-None-Match": etag } : {}),
-    },
-  });
+  const headers = await buildCommonHeaders();
+  const fetchHeaders = {
+    ...headers,
+    ...(etag ? { "If-None-Match": etag } : {}),
+  };
+  const response = await fetchOrThrow(url, fetchHeaders, "GET");
 
   if (response.status === 304) {
-    return { data: null, etag: etag ?? null };
+    return {
+      data: null,
+      etag: etag ?? null,
+      correlationId: headers[CORRELATION_ID],
+    };
   }
 
   if (!response.ok) {
-    throw new ApiError(`Getting case transfer status failed`, url, response);
+    throw new ApiError(`Getting case transfer status failed`, url, response, {
+      correlationId: headers[CORRELATION_ID],
+    });
   }
 
   const result = await parseAndValidateResponse<TransferStatusResponse>(
@@ -521,23 +558,24 @@ export const getTransferStatus = async (
     url,
     transferStatusResponseSchema,
     "transferStatusResponseSchema",
+    headers[CORRELATION_ID],
   );
-  return { data: result, etag: response.headers.get("ETag") };
+  return {
+    data: result,
+    etag: response.headers.get("ETag"),
+    correlationId: headers[CORRELATION_ID],
+  };
 };
 
 export const handleFileTransferClear = async (transferId: string) => {
   const url = `${GATEWAY_BASE_URL}/api/v1/filetransfer/${transferId}/clear`;
-
-  const response = await fetch(url, {
-    method: "POST",
-    credentials: "include",
-    headers: {
-      ...(await buildCommonHeaders()),
-    },
-  });
+  const headers = await buildCommonHeaders();
+  const response = await fetchOrThrow(url, headers, "POST");
 
   if (!response.ok) {
-    throw new ApiError(`clear file transfer api failed`, url, response);
+    throw new ApiError(`clear file transfer api failed`, url, response, {
+      correlationId: headers[CORRELATION_ID],
+    });
   }
 };
 
@@ -546,40 +584,57 @@ export const getActivityLog = async (caseId: string) => {
     "case-id": caseId,
   });
   const url = `${GATEWAY_BASE_URL}/api/v1/activity/logs?${params}`;
-
-  const response = await fetch(url, {
-    method: "GET",
-    credentials: "include",
-    headers: {
-      ...(await buildCommonHeaders()),
-    },
-  });
+  const headers = await buildCommonHeaders();
+  const response = await fetchOrThrow(url, headers, "GET");
 
   if (!response.ok) {
-    throw new ApiError(`Getting case activity log failed`, url, response);
+    throw new ApiError(`Getting case activity log failed`, url, response, {
+      correlationId: headers[CORRELATION_ID],
+    });
   }
   const result = await parseAndValidateResponse<ActivityLogResponse>(
     response,
     url,
     activityLogResponseSchema,
     "activityLogResponseSchema",
+    headers[CORRELATION_ID],
   );
   return result;
 };
 
 export const downloadActivityLog = async (activityId: string) => {
   const url = `${GATEWAY_BASE_URL}/api/v1/activity/${activityId}/logs/download`;
-
-  const response = await fetch(url, {
-    method: "GET",
-    credentials: "include",
-    headers: {
-      ...(await buildCommonHeaders()),
-    },
-  });
+  const headers = await buildCommonHeaders();
+  const response = await fetchOrThrow(url, headers, "GET");
 
   if (!response.ok) {
-    throw new ApiError(`Downloading activity log failed`, url, response);
+    throw new ApiError(`Downloading activity log failed`, url, response, {
+      correlationId: headers[CORRELATION_ID],
+    });
   }
   return response;
+};
+
+export const logTelemetryEvent = async (payload: TelemetryPayload) => {
+  try {
+    const url = `${GATEWAY_BASE_URL}/api/v1/telemetry`;
+    const headers = await buildCommonHeaders();
+    const response = await fetch(url, {
+      method: "POST",
+      credentials: "include",
+      headers,
+      body: JSON.stringify(payload),
+    });
+    if (!response.ok) {
+      console.warn(
+        `Logging telemetry event failed with status: ${response.status}`,
+      );
+    }
+  } catch (error) {
+    // Fail silently to ensure UI flows remain unblocked
+    console.warn(
+      "Logging telemetry event failed due to network or auth error:",
+      error,
+    );
+  }
 };
