@@ -19,6 +19,8 @@ pr:
 
 variables:
   - group: lacc-deployment-global
+  - name: tagPrefix
+    value: "release-v"
 
 pool: "LaCC PreProd Pool"
 
@@ -34,12 +36,19 @@ steps:
         exit 1
       fi
 
-      newTag="v$RELEASE_VERSION"
+      newTag="$TAG_PREFIX$RELEASE_VERSION"
 
       # get the highest release tag from origin
       # ignore peeled references produced for annotated tags
-      latestTag=$(git ls-remote --tags origin 'refs/tags/v*' |
-        awk '$2 !~ /\^\{\}$/ {sub("refs/tags/", "", $2); if ($2 ~ /^v[0-9]+\.[0-9]+\.[0-9]+$/) print $2}' |
+      latestTag=$(git ls-remote --tags origin "refs/tags/$TAG_PREFIX*" |
+        awk -v prefix="$TAG_PREFIX" '
+          $2 !~ /\^\{\}$/ {
+            sub(/^refs\/tags\//, "", $2)
+
+            if ($2 ~ ("^" prefix "[0-9]+\\.[0-9]+\\.[0-9]+$"))
+              print $2
+          }
+        ' |
         sort -V |
         tail -n 1)
 
@@ -63,6 +72,7 @@ steps:
     displayName: "Validate releaseVersion Tag"
     env:
       RELEASE_VERSION: $(releaseVersion)
+      TAG_PREFIX: $(tagPrefix)
 
   - script: |
       set -euo pipefail
