@@ -78,14 +78,7 @@ test.describe("transfer-error-handling", () => {
       "Sorry, there is a problem with the service",
     );
     await expect(
-      page.getByText(
-        "Please try this case again later. If the problem continues, contact the product team.",
-      ),
-    ).toBeVisible();
-    await expect(
-      page.getByText(
-        "Error: An error occurred contacting the server at https://mocked-out-api/api/v1/filetransfer/files: indexing file transfer api failed; status - Internal Server Error (500)",
-      ),
+      page.getByText("Contact the product team and give them the error code."),
     ).toBeVisible();
   });
 
@@ -131,14 +124,7 @@ test.describe("transfer-error-handling", () => {
       "Sorry, there is a problem with the service",
     );
     await expect(
-      page.getByText(
-        "Please try this case again later. If the problem continues, contact the product team.",
-      ),
-    ).toBeVisible();
-    await expect(
-      page.getByText(
-        "Error: An error occurred contacting the server at https://mocked-out-api/api/v1/filetransfer/files: response schema validation failed; status - OK (200)",
-      ),
+      page.getByText("Contact the product team and give them the error code."),
     ).toBeVisible();
   });
   test("Should show the error page if initiate end point throws an Api error", async ({
@@ -180,24 +166,11 @@ test.describe("transfer-error-handling", () => {
     );
     await transferMaterialsDestinationPage.clickTransferActionButton();
 
-    // await expect(page.getByTestId("transfer-spinner")).toBeVisible();
-    // await expect(page.getByTestId("egress-table-wrapper")).not.toBeVisible();
-    // await expect(page.getByTestId("netapp-table-wrapper")).not.toBeVisible();
-    // await expect(
-    //   page.getByTestId("tab-content-transfer-materials"),
-    // ).toContainText("Indexing transfer from Egress to Shared Drive...");
     await expect(page.locator("h1")).toHaveText(
       "Sorry, there is a problem with the service",
     );
     await expect(
-      page.getByText(
-        "Please try this case again later. If the problem continues, contact the product team.",
-      ),
-    ).toBeVisible();
-    await expect(
-      page.getByText(
-        "Error: An error occurred contacting the server at https://mocked-out-api/api/v1/filetransfer/initiate: initiate file transfer failed; status - Internal Server Error (500)",
-      ),
+      page.getByText("Contact the product team and give them the error code."),
     ).toBeVisible();
   });
   test("Should show the error page if initiate end point returns invalid response", async ({
@@ -242,14 +215,7 @@ test.describe("transfer-error-handling", () => {
       "Sorry, there is a problem with the service",
     );
     await expect(
-      page.getByText(
-        "Please try this case again later. If the problem continues, contact the product team.",
-      ),
-    ).toBeVisible();
-    await expect(
-      page.getByText(
-        "Error: An error occurred contacting the server at https://mocked-out-api/api/v1/filetransfer/initiate: response schema validation failed; status - OK (200)",
-      ),
+      page.getByText("Contact the product team and give them the error code."),
     ).toBeVisible();
   });
   test("Should show the error page if the transfer status endpoint throws an Api error", async ({
@@ -298,14 +264,7 @@ test.describe("transfer-error-handling", () => {
       },
     );
     await expect(
-      page.getByText(
-        "Please try this case again later. If the problem continues, contact the product team.",
-      ),
-    ).toBeVisible();
-    await expect(
-      page.getByText(
-        "Error: An error occurred contacting the server at https://mocked-out-api/api/v1/filetransfer/transfer-id-egress-to-netapp/status: Getting case transfer status failed; status - Internal Server Error (500)",
-      ),
+      page.getByText("Contact the product team and give them the error code."),
     ).toBeVisible();
   });
 });

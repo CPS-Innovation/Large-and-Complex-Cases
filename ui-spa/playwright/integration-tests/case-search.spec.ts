@@ -286,12 +286,7 @@ test.describe("Case Search/Results", async () => {
       );
       await expect(
         page.getByText(
-          "Please try this case again later. If the problem continues, contact the product team.",
-        ),
-      ).toBeVisible();
-      await expect(
-        page.getByText(
-          "API_ERROR: An error occurred contacting the server at https://mocked-out-api/api/v1/areas: Getting case areas failed; status - Internal Server Error (500)",
+          "Contact the product team and give them the error code.",
         ),
       ).toBeVisible();
     });
@@ -558,12 +553,7 @@ test.describe("Case Search/Results", async () => {
       );
       await expect(
         page.getByText(
-          "Please try this case again later. If the problem continues, contact the product team.",
-        ),
-      ).toBeVisible();
-      await expect(
-        page.getByText(
-          "API_ERROR: An error occurred contacting the server at https://mocked-out-api/api/v1/areas: Getting case areas failed; status - Internal Server Error (500)",
+          "Contact the product team and give them the error code.",
         ),
       ).toBeVisible();
     });
@@ -585,12 +575,7 @@ test.describe("Case Search/Results", async () => {
       );
       await expect(
         page.getByText(
-          "Please try this case again later. If the problem continues, contact the product team.",
-        ),
-      ).toBeVisible();
-      await expect(
-        page.getByText(
-          "API_ERROR: An error occurred contacting the server at https://mocked-out-api/api/v1/areas: Getting case areas failed; status - Internal Server Error (500)",
+          "Contact the product team and give them the error code.",
         ),
       ).toBeVisible();
     });
@@ -613,12 +598,7 @@ test.describe("Case Search/Results", async () => {
       );
       await expect(
         page.getByText(
-          "Please try this case again later. If the problem continues, contact the product team.",
-        ),
-      ).toBeVisible();
-      await expect(
-        page.getByText(
-          "API_ERROR: An error occurred contacting the server at https://mocked-out-api/api/v1/case-search?operation-name=ww&area=1001: Searching for cases failed; status - Internal Server Error (500)",
+          "Contact the product team and give them the error code.",
         ),
       ).toBeVisible();
 
@@ -630,12 +610,7 @@ test.describe("Case Search/Results", async () => {
       );
       await expect(
         page.getByText(
-          "Please try this case again later. If the problem continues, contact the product team.",
-        ),
-      ).toBeVisible();
-      await expect(
-        page.getByText(
-          "API_ERROR: An error occurred contacting the server at https://mocked-out-api/api/v1/case-search?defendant-name=ww&area=1001: Searching for cases failed; status - Internal Server Error (500)",
+          "Contact the product team and give them the error code.",
         ),
       ).toBeVisible();
 
@@ -646,12 +621,7 @@ test.describe("Case Search/Results", async () => {
       );
       await expect(
         page.getByText(
-          "Please try this case again later. If the problem continues, contact the product team.",
-        ),
-      ).toBeVisible();
-      await expect(
-        page.getByText(
-          "API_ERROR: An error occurred contacting the server at https://mocked-out-api/api/v1/case-search?urn=11AA2222233: Searching for cases failed; status - Internal Server Error (500)",
+          "Contact the product team and give them the error code.",
         ),
       ).toBeVisible();
     });

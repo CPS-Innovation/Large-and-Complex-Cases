@@ -1,0 +1,88 @@
+trigger:
+  batch: true
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - backend
+      - ui-spa
+
+pr:
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - backend
+      - ui-spa
+
+variables:
+  - group: lacc-deployment-global
+  - name: tagPrefix
+    value: "release-v"
+
+pool: "LaCC PreProd Pool"
+
+steps:
+  - checkout: self
+    persistCredentials: true
+
+  - script: |
+      set -euo pipefail
+
+      if [[ ! "$RELEASE_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+        echo "##vso[task.logissue type=error]The value of variable releaseVersion: $RELEASE_VERSION is not a valid semantic version. Expected format: MAJOR.MINOR.PATCH."
+        exit 1
+      fi
+
+      newTag="$TAG_PREFIX$RELEASE_VERSION"
+
+      # get the highest release tag from origin
+      # ignore peeled references produced for annotated tags
+      latestTag=$(git ls-remote --tags origin "refs/tags/$TAG_PREFIX*" |
+        awk -v prefix="$TAG_PREFIX" '
+          $2 !~ /\^\{\}$/ {
+            sub(/^refs\/tags\//, "", $2)
+
+            if ($2 ~ ("^" prefix "[0-9]+\\.[0-9]+\\.[0-9]+$"))
+              print $2
+          }
+        ' |
+        sort -V |
+        tail -n 1)
+
+      if [[ -z "$latestTag" ]]; then
+        echo "##vso[task.logissue type=warning]No release tags found in the remote repository."
+      else
+        echo "Latest remote tag: $latestTag"
+        echo "New release tag: $newTag"
+
+        # fail if newTag is less than or equal to latestTag.
+        highestVersion=$(printf '%s\n%s\n' "$latestTag" "$newTag" | sort -V | tail -n 1)
+
+        if [[ "$highestVersion" == "$latestTag" ]]; then
+          echo "##vso[task.logissue type=error]The semver value of variable releaseVersion: $RELEASE_VERSION must be greater than ${latestTag#v}."
+          exit 1
+        fi
+      fi
+
+      echo "The repository will be tagged with the new release version $newTag"
+      echo "##vso[task.setvariable variable=newTag]$newTag"
+    displayName: "Validate releaseVersion Tag"
+    env:
+      RELEASE_VERSION: $(releaseVersion)
+      TAG_PREFIX: $(tagPrefix)
+
+  - script: |
+      set -euo pipefail
+
+      # overwrite any local tags. We are only interested in the remote:
+      git tag -f "$NEW_TAG"
+
+      git push origin "refs/tags/$NEW_TAG"
+    # only tag repo on merge to main
+    condition: and(succeeded(), in(variables['Build.Reason'], 'IndividualCI', 'BatchedCI'))
+    displayName: "Tag Repository"
+    env:
+      NEW_TAG: $(newTag)
