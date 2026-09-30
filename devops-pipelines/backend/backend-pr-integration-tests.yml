@@ -33,6 +33,7 @@ stages:
           ${{ eq(parameters.environment, 'dev') }}
         )
       )
+    displayName: "Run Integration Tests (Dev)"
     variables:
       - template: ../templates/variables/backend-deploy-vars.yml
         parameters:
@@ -51,6 +52,7 @@ stages:
           ${{ eq(parameters.environment, 'staging') }}
         )
       )
+    displayName: "Run Integration Tests (Staging)"
     variables:
       - template: ../templates/variables/backend-deploy-vars.yml
         parameters:

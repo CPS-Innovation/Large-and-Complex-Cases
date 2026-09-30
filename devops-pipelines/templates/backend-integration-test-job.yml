@@ -21,7 +21,7 @@ jobs:
       DDEI.TestUrn: $(CmsTestUrn)
       DDEI.TestOperationName: $(CmsTestOperationName)
       DDEI.TestDefendantLastName: $(CmsTestDefendantLastName)
-      DDEI:TestCmsAreaCode: $(CmsTestCmsAreaCode)
+      DDEI.TestCmsAreaCode: $(CmsTestCmsAreaCode)
       Azure.TenantId: $(TenantId)
       Azure.ClientId: $(CallingAppValidAudience)
       Azure.ClientSecret: $(AadClientSecret)

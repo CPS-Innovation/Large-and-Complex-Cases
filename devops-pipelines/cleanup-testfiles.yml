@@ -37,7 +37,7 @@ jobs:
             $workspaceIds = @(
               $env:devWorkspace
               $env:stgWorkspace
-            )
+            ) | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Select-Object -Unique
 
             $failedWorkspaces = @()
 
