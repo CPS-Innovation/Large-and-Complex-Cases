@@ -21,7 +21,7 @@ Import-Module (Join-Path $PSScriptRoot 'EgressCleanupHelperModule.psm1')
 
 if ($WorkspaceNamePrefix.Length -lt 3) {
   Write-Error "WorkspaceNamePrefix must be at least 3 characters."
-  exit 1
+  throw
 }
 
 $escapedPrefix = [regex]::Escape($WorkspaceNamePrefix)
@@ -38,7 +38,7 @@ try {
 }
 catch {
   Write-Error $_.Exception.Message
-  exit 1
+  throw
 }
 
 Write-Host "  [OK] Authenticated" -ForegroundColor Green
@@ -58,7 +58,7 @@ try {
 }
 catch {
   Write-Error "Failed to list workspaces: $($_.Exception.Message)"
-  exit 1
+  throw
 }
 
 while ($true) {
