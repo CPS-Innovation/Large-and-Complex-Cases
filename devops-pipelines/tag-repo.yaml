@@ -1,4 +1,5 @@
 trigger:
+  batch: true
   branches:
     include:
       - main
@@ -18,8 +19,6 @@ pr:
 
 variables:
   - group: lacc-deployment-global
-  - name: buildReason
-    value: $[variables['Build.Reason']]
 
 pool: "LaCC PreProd Pool"
 
@@ -30,17 +29,17 @@ steps:
   - script: |
       set -euo pipefail
 
-      if [[ ! "$(releaseVersion)" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-        echo "##vso[task.logissue type=error]The value of variable releaseVersion: $(releaseVersion) is not a valid semantic version. Expected format: MAJOR.MINOR.PATCH."
+      if [[ ! "$RELEASE_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+        echo "##vso[task.logissue type=error]The value of variable releaseVersion: $RELEASE_VERSION is not a valid semantic version. Expected format: MAJOR.MINOR.PATCH."
         exit 1
       fi
 
-      newTag="v$(releaseVersion)"
+      newTag="v$RELEASE_VERSION"
 
       # get the highest release tag from origin
       # ignore peeled references produced for annotated tags
       latestTag=$(git ls-remote --tags origin 'refs/tags/v*' |
-        awk '$2 !~ /\^\{\}$/ {sub("refs/tags/", "", $2); print $2}' |
+        awk '$2 !~ /\^\{\}$/ {sub("refs/tags/", "", $2); if ($2 ~ /^v[0-9]+\.[0-9]+\.[0-9]+$/) print $2}' |
         sort -V |
         tail -n 1)
 
@@ -50,32 +49,30 @@ steps:
         echo "Latest remote tag: $latestTag"
         echo "New release tag: $newTag"
 
-        # validate the latest remote tag format
-        if [[ ! "$latestTag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-          echo "##vso[task.logissue type=error]The latest tag found in the remote repository has an unexpected format: $latestTag. Expected format: vMAJOR.MINOR.PATCH."
-          exit 1
-        fi
-
         # fail if newTag is less than or equal to latestTag.
         highestVersion=$(printf '%s\n%s\n' "$latestTag" "$newTag" | sort -V | tail -n 1)
 
         if [[ "$highestVersion" == "$latestTag" ]]; then
-          echo "##vso[task.logissue type=error]The semver value of variable releaseVersion: $(releaseVersion) must be greater than ${latestTag#v}."
+          echo "##vso[task.logissue type=error]The semver value of variable releaseVersion: $RELEASE_VERSION must be greater than ${latestTag#v}."
           exit 1
         fi
       fi
 
-      echo "The respository will be tagged with the new release version $newTag"
-      echo "##vso[task.setvariable variable=newTag;]$newTag"
+      echo "The repository will be tagged with the new release version $newTag"
+      echo "##vso[task.setvariable variable=newTag]$newTag"
     displayName: "Validate releaseVersion Tag"
+    env:
+      RELEASE_VERSION: $(releaseVersion)
 
   - script: |
       set -euo pipefail
 
       # overwrite any local tags. We are only interested in the remote:
-      git tag -f $(newTag)
+      git tag -f $NEW_TAG
 
-      git push origin refs/tags/$(newTag)
+      git push origin refs/tags/$NEW_TAG
     # only tag repo on merge to main
-    condition: and(succeeded(), eq(variables.buildReason, 'IndividualCI'))
+    condition: and(succeeded(), in(variables['Build.Reason'], 'IndividualCI', 'BatchedCI'))
     displayName: "Tag Repository"
+    env:
+      NEW_TAG: $(newTag)
