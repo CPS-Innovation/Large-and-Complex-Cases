@@ -30,7 +30,7 @@ try {
 }
 catch {
   Write-Error $_.Exception.Message
-  exit 1
+  throw
 }
 
 Write-Host "  [OK] Authenticated" -ForegroundColor Green
@@ -49,7 +49,7 @@ try {
 }
 catch {
   Write-Error "Failed to list folder contents: $($_.Exception.Message)"
-  exit 1
+  throw
 }
 
 while ($true) {
@@ -109,7 +109,7 @@ $batchSize = 100
 $totalBatches = [math]::Ceiling($fileIds.Count / $batchSize)
 
 for ($i = 0; $i -lt $fileIds.Count; $i += $batchSize) {
-  $batch = $fileIds[$i..([math]::Min($i + $batchSize - 1, $fileIds.Count - 1))]  
+  $batch = $fileIds[$i..([math]::Min($i + $batchSize - 1, $fileIds.Count - 1))]
   $batchIndex = [int]($i / $batchSize) + 1
 
   Write-Host ("Deleting batch {0}/{1} ({2} file(s))..." -f `
@@ -121,15 +121,14 @@ for ($i = 0; $i -lt $fileIds.Count; $i += $batchSize) {
       -AuthorizationHeader $AuthHeader `
       -WorkspaceId $WorkspaceId `
       -FileIds $batch
-      
+
     Write-Host ("Batch {0}/{1} completed successfully." -f `
         $batchIndex, $totalBatches)
 
   }
   catch {
     Write-Host "Failed to delete files: $($_.Exception.Message)" -ForegroundColor Red
-    Write-Error $_
-    exit 1
+    throw
   }
 }
 
