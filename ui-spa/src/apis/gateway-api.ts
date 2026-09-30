@@ -94,9 +94,7 @@ const fetchOrThrow = async (
       method,
       credentials: "include",
       headers,
-      ...(method === "POST" && stringifiedPayload
-        ? { body: stringifiedPayload }
-        : {}),
+      ...(stringifiedPayload ? { body: stringifiedPayload } : {}),
     });
   } catch (networkError) {
     throw new ApiError(
@@ -535,26 +533,11 @@ export const getTransferStatus = async (
 }> => {
   const url = `${GATEWAY_BASE_URL}/api/v1/filetransfer/${transferId}/status`;
   const headers = await buildCommonHeaders();
-  let response: Response;
-  try {
-    response = await fetch(url, {
-      method: "GET",
-      credentials: "include",
-      headers: {
-        ...headers,
-        ...(etag ? { "If-None-Match": etag } : {}),
-      },
-    });
-  } catch (networkError) {
-    throw new ApiError(
-      `${networkError}`,
-      url,
-      { status: 0, statusText: "Network Error" },
-      {
-        correlationId: headers[CORRELATION_ID],
-      },
-    );
-  }
+  const fetchHeaders = {
+    ...headers,
+    ...(etag ? { "If-None-Match": etag } : {}),
+  };
+  const response = await fetchOrThrow(url, fetchHeaders, "GET");
 
   if (response.status === 304) {
     return {

@@ -60,11 +60,11 @@ export class TelemetryService {
       telemetryType: TelemetryType.Exception,
       properties: [
         {
-          exceptionMessage: error.message,
+          exceptionMessage: error?.message ?? `${error}`,
         },
-        { errorName: error.name },
+        { errorName: error?.name ?? "Error" },
         {
-          errorStack: error.stack ?? "",
+          errorStack: error?.stack ?? "",
         },
         ...properties,
       ],
