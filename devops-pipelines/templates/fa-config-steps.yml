@@ -91,7 +91,7 @@ steps:
           },
           {
             "name": "NetAppOptions__RegionName",
-            "value": "eu-west-1",
+            "value": "$(NetAppOptionsRegionName)",
             "slotSetting": false
           },
           {
