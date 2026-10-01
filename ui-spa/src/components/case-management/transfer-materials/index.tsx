@@ -41,7 +41,7 @@ import {
 import { MainStateContext } from "../../../providers/MainStateProvider";
 import styles from "./index.module.scss";
 
-type TransferMaterialsV1PageProps = {
+type TransferMaterialsPageProp = {
   isTabActive: boolean;
   caseId: string;
   operationName: string;
@@ -56,7 +56,7 @@ type TransferMaterialsV1PageProps = {
 };
 
 const CHECKBOX_ALL_FOLDERS_PATH = "all-folders";
-const TransferMaterialsV1Page: React.FC<TransferMaterialsV1PageProps> = ({
+const TransferMaterialsPage: React.FC<TransferMaterialsPageProp> = ({
   isTabActive,
   caseId,
   operationName,
@@ -554,8 +554,6 @@ const TransferMaterialsV1Page: React.FC<TransferMaterialsV1PageProps> = ({
         setTimeout(() => {
           setTransferSource("netapp");
         }, 0);
-      } else {
-        setNetAppFolderPath(activeTransferData.destinationPath);
       }
       setActiveTransferData(null);
       return;
@@ -863,4 +861,4 @@ const TransferMaterialsV1Page: React.FC<TransferMaterialsV1PageProps> = ({
   );
 };
 
-export default TransferMaterialsV1Page;
+export default TransferMaterialsPage;
