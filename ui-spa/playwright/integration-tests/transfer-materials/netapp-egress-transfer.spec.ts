@@ -1,177 +1,32 @@
 import { test } from "../utils/test";
-import { type Page, expect } from "@playwright/test";
+import { expect } from "@playwright/test";
 import { delay, HttpResponse, http } from "msw";
 import { TransferMaterialsSourcePage } from "../pages/transfer-material-source";
 import { TransferMaterialsDestinationPage } from "../pages/transfer-material-destination";
-async function runTransferScenario(page: Page, transferType: "copy" | "move") {
-  const transferMaterialsSourcePage = new TransferMaterialsSourcePage(page);
-  await transferMaterialsSourcePage.verifyUrl("/case/12/case-management");
-  await transferMaterialsSourcePage.verifyPageElements();
-  await transferMaterialsSourcePage.verifyEgressTransferSourceElements();
-  await transferMaterialsSourcePage.verifyTransferSourceTableLoader(
-    "egress",
-    true,
-  );
-  await transferMaterialsSourcePage.verifyTransferSourceTableLoader(
-    "egress",
-    false,
-  );
-  await transferMaterialsSourcePage.verifyFolderPath([
-    "Egress: Workspace-Alpha",
-  ]);
-  await transferMaterialsSourcePage.validateTableColumnHeaders();
 
-  const folderRows = [
-    ["", "folder-1-0", "02/01/2000", "--"],
-    ["", "folder-1-1", "03/01/2000", "--"],
-    ["", "file-1-2.pdf", "03/01/2000", "1.23 KB"],
-  ];
-  await transferMaterialsSourcePage.validateTableRowValues(folderRows);
-  await transferMaterialsSourcePage.verifyCopyBtnEnabled(false);
-  await transferMaterialsSourcePage.verifyMoveBtnEnabled(false);
-
-  await transferMaterialsSourcePage.handleFolderClick("folder-1-0");
-  await transferMaterialsSourcePage.verifyTransferSourceTableLoader(
-    "egress",
-    true,
-  );
-  await transferMaterialsSourcePage.verifyTransferSourceTableLoader(
-    "egress",
-    false,
-  );
-  await transferMaterialsSourcePage.verifyFolderPath([
-    "Egress: Workspace-Alpha",
-    "folder-1-0",
-  ]);
-  await transferMaterialsSourcePage.validateTableRowValues([
-    ["", "folder-2-0", "02/01/2000", "--"],
-    ["", "folder-2-1", "03/01/2000", "--"],
-    ["", "file-2-2.pdf", "03/01/2000", "1.23 KB"],
-  ]);
-  await transferMaterialsSourcePage.verifyCheckboxesVisibility(true, 4);
-  await transferMaterialsSourcePage.verifyCopyBtnEnabled(false);
-  await transferMaterialsSourcePage.verifyMoveBtnEnabled(false);
-  await transferMaterialsSourcePage.toggleCheckbox(0);
-  await transferMaterialsSourcePage.verifyCopyBtnEnabled(true);
-  await transferMaterialsSourcePage.verifyMoveBtnEnabled(true);
-
-  if (transferType === "copy") {
-    await transferMaterialsSourcePage.clickCopyBtn();
-  } else {
-    await transferMaterialsSourcePage.clickMoveBtn();
-  }
-
-  const transferMaterialsDestinationPage = new TransferMaterialsDestinationPage(
-    page,
-  );
-  await transferMaterialsDestinationPage.verifyUrl(
-    "/case/12/case-management/transfer-destination-page",
-  );
-  await transferMaterialsDestinationPage.verifyPageElements(
-    "egress",
-    3,
-    transferType,
-  );
-  await transferMaterialsDestinationPage.verifyFolderExpanded(
-    "Shared Drive: netapp",
-    true,
-    ["folder-1-0", "folder-1-1"],
-  );
-  await transferMaterialsDestinationPage.clickMinimizeFolder(
-    "Shared Drive: netapp",
-  );
-  await transferMaterialsDestinationPage.verifyFolderExpanded(
-    "Shared Drive: netapp",
-    false,
-    [],
-  );
-  await transferMaterialsDestinationPage.clickExpandFolder(
-    "Shared Drive: netapp",
-  );
-  await transferMaterialsDestinationPage.verifyFolderExpanded(
-    "Shared Drive: netapp",
-    true,
-    ["folder-1-0", "folder-1-1"],
-  );
-  await transferMaterialsDestinationPage.clickExpandFolder("folder-1-0");
-  await transferMaterialsDestinationPage.verifyTransferDestinationTableLoader(
-    true,
-  );
-  await transferMaterialsDestinationPage.verifyTransferDestinationTableLoader(
-    false,
-  );
-  await transferMaterialsDestinationPage.verifyFolderExpanded(
-    "folder-1-0",
-    true,
-    ["folder-2-0", "folder-2-1"],
-  );
-  await transferMaterialsDestinationPage.clickMinimizeFolder("folder-1-0");
-  await transferMaterialsDestinationPage.verifyFolderExpanded(
-    "folder-1-0",
-    false,
-  );
-  await transferMaterialsDestinationPage.verifyTransferActionEnabled(false);
-  await transferMaterialsDestinationPage.selectFolder("folder-1-0");
-  await transferMaterialsDestinationPage.verifyTransferActionEnabled(true);
-  await transferMaterialsDestinationPage.verifyTransferActionButtonName(
-    `${transferType === "copy" ? "Copy" : "Move"} to folder-1-0`,
-  );
-  await transferMaterialsDestinationPage.clickTransferActionButton();
-  await transferMaterialsSourcePage.verifyUrl("/case/12/case-management");
-  await transferMaterialsSourcePage.verifyPageElements();
-  await transferMaterialsSourcePage.validateTransferSuccessBanner(
-    [
-      {
-        folderPath: "folder2",
-        files: ["file1.txt", "file2.txt"],
-      },
-      {
-        folderPath: "folder3",
-        files: ["file3.txt"],
-      },
-    ],
-    transferType,
-  );
-  // making sure the success message is removed after a page reload
-  await page.goto("/case/12/case-management?transfer-materials-v1=true");
-  await transferMaterialsSourcePage.verifyUrl("/case/12/case-management");
-  await transferMaterialsSourcePage.verifyPageElements();
-  await transferMaterialsSourcePage.verifyEgressTransferSourceElements();
-  await transferMaterialsSourcePage.validateTransferSuccessBannerHidden();
-}
-test.describe("transfer material egress netapp transfer", () => {
-  test.beforeEach(async ({ page }) => {
-    await page.goto("/case/12/case-management?transfer-materials-v1=true");
-  });
-
-  test("Should successfully handle the copy of materials from egress to shared drive", async ({
-    page,
-  }) => {
-    await runTransferScenario(page, "copy");
-  });
-
-  test("Should successfully handle the move of materials from egress to shared drive", async ({
+test.describe("transfer material netapp to egress transfer", () => {
+  test("Should successfully handle the copy of materials from netapp to shared drive", async ({
     page,
     worker,
   }) => {
     await worker.use(
       http.get(
-        "https://mocked-out-api/api/v1/filetransfer/transfer-id-egress-to-netapp/status",
+        "https://mocked-out-api/api/v1/filetransfer/transfer-id-netapp-to-egress/status",
         async () => {
           await delay(10);
           return HttpResponse.json({
             id: "00000000-0000-4000-8000-000000000001",
-            status: "Completed",
-            transferType: "Move",
-            direction: "EgressToNetApp",
             startedAt: null,
+            failedFiles: 0,
+            status: "Completed",
+            transferType: "Copy",
+            direction: "NetAppToEgress",
             completedAt: null,
             failedItems: [],
             userName: "dev_user@example.org",
             totalFiles: 30,
             processedFiles: 30,
             successfulFiles: 30,
-            failedFiles: 0,
             successfulItems: [
               {
                 sourcePath: "folder1/folder2/file1.txt",
@@ -188,10 +43,149 @@ test.describe("transfer material egress netapp transfer", () => {
         },
       ),
     );
-    await runTransferScenario(page, "move");
+    await page.goto("/case/12/case-management");
+    const transferMaterialsSourcePage = new TransferMaterialsSourcePage(page);
+    await transferMaterialsSourcePage.verifyUrl("/case/12/case-management");
+    await transferMaterialsSourcePage.verifyTransferSourceTableLoader(
+      "egress",
+      true,
+    );
+    await transferMaterialsSourcePage.verifyTransferSourceTableLoader(
+      "egress",
+      false,
+    );
+    await transferMaterialsSourcePage.verifyEgressTransferSourceElements();
+
+    await transferMaterialsSourcePage.verifyFolderPath([
+      "Egress: Workspace-Alpha",
+    ]);
+    await transferMaterialsSourcePage.clickToggleTransferDirection();
+
+    await transferMaterialsSourcePage.verifyFolderPath([
+      "Shared Drive: netapp",
+    ]);
+    await transferMaterialsSourcePage.validateTableColumnHeaders();
+
+    const folderRows = [
+      ["", "folder-1-0", "--", "--"],
+      ["", "folder-1-1", "--", "--"],
+      ["", "file-1-0.pdf", "02/01/2000", "1.23 KB"],
+      ["", "file-1-1.pdf", "03/01/2000", "2.26 MB"],
+    ];
+    await transferMaterialsSourcePage.validateTableRowValues(folderRows);
+    await transferMaterialsSourcePage.verifySharedDriveTransferSourceElements();
+    await transferMaterialsSourcePage.verifyCheckboxesVisibility(true, 5);
+    await transferMaterialsSourcePage.verifyCopyBtnEnabled(false);
+    await transferMaterialsSourcePage.verifyMoveBtnHidden();
+
+    await transferMaterialsSourcePage.handleFolderClick("folder-1-0");
+    await transferMaterialsSourcePage.verifyTransferSourceTableLoader(
+      "shared-drive",
+      true,
+    );
+    await transferMaterialsSourcePage.verifyTransferSourceTableLoader(
+      "shared-drive",
+      false,
+    );
+    await transferMaterialsSourcePage.verifyFolderPath([
+      "Shared Drive: netapp",
+      "folder-1-0",
+    ]);
+    await transferMaterialsSourcePage.validateTableRowValues([
+      ["", "folder-2-0", "--", "--"],
+      ["", "folder-2-1", "--", "--"],
+      ["", "file-2-0.pdf", "02/01/2000", "1.23 KB"],
+      ["", "file-2-1.pdf", "03/01/2000", "2.26 MB"],
+    ]);
+    await transferMaterialsSourcePage.verifyCheckboxesVisibility(true, 5);
+    await transferMaterialsSourcePage.verifyCopyBtnEnabled(false);
+    await transferMaterialsSourcePage.toggleCheckbox(0, "shared-drive");
+    await transferMaterialsSourcePage.verifyCopyBtnEnabled(true);
+
+    await transferMaterialsSourcePage.clickCopyBtn();
+
+    const transferMaterialsDestinationPage =
+      new TransferMaterialsDestinationPage(page);
+    await transferMaterialsDestinationPage.verifyUrl(
+      "/case/12/case-management/transfer-destination-page",
+    );
+    await transferMaterialsDestinationPage.verifyPageElements(
+      "shared-drive",
+      4,
+      "copy",
+    );
+    await transferMaterialsDestinationPage.verifyDisabledTreeItem(
+      "Egress: Workspace-Alpha",
+    );
+    await transferMaterialsDestinationPage.verifyFolderExpanded(
+      "Egress: Workspace-Alpha",
+      true,
+      ["folder-1-0", "folder-1-1"],
+    );
+    await transferMaterialsDestinationPage.clickMinimizeFolder(
+      "Egress: Workspace-Alpha",
+    );
+    await transferMaterialsDestinationPage.verifyFolderExpanded(
+      "Egress: Workspace-Alpha",
+      false,
+      [],
+    );
+    await transferMaterialsDestinationPage.clickExpandFolder(
+      "Egress: Workspace-Alpha",
+    );
+    await transferMaterialsDestinationPage.verifyFolderExpanded(
+      "Egress: Workspace-Alpha",
+      true,
+      ["folder-1-0", "folder-1-1"],
+    );
+    await transferMaterialsDestinationPage.clickExpandFolder("folder-1-0");
+    await transferMaterialsDestinationPage.verifyTransferDestinationTableLoader(
+      true,
+    );
+    await transferMaterialsDestinationPage.verifyTransferDestinationTableLoader(
+      false,
+    );
+    await transferMaterialsDestinationPage.verifyFolderExpanded(
+      "folder-1-0",
+      true,
+      ["folder-2-0", "folder-2-1"],
+    );
+    await transferMaterialsDestinationPage.clickMinimizeFolder("folder-1-0");
+    await transferMaterialsDestinationPage.verifyFolderExpanded(
+      "folder-1-0",
+      false,
+    );
+    await transferMaterialsDestinationPage.verifyTransferActionEnabled(false);
+    await transferMaterialsDestinationPage.selectFolder("folder-1-0");
+    await transferMaterialsDestinationPage.verifyTransferActionEnabled(true);
+    await transferMaterialsDestinationPage.verifyTransferActionButtonName(
+      `Copy to folder-1-0`,
+    );
+    await transferMaterialsDestinationPage.clickTransferActionButton();
+    await transferMaterialsSourcePage.verifyUrl("/case/12/case-management");
+    await transferMaterialsSourcePage.verifyPageElements();
+    await transferMaterialsSourcePage.validateTransferSuccessBanner(
+      [
+        {
+          folderPath: "folder2",
+          files: ["file1.txt", "file2.txt"],
+        },
+        {
+          folderPath: "folder3",
+          files: ["file3.txt"],
+        },
+      ],
+      "copy",
+    );
+    // making sure the success message is removed after a page reload
+    await page.goto("/case/12/case-management");
+    await transferMaterialsSourcePage.verifyUrl("/case/12/case-management");
+    await transferMaterialsSourcePage.verifyPageElements();
+    await transferMaterialsSourcePage.verifyEgressTransferSourceElements();
+    await transferMaterialsSourcePage.validateTransferSuccessBannerHidden();
   });
 
-  test("Should show the egress to netapp transfer loading screen, if the same user come back to the application after triggering transfer and should show completion as it happens", async ({
+  test("Should show the netapp to egress transfer loading screen, if the same user come back to the application after triggering transfer and should show completion as it happens", async ({
     page,
     worker,
   }) => {
@@ -222,7 +216,7 @@ test.describe("transfer material egress netapp transfer", () => {
             failedFiles: 0,
             status: "Initiated",
             transferType: "Copy",
-            direction: "EgressToNetApp",
+            direction: "NetAppToEgress",
             completedAt: null,
             failedItems: [],
             userName: "dev_user@example.org",
@@ -234,11 +228,11 @@ test.describe("transfer material egress netapp transfer", () => {
         },
       ),
     );
-
+    await page.goto("/case/12/case-management");
     const transferMaterialsSourcePage = new TransferMaterialsSourcePage(page);
     await transferMaterialsSourcePage.verifyPageElements();
     await transferMaterialsSourcePage.verifyTransferLoaderVisible(
-      "egress",
+      "shared-drive",
       true,
     );
     await transferMaterialsSourcePage.verifyTransferStatsHidden();
@@ -254,7 +248,7 @@ test.describe("transfer material egress netapp transfer", () => {
             failedFiles: 0,
             status: "Initiated",
             transferType: "Copy",
-            direction: "EgressToNetApp",
+            direction: "NetAppToEgress",
             completedAt: null,
             failedItems: [],
             userName: "dev_user@example.org",
@@ -283,7 +277,7 @@ test.describe("transfer material egress netapp transfer", () => {
             failedFiles: 0,
             status: "InProgress",
             transferType: "Copy",
-            direction: "EgressToNetApp",
+            direction: "NetAppToEgress",
             completedAt: null,
             failedItems: [],
             userName: "dev_user@example.org",
@@ -296,7 +290,7 @@ test.describe("transfer material egress netapp transfer", () => {
       ),
     );
     await transferMaterialsSourcePage.verifyTransferLoaderVisible(
-      "egress",
+      "shared-drive",
       true,
     );
     await transferMaterialsSourcePage.verifyTransferStats(
@@ -314,7 +308,7 @@ test.describe("transfer material egress netapp transfer", () => {
             failedFiles: 0,
             status: "Completed",
             transferType: "Copy",
-            direction: "EgressToNetApp",
+            direction: "NetAppToEgress",
             completedAt: null,
             failedItems: [],
             userName: "dev_user@example.org",
@@ -337,7 +331,6 @@ test.describe("transfer material egress netapp transfer", () => {
         },
       ),
     );
-
     await transferMaterialsSourcePage.verifyTransferLoaderHidden();
     await transferMaterialsSourcePage.verifyTransferStatsHidden();
     await transferMaterialsSourcePage.validateTransferSuccessBanner(
@@ -386,7 +379,7 @@ test.describe("transfer material egress netapp transfer", () => {
             failedFiles: 0,
             status: "Initiated",
             transferType: "Copy",
-            direction: "EgressToNetApp",
+            direction: "NetAppToEgress",
             completedAt: null,
             failedItems: [],
             userName: "abc@example.org",
@@ -398,10 +391,11 @@ test.describe("transfer material egress netapp transfer", () => {
         },
       ),
     );
+    await page.goto("/case/12/case-management");
     const transferMaterialsSourcePage = new TransferMaterialsSourcePage(page);
     await transferMaterialsSourcePage.verifyPageElements();
     await transferMaterialsSourcePage.verifyTransferLoaderVisible(
-      "egress",
+      "shared-drive",
       false,
       "abc@example.org",
     );
@@ -433,7 +427,7 @@ test.describe("transfer material egress netapp transfer", () => {
       ),
     );
     await transferMaterialsSourcePage.verifyTransferLoaderVisible(
-      "egress",
+      "shared-drive",
       false,
       "abc@example.org",
     );
@@ -467,30 +461,15 @@ test.describe("transfer material egress netapp transfer", () => {
     await transferMaterialsSourcePage.verifyEgressTransferSourceElements();
   });
 
-  test("Should not show the transfer move option if the transferMove feature flag is disabled", async ({
-    page,
-  }) => {
-    await page.goto(
-      "/case/12/case-management?transfer-materials-v1=true&transfer-move=false",
-    );
-    const transferMaterialsSourcePage = new TransferMaterialsSourcePage(page);
-    await transferMaterialsSourcePage.verifyPageElements();
-    await transferMaterialsSourcePage.verifyEgressTransferSourceElements();
-    await transferMaterialsSourcePage.verifyMoveBtnHidden();
-  });
-
-  test("Should show the egress connection error screen, if user who does not have access to egress come to the application when there is an active transfer Id", async ({
+  test("Should show the netapp connection error screen, if user who does not have access to netapp, comes to the application when there is an active transfer Id", async ({
     page,
     worker,
   }) => {
     await worker.use(
-      http.get(
-        "https://mocked-out-api/api/v1/egress/workspaces/egress_1/files",
-        async () => {
-          await delay(500);
-          return new HttpResponse(null, { status: 401 });
-        },
-      ),
+      http.get("https://mocked-out-api/api/v1/netapp/files", async () => {
+        await delay(500);
+        return new HttpResponse(null, { status: 401 });
+      }),
     );
     await worker.use(
       http.get("https://mocked-out-api/api/v1/cases/12", async () => {
@@ -519,7 +498,7 @@ test.describe("transfer material egress netapp transfer", () => {
             failedFiles: 0,
             status: "InProgress",
             transferType: "Copy",
-            direction: "EgressToNetApp",
+            direction: "NetAppToEgress",
             completedAt: null,
             failedItems: [],
             userName: "abc@example.org",
@@ -544,17 +523,17 @@ test.describe("transfer material egress netapp transfer", () => {
         statusApiCall = true;
       }
     });
-    await page.goto("/case/12/case-management?transfer-materials-v1=true");
+    await page.goto("/case/12/case-management");
     const transferMaterialsSourcePage = new TransferMaterialsSourcePage(page);
     await transferMaterialsSourcePage.verifyPageElements();
     await transferMaterialsSourcePage.verifyTransferLoaderHidden();
 
     //Note: convert to connectionError page class
     await expect(page).toHaveURL(
-      "/case/12/case-management/connection-error?type=egress",
+      "/case/12/case-management/connection-error?type=shareddrive",
     );
     await expect(page.locator("h1")).toHaveText(
-      "There is a problem connecting to Egress",
+      "There is a problem connecting to the Shared Drive",
     );
     const listItems = page.locator("ul > li");
     await expect(listItems).toHaveCount(2);

@@ -172,6 +172,7 @@ test.describe("Skip-link test ", () => {
     await expect(page).toHaveURL(
       "/case/14/netapp-connect?operation-name=Thunderstruck3_pl",
     );
+    await delay(500);
     await expect(
       page.getByText(`Loading folders from Network Shared Drive`),
     ).toBeVisible();

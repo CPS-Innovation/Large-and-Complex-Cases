@@ -6,10 +6,10 @@ End-to-end tests for the **Large and Complex Cases (LCC)** file transfer system,
 
 Tests run in two modes:
 
-| Mode | Command | Description |
-|------|---------|-------------|
+| Mode                        | Command                     | Description                                                                                                              |
+| --------------------------- | --------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
 | **Default (existing case)** | `npm run e2e:existing-case` | Uses a pre-existing case and workspace. Skips case registration, Egress/NetApp connection. Faster for iterative testing. |
-| **Register case** | `npm run e2e:register-case` | Creates a new workspace, registers a fresh case, sets up all connections. Full end-to-end flow. |
+| **Register case**           | `npm run e2e:register-case` | Creates a new workspace, registers a fresh case, sets up all connections. Full end-to-end flow.                          |
 
 ### Test Matrix
 
@@ -18,14 +18,14 @@ mode stays small for fast iteration, register-case mode exercises larger
 transfers. The Default / Register columns show each mode's size (`--` = not
 run in that mode).
 
-| Test | Default Mode | Register Case Mode |
-|------|--------------|--------------------|
-| Egress to NetApp Copy | ✓ 10MB x 1 | ✓ 100MB x 1 |
-| Egress to NetApp Copy - Large | ✓ 50MB x 1 | ✓ 200MB x 1 |
-| Egress to NetApp Copy - Multifile | -- | ✓ 10MB x 3 |
-| Egress to NetApp Move | ✓ 10MB x 1 | ✓ 100MB x 1 |
-| NetApp to Egress Copy | ✓ 10MB x 1 (uses seeded fixture) | ✓ 100MB x 1 (sort + row 0) |
-| Full Flow (login, search, connect) | -- | ✓ 100MB x 1 |
+| Test                               | Default Mode                     | Register Case Mode         |
+| ---------------------------------- | -------------------------------- | -------------------------- |
+| Egress to NetApp Copy              | ✓ 10MB x 1                       | ✓ 100MB x 1                |
+| Egress to NetApp Copy - Large      | ✓ 50MB x 1                       | ✓ 200MB x 1                |
+| Egress to NetApp Copy - Multifile  | --                               | ✓ 10MB x 3                 |
+| Egress to NetApp Move              | ✓ 10MB x 1                       | ✓ 100MB x 1                |
+| NetApp to Egress Copy              | ✓ 10MB x 1 (uses seeded fixture) | ✓ 100MB x 1 (sort + row 0) |
+| Full Flow (login, search, connect) | --                               | ✓ 100MB x 1                |
 
 Default-mode sizes come from `TEST_FILE_SIZE_MB` (10) and
 `LARGE_TEST_FILE_SIZE_MB` (50); register-case sizes are set per spec via
@@ -88,16 +88,19 @@ e2e/pw/
 ## Setup
 
 1. Install dependencies:
+
    ```bash
    npm ci
    ```
 
 2. Install Playwright browsers:
+
    ```bash
    npx playwright install --with-deps chromium
    ```
 
 3. Create a local environment file:
+
    ```bash
    cp .env.template .env.local
    ```
@@ -178,35 +181,35 @@ standard auth set.
 
 ## Environment Variables
 
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `BASE_URL` | LCC UI URL | Yes |
-| `CMS_LOGIN_PAGE` | Tactical login endpoint | Yes |
-| `CASE_API_BASE_URL` | Case Management API | Yes |
-| `DDEI_BASE_URL` | DDEI API | Register-case only |
-| `EGRESS_BASE_URL` | Egress API | Yes |
-| `TENANT_ID` | Azure AD tenant ID | Yes |
-| `LCC_API_CLIENT_ID` | Azure AD client ID | Yes |
-| `CMRC_API_CLIENT_ID` | Azure AD client ID | Register-case only |
-| `E2E_AD_USER` | Azure AD test user email | Yes |
-| `E2E_AD_PASSWORD` | Azure AD test user password | Yes |
-| `CMS_USERNAME` | CMS username | Yes |
-| `CMS_PASSWORD` | CMS password | Yes |
-| `DDEI_ACCESS_KEY_CASE_REGISTER` | DDEI function key | Register-case only |
-| `EGRESS_SERVICE_ACCOUNT_AUTH` | Egress service account (Base64) | Yes |
-| `EGRESS_TEMPLATE_ID` | Egress workspace template ID | No (has default) |
-| `EGRESS_ADMIN_ROLE_ID` | Egress admin role ID | No (has default) |
-| `TEST_FILE_SIZE_MB` | Test file size in MB | No (default: 10) |
-| `TEST_FILE_COUNT` | Number of test files to upload | No (default: 1) |
-| `LARGE_TEST_FILE_SIZE_MB` | Large test file size in MB | No (default: 50) |
-| `DEFAULT_WORKSPACE_ID` | Pre-existing Egress workspace ID | Default mode only |
-| `DEFAULT_WORKSPACE_NAME` | Pre-existing Egress workspace name | Default mode only |
-| `DEFAULT_CASE_ID` | Pre-existing case ID | Default mode only |
-| `DEFAULT_CASE_URN` | Pre-existing case URN | Default mode only |
-| `LCC_API_BASE_URL` | LCC backend URL — used by NetApp file teardown + disassociate | Default mode (recommended); register-case (recommended) |
-| `NETAPP_OPERATION_NAME` | Connected NetApp folder for default mode | Default mode (recommended) |
-| `LCC_API_CLIENT_SECRET` | Secret for `LCC_API_CLIENT_ID` | Register-case (recommended) |
-| `TRANSFER_MATERIALS_V1` | Which Transfer Materials screen to drive (see below) | No (default: false) |
+| Variable                        | Description                                                   | Required                                                |
+| ------------------------------- | ------------------------------------------------------------- | ------------------------------------------------------- |
+| `BASE_URL`                      | LCC UI URL                                                    | Yes                                                     |
+| `CMS_LOGIN_PAGE`                | Tactical login endpoint                                       | Yes                                                     |
+| `CASE_API_BASE_URL`             | Case Management API                                           | Yes                                                     |
+| `DDEI_BASE_URL`                 | DDEI API                                                      | Register-case only                                      |
+| `EGRESS_BASE_URL`               | Egress API                                                    | Yes                                                     |
+| `TENANT_ID`                     | Azure AD tenant ID                                            | Yes                                                     |
+| `LCC_API_CLIENT_ID`             | Azure AD client ID                                            | Yes                                                     |
+| `CMRC_API_CLIENT_ID`            | Azure AD client ID                                            | Register-case only                                      |
+| `E2E_AD_USER`                   | Azure AD test user email                                      | Yes                                                     |
+| `E2E_AD_PASSWORD`               | Azure AD test user password                                   | Yes                                                     |
+| `CMS_USERNAME`                  | CMS username                                                  | Yes                                                     |
+| `CMS_PASSWORD`                  | CMS password                                                  | Yes                                                     |
+| `DDEI_ACCESS_KEY_CASE_REGISTER` | DDEI function key                                             | Register-case only                                      |
+| `EGRESS_SERVICE_ACCOUNT_AUTH`   | Egress service account (Base64)                               | Yes                                                     |
+| `EGRESS_TEMPLATE_ID`            | Egress workspace template ID                                  | No (has default)                                        |
+| `EGRESS_ADMIN_ROLE_ID`          | Egress admin role ID                                          | No (has default)                                        |
+| `TEST_FILE_SIZE_MB`             | Test file size in MB                                          | No (default: 10)                                        |
+| `TEST_FILE_COUNT`               | Number of test files to upload                                | No (default: 1)                                         |
+| `LARGE_TEST_FILE_SIZE_MB`       | Large test file size in MB                                    | No (default: 50)                                        |
+| `DEFAULT_WORKSPACE_ID`          | Pre-existing Egress workspace ID                              | Default mode only                                       |
+| `DEFAULT_WORKSPACE_NAME`        | Pre-existing Egress workspace name                            | Default mode only                                       |
+| `DEFAULT_CASE_ID`               | Pre-existing case ID                                          | Default mode only                                       |
+| `DEFAULT_CASE_URN`              | Pre-existing case URN                                         | Default mode only                                       |
+| `LCC_API_BASE_URL`              | LCC backend URL — used by NetApp file teardown + disassociate | Default mode (recommended); register-case (recommended) |
+| `NETAPP_OPERATION_NAME`         | Connected NetApp folder for default mode                      | Default mode (recommended)                              |
+| `LCC_API_CLIENT_SECRET`         | Secret for `LCC_API_CLIENT_ID`                                | Register-case (recommended)                             |
+| `TRANSFER_MATERIALS_V1`         | Which Transfer Materials screen to drive (see below)          | No (default: false)                                     |
 
 ## Transfer Materials screen: `TRANSFER_MATERIALS_V1`
 
@@ -236,11 +239,10 @@ For a real Azure AD user the new screen renders only when **both** hold:
 2. `E2E_AD_USER` is a member of the Azure AD group set as that environment's
    `VITE_PRIVATE_BETA_FEATURE_USER_GROUP2`.
 
-The `?transfer-materials-v1=true` query override does **not** apply to
-`E2E_AD_USER` — only to the mock-auth user `dev_user@example.org` in ui-spa's own
+The ``query override does **not** apply to`E2E_AD_USER`— only to the mock-auth user`dev_user@example.org`in ui-spa's own
 mocked integration tests. Neither (1) nor (2) is readable from this repo; confirm
-by signing in as `E2E_AD_USER` on the target environment and checking the tab,
-then set `TRANSFER_MATERIALS_V1` to match.
+by signing in as`E2E_AD_USER`on the target environment and checking the tab,
+then set`TRANSFER_MATERIALS_V1` to match.
 
 ## Environment Profiles
 
@@ -320,6 +322,7 @@ On test failure, the following are automatically captured in `./test-results/`:
 - **Trace** -- step-by-step replay with DOM snapshots, network requests, and console logs
 
 To view a trace:
+
 ```bash
 npx playwright show-trace test-results/<test-folder>/trace.zip
 ```
@@ -352,8 +355,8 @@ spec.
      applied: tactical cookies age fast and the LCC app leaves the
      case-search radios disabled (and rejects `/api/v1/case-search` with
      HTTP 400) when tactical is stale. Re-logging is fast next to upload
-     + transfer time and avoids that race. The case + Egress/NetApp
-     connect work from setup is still skipped.
+     - transfer time and avoids that race. The case + Egress/NetApp
+       connect work from setup is still skipped.
 
 3. **Test steps** (in the browser):
    - Search for the pre-connected case by URN
@@ -441,7 +444,7 @@ DELETE /api/v1/netapp/connections?case-id={caseId}
 
 Auth shape: **app-only AAD token** via the client-credentials grant
 against the LCC API app registration (`LCC_API_CLIENT_ID` +
-`LCC_API_CLIENT_SECRET`) — *not* the user-delegated tokens used
+`LCC_API_CLIENT_SECRET`) — _not_ the user-delegated tokens used
 elsewhere in the suite. The endpoint rejects user-delegated tokens
 with 401; verified empirically via `scripts/smoke-disassociate.ts`.
 
