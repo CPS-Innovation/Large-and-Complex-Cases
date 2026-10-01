@@ -7,6 +7,8 @@ using CPS.ComplexCases.Common.Models.Requests;
 using CPS.ComplexCases.FileTransfer.API.Durable.Activity;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads;
 using CPS.ComplexCases.FileTransfer.API.Models.Domain.Enums;
+using Polly.CircuitBreaker;
+using Polly.RateLimiting;
 
 namespace CPS.ComplexCases.FileTransfer.API.Tests.Unit.Durable.Activity;
 
@@ -128,6 +130,56 @@ public class TransferFileHelperTests
             s3, TransferDirection.EgressToNetApp, isCancellationRequested: false);
 
         Assert.Equal(TransferErrorCode.Transient, mapped.ErrorCode);
+    }
+
+    [Fact]
+    public void MapExceptionToFailureResult_BrokenCircuit_IsTransient()
+    {
+        var mapped = TransferFile.MapExceptionToFailureResult(
+            new BrokenCircuitException("The circuit is now open and is not allowing calls."),
+            TransferDirection.NetAppToEgress,
+            isCancellationRequested: false);
+
+        Assert.False(mapped.Rethrow);
+        Assert.Equal(TransferErrorCode.Transient, mapped.ErrorCode);
+    }
+
+    [Fact]
+    public void MapExceptionToFailureResult_RateLimiterRejected_IsTransient()
+    {
+        var mapped = TransferFile.MapExceptionToFailureResult(
+            new RateLimiterRejectedException(),
+            TransferDirection.NetAppToEgress,
+            isCancellationRequested: false);
+
+        Assert.False(mapped.Rethrow);
+        Assert.Equal(TransferErrorCode.Transient, mapped.ErrorCode);
+    }
+
+    [Fact]
+    public void MapExceptionToFailureResult_TransientStorageException_IsTransient()
+    {
+        var mapped = TransferFile.MapExceptionToFailureResult(
+            new TransientStorageException("Chunk 3 upload for upload abc failed after 4 attempts."),
+            TransferDirection.NetAppToEgress,
+            isCancellationRequested: false);
+
+        Assert.False(mapped.Rethrow);
+        Assert.Equal(TransferErrorCode.Transient, mapped.ErrorCode);
+        Assert.Contains("failed after 4 attempts", mapped.DiagnosticMessage);
+    }
+
+    [Fact]
+    public void MapExceptionToFailureResult_ConnectionFailureWithoutStatusCode_IsTransient()
+    {
+        var mapped = TransferFile.MapExceptionToFailureResult(
+            new HttpRequestException("The connection was closed unexpectedly."),
+            TransferDirection.NetAppToEgress,
+            isCancellationRequested: false);
+
+        Assert.False(mapped.Rethrow);
+        Assert.Equal(TransferErrorCode.Transient, mapped.ErrorCode);
+        Assert.Contains("Transient connection failure", mapped.DiagnosticMessage);
     }
 
     [Fact]

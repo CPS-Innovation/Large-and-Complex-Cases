@@ -20,6 +20,7 @@ using CPS.ComplexCases.NetApp.Client;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Polly;
 
 namespace CPS.ComplexCases.FileTransfer.API.Durable.Activity;
 
@@ -312,6 +313,35 @@ public class TransferFile(
             };
         }
 
+        // An open circuit (and any other Polly strategy that sheds load) rejects the call without
+        // reaching Egress. The destination is overloaded, not the file bad, so classify it as
+        // transient: the break has long expired by the time the orchestrator's retry pass runs.
+        if (ex is ExecutionRejectedException rejected)
+        {
+            var errorMessage = $"Destination call rejected by the resilience pipeline: {rejected.Message}";
+            logger?.LogWarning(rejected, "Destination call was rejected before reaching the service");
+            return new MappedExceptionOutcome
+            {
+                Rethrow = false,
+                ErrorCode = TransferErrorCode.Transient,
+                DiagnosticMessage = errorMessage,
+                Exception = rejected
+            };
+        }
+
+        // The storage client already retried this internally and the destination kept failing.
+        if (ex is TransientStorageException transientStorage)
+        {
+            logger?.LogWarning(transientStorage, "Destination exhausted the storage client's own retries");
+            return new MappedExceptionOutcome
+            {
+                Rethrow = false,
+                ErrorCode = TransferErrorCode.Transient,
+                DiagnosticMessage = transientStorage.Message,
+                Exception = transientStorage
+            };
+        }
+
         if (ex is AmazonS3Exception s3
             && ((int)s3.StatusCode >= 500
                 || s3.StatusCode == System.Net.HttpStatusCode.NotFound
@@ -324,6 +354,21 @@ public class TransferFile(
                 ErrorCode = TransferErrorCode.Transient,
                 DiagnosticMessage = errorMessage,
                 Exception = s3
+            };
+        }
+
+        // A connection-level failure (reset socket, TLS or DNS error) carries no status code. Egress
+        // drops sockets when too many streams hit it at once, which is recoverable on a later pass.
+        if (ex is HttpRequestException connectionFailure && connectionFailure.StatusCode is null)
+        {
+            var errorMessage = $"Transient connection failure: {connectionFailure.Message}";
+            logger?.LogWarning(connectionFailure, "Connection failed during transfer with no HTTP status code");
+            return new MappedExceptionOutcome
+            {
+                Rethrow = false,
+                ErrorCode = TransferErrorCode.Transient,
+                DiagnosticMessage = errorMessage,
+                Exception = connectionFailure
             };
         }
 
