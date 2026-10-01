@@ -15,4 +15,14 @@ public class SizeConfigTests
         Assert.True(config.BatchSize * config.MaxConcurrentPartUploads <= EgressConcurrencyLimit);
         Assert.True(config.RetryBatchSize <= config.BatchSize);
     }
+
+    [Fact]
+    public void DefaultLargeFileBatchSize_ThrottlesMultipartFanOutBelowBatchSize()
+    {
+        var config = new SizeConfig();
+
+        Assert.Equal(4, config.LargeFileBatchSize);
+        Assert.True(config.LargeFileBatchSize < config.BatchSize);
+        Assert.True(config.LargeFileBatchSize * config.MaxConcurrentPartUploads <= EgressConcurrencyLimit);
+    }
 }

@@ -4,6 +4,7 @@ using CPS.ComplexCases.Common.Extensions;
 using CPS.ComplexCases.Common.Models.Domain;
 using CPS.ComplexCases.Common.Models.Domain.Dtos;
 using CPS.ComplexCases.Common.Models.Domain.Enums;
+using CPS.ComplexCases.Common.Models.Domain.Exceptions;
 using CPS.ComplexCases.Common.Storage;
 using CPS.ComplexCases.Common.Telemetry;
 using CPS.ComplexCases.Egress.Factories;
@@ -164,7 +165,7 @@ public class EgressStorageClient(
             }
         }
 
-        throw new InvalidOperationException(
+        throw new TransientStorageException(
             $"Chunk {chunkNumber} upload for upload {session.UploadId} failed after {maxAttempts} attempts.");
     }
 
@@ -379,7 +380,7 @@ public class EgressStorageClient(
             }
         }
 
-        throw new InvalidOperationException(
+        throw new TransientStorageException(
             $"Single-upload for upload {session.UploadId} failed after {maxAttempts} attempts.");
     }
 
@@ -411,11 +412,14 @@ public class EgressStorageClient(
         return buffer;
     }
 
-    public async Task<bool> FileExistsAsync(string path, string? workspaceId = null, string? bearerToken = null, string? bucketName = null, string? fileId = null)
+    public async Task<bool> FileExistsAsync(string path, string? workspaceId = null, string? bearerToken = null, string? bucketName = null, string? fileId = null) =>
+        (await ProbeFileAsync(path, workspaceId, bearerToken, bucketName, fileId)).Exists;
+
+    public async Task<FileProbeResult> ProbeFileAsync(string path, string? workspaceId = null, string? bearerToken = null, string? bucketName = null, string? fileId = null)
     {
         if (!string.IsNullOrEmpty(fileId))
         {
-            return await FileExistsByIdAsync(
+            return await ProbeFileByIdAsync(
                 workspaceId ?? throw new ArgumentNullException(nameof(workspaceId), "Workspace ID cannot be null."),
                 fileId);
         }
@@ -428,12 +432,14 @@ public class EgressStorageClient(
         // trigger a recursive scan of every folder in the workspace.
         var filesInParentFolder = await GetAllPagesInParallel(resolvedWorkspaceId, folderId: null, token, parentFolderPath);
 
-        return filesInParentFolder.Any(f =>
+        var match = filesInParentFolder.FirstOrDefault(f =>
             !f.IsFolder &&
             (f.Path.EnsureTrailingSlash() + f.FileName).Equals(path, StringComparison.OrdinalIgnoreCase));
+
+        return match is null ? FileProbeResult.NotFound : FileProbeResult.Found(match.FileSize);
     }
 
-    private async Task<bool> FileExistsByIdAsync(string workspaceId, string fileId)
+    private async Task<FileProbeResult> ProbeFileByIdAsync(string workspaceId, string fileId)
     {
         var token = await GetWorkspaceToken();
         var arg = new GetWorkspaceDocumentArg
@@ -447,11 +453,11 @@ public class EgressStorageClient(
             using var response = await SendRequestAsync(
                 _egressRequestFactory.GetWorkspaceDocumentHeadRequest(arg, token),
                 streamResponse: true);
-            return true;
+            return FileProbeResult.Found(response.Content.Headers.ContentLength);
         }
         catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
         {
-            return false;
+            return FileProbeResult.NotFound;
         }
         catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.MethodNotAllowed)
         {
@@ -460,11 +466,11 @@ public class EgressStorageClient(
                 using var response = await SendRequestAsync(
                     _egressRequestFactory.GetWorkspaceDocumentRequest(arg, token),
                     streamResponse: true);
-                return true;
+                return FileProbeResult.Found(response.Content.Headers.ContentLength);
             }
             catch (HttpRequestException inner) when (inner.StatusCode == HttpStatusCode.NotFound)
             {
-                return false;
+                return FileProbeResult.NotFound;
             }
         }
     }

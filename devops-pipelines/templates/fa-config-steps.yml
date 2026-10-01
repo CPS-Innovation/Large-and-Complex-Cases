@@ -210,6 +210,11 @@ steps:
             "slotSetting": false
           },
           {
+            "name": "SizeConfig__LargeFileBatchSize",
+            "value": "$(SizeConfigLargeFileBatchSize)",
+            "slotSetting": false
+          },
+          {
             "name": "SizeConfig__MaxConcurrentPartUploads",
             "value": "$(SizeConfigMaxConcurrentPartUploads)",
             "slotSetting": false

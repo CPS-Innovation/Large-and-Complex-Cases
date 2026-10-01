@@ -28,4 +28,8 @@ public class TransferSourcePath
     public string? ModifiedPath { get; set; }
     public string? FileId { get; set; }
     public string? FullFilePath { get; set; }
+
+    // Stamped by the pre-flight source validation, not supplied by callers. Null means the size
+    // could not be determined, in which case size-based decisions must fall back to a default.
+    public long? FileSizeBytes { get; set; }
 }
