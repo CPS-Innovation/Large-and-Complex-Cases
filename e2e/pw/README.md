@@ -59,11 +59,10 @@ e2e/pw/
     register-case-state.ts            # Shared state file paths for the setup project
     types.ts                          # TypeScript type definitions
   pages/                              # Page Object Models
-    getTransferMaterialsTab.ts        # Picks the screen POM from TRANSFER_MATERIALS_V1
+    getTransferMaterialsTab.ts        # Builds the Transfer Materials POM
     TransferMaterialsTabApi.ts        # Screen-agnostic Transfer Materials contract
-    TransferMaterialsTab.ts           # Old-screen implementation
-    TransferMaterialsTabV1.ts         # New-screen (v1) implementation
-    TransferDestinationPage.ts        # New-screen destination-tree page (pick folder + confirm)
+    TransferMaterialsTabV1.ts         # Transfer Materials screen implementation
+    TransferDestinationPage.ts        # Destination-tree page (pick folder + confirm)
     ...                               # CaseSearch, SearchResults, CaseManagement, ActivityLog, login/connect POMs
   tests/
     register-case.setup.ts            # Setup project: register + connect once per run
@@ -209,40 +208,6 @@ standard auth set.
 | `LCC_API_BASE_URL`              | LCC backend URL — used by NetApp file teardown + disassociate | Default mode (recommended); register-case (recommended) |
 | `NETAPP_OPERATION_NAME`         | Connected NetApp folder for default mode                      | Default mode (recommended)                              |
 | `LCC_API_CLIENT_SECRET`         | Secret for `LCC_API_CLIENT_ID`                                | Register-case (recommended)                             |
-| `TRANSFER_MATERIALS_V1`         | Which Transfer Materials screen to drive (see below)          | No (default: false)                                     |
-
-## Transfer Materials screen: `TRANSFER_MATERIALS_V1`
-
-Selects which screen the specs drive: `false` (default) = old screen, `true` =
-redesigned screen. It is a **selector only** — it must match what the
-environment renders for `E2E_AD_USER`, or the specs drive the wrong screen and fail.
-
-Specs stay screen-agnostic by building the Transfer Materials page object via
-`getTransferMaterialsTab(page)`, which reads the switch and returns either
-`TransferMaterialsTab` (old screen) or `TransferMaterialsTabV1` (new screen).
-Both implement the shared `TransferMaterialsTabApi` contract, so a spec depends
-only on that surface — no screen-specific selectors.
-
-The one place the flow genuinely differs is the NetApp → Egress destination:
-the old screen navigates the second Egress panel and confirms in a modal, while
-the new screen has no second panel and instead navigates a destination tree
-(`TransferDestinationPage`). The two specs that do this —
-`netapp-to-egress-copy.spec.ts` and `netapp-to-egress-copy-default.spec.ts` —
-branch on `loadEnvConfig().transferMaterialsV1` to pick the right path, rather
-than referencing screen-specific selectors directly.
-
-For a real Azure AD user the new screen renders only when **both** hold:
-
-1. The deployed SPA at `BASE_URL` was built with
-   `VITE_FEATURE_FLAG_TRANSFER_MATERIALS_V1=true` (baked in at build time via the
-   env's Azure DevOps variable group — not in this repo, not runtime-toggleable).
-2. `E2E_AD_USER` is a member of the Azure AD group set as that environment's
-   `VITE_PRIVATE_BETA_FEATURE_USER_GROUP2`.
-
-The ``query override does **not** apply to`E2E_AD_USER`— only to the mock-auth user`dev_user@example.org`in ui-spa's own
-mocked integration tests. Neither (1) nor (2) is readable from this repo; confirm
-by signing in as`E2E_AD_USER`on the target environment and checking the tab,
-then set`TRANSFER_MATERIALS_V1` to match.
 
 ## Environment Profiles
 
