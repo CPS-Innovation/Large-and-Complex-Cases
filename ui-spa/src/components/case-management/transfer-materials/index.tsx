@@ -14,7 +14,7 @@ import {
   handleFileTransferClear,
 } from "../../../apis/gateway-api";
 import { useNavigate } from "react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 
 import { getFormattedEgressFolderData } from "../../../common/utils/getFormattedEgressFolderData";
 import { mapToNetAppFolderData } from "../../../common/utils/mapToNetAppFolderData";
@@ -39,6 +39,7 @@ import {
   sortByNumberProperty,
 } from "../../../common/utils/sortUtils";
 import { MainStateContext } from "../../../providers/MainStateProvider";
+import { telemetryService } from "../../../TelemetryLogger";
 import styles from "./index.module.scss";
 
 type TransferMaterialsPageProp = {
@@ -212,6 +213,24 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProp> = ({
     enabled: !!netAppFolderPath,
     staleTime: 0,
     gcTime: 0,
+  });
+
+  const handleClearMutation = useMutation({
+    mutationFn: (transferId: string) => handleFileTransferClear(transferId),
+    onError: (error) => {
+      // silently report to the telemetry service
+      void telemetryService.trackException(error, [
+        {
+          referenceId:
+            error instanceof ApiError ? (error.correlationId ?? "") : "",
+        },
+        {
+          errorSource:
+            error instanceof ApiError ? "API_ERROR" : "UI_UNHANDLED_EXCEPTION",
+        },
+        { route: window.location.pathname },
+      ]);
+    },
   });
 
   const netAppFolderData = useMemo(
@@ -644,7 +663,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProp> = ({
         setTransferStatus("completed");
         setActiveTransferData(activeTransferData);
         if (response.userName === username && transferId)
-          handleFileTransferClear(transferId);
+          handleClearMutation.mutate(transferId);
         dispatch({
           type: "SET_INITIATE_FILE_TRANSFER_RESPONSE",
           payload: {
@@ -680,7 +699,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProp> = ({
         });
         navigate(`/case/${caseId}/case-management/transfer-errors`);
         if (response.userName === username && transferId)
-          handleFileTransferClear(transferId);
+          handleClearMutation.mutate(transferId);
         setTransferId("");
         setActiveTransferData(null);
       }
@@ -695,6 +714,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProp> = ({
       transferSource,
       egressRefetch,
       netAppRefetch,
+      handleClearMutation,
       dispatch,
     ],
   );
