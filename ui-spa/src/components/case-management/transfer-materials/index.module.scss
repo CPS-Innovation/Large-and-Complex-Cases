@@ -1,8 +1,4 @@
 .mainContainer {
-  display: flex;
-  width: 100%;
-  gap: 0.625rem;
-
   .titleWrapper {
     background: #f3f2f1;
     padding: 0.25rem 0.5rem;
@@ -13,58 +9,6 @@
   }
   .tableContainer {
     padding: 0 1rem;
-  }
-  .sourceContainer {
-    width: 60%;
-    border: 1px solid #b1b4b6;
-    min-height: 21.875rem;
-
-    & :global(.govuk-checkboxes__input) {
-      width: 30px;
-      height: 30px;
-    }
-    & :global(.govuk-checkboxes__label::before) {
-      width: 30px;
-      height: 30px;
-    }
-    & :global(.govuk-checkboxes__label::after) {
-      top: 9px;
-      left: 7px;
-      width: 15px;
-      height: 8px;
-      border-width: 0 0 3px 3px;
-    }
-    & :global(.govuk-table) {
-      table-layout: fixed;
-    }
-    & :global(.govuk-table__header:nth-of-type(1)) {
-      width: 1.25rem;
-      & :global(.govuk-checkboxes__item) {
-        padding: 0;
-      }
-    }
-    & :global(.govuk-table__header:nth-of-type(2)) {
-      width: 15.625rem;
-    }
-    & :global(.govuk-table__header:nth-of-type(3)) {
-      width: 9.375rem;
-    }
-    & :global(.govuk-table__header:nth-of-type(4)) {
-      width: 6.25rem;
-    }
-    & :global(.govuk-table__cell:nth-of-type(2)) {
-      button {
-        width: 15.625rem;
-        overflow-wrap: break-word;
-        word-break: break-all;
-        text-align: left;
-      }
-    }
-  }
-  .destinationContainer {
-    width: 40%;
-    border: 1px solid #b1b4b6;
-    min-height: 21.875rem;
   }
 }
 
@@ -85,7 +29,6 @@
 
 .successBanner {
   margin-top: 2rem;
-  width: 50%;
   .successMessage {
     font-size: 1.5rem;
   }
@@ -109,12 +52,24 @@
 }
 
 .insetTextWrapper {
+  border-bottom: 1px solid #b1b4b6;
+}
+
+.controlWrapper {
   position: relative;
+  width: 100%;
+  margin-bottom: 1.875rem;
+  & :global(.govuk-button) {
+    width: fit-content;
+  }
+
   .disconnectButton {
-    position: absolute;
-    top: 0;
-    right: 0;
-    margin-bottom: 0;
-    margin-top: 1.875rem;
+    position: relative;
+    margin: 0.65rem 0 0 0;
+    @media (min-width: 50rem) {
+      position: absolute;
+      right: 0;
+      bottom: 0;
+    }
   }
 }

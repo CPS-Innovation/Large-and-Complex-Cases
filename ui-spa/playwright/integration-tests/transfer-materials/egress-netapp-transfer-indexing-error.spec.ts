@@ -193,7 +193,7 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
           },
         ),
       );
-      await page.goto("/case/12/case-management?transfer-materials-v1=true");
+      await page.goto("/case/12/case-management");
       await startTransfer(page);
       await expect(page).toHaveURL(
         "/case/12/case-management/transfer-resolve-file-path",
@@ -472,7 +472,7 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
       await transferMaterialsSourcePage.verifyEgressTransferSourceElements();
 
       // making sure the success message is removed after a page reload
-      await page.goto("/case/12/case-management?transfer-materials-v1=true");
+      await page.goto("/case/12/case-management");
       await transferMaterialsSourcePage.verifyUrl("/case/12/case-management");
       await transferMaterialsSourcePage.verifyPageElements();
       await transferMaterialsSourcePage.verifyEgressTransferSourceElements();
@@ -530,7 +530,7 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
           },
         ),
       );
-      await page.goto("/case/12/case-management?transfer-materials-v1=true");
+      await page.goto("/case/12/case-management");
       await startTransfer(page);
       await expect(page).toHaveURL(
         "/case/12/case-management/transfer-resolve-file-path",
@@ -619,7 +619,7 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
           },
         ),
       );
-      await page.goto("/case/12/case-management?transfer-materials-v1=true");
+      await page.goto("/case/12/case-management");
       await startTransfer(page);
       await expect(page).toHaveURL(
         "/case/12/case-management/transfer-resolve-file-path",
@@ -755,7 +755,7 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
           },
         ),
       );
-      await page.goto("/case/12/case-management?transfer-materials-v1=true");
+      await page.goto("/case/12/case-management");
       await startTransfer(page);
       await expect(page).toHaveURL(
         "/case/12/case-management/transfer-resolve-file-path",
@@ -854,7 +854,7 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
           },
         ),
       );
-      await page.goto("/case/12/case-management?transfer-materials-v1=true");
+      await page.goto("/case/12/case-management");
       await startTransfer(page, true, false, "move");
       await expect(page).toHaveURL(
         "/case/12/case-management/transfer-permissions-error",

@@ -10,7 +10,7 @@ const BASE_TRANSFER_STATUS = {
   successfulFiles: 0,
   failedFiles: 0,
 };
-test.describe("Transfer v1 skip link test ", () => {
+test.describe("Transfer skip link test ", () => {
   test("Transfer Destination & Transfer Error Page -  clicking skip-link should take you to the main content ", async ({
     page,
     worker,
@@ -51,7 +51,7 @@ test.describe("Transfer v1 skip link test ", () => {
       ),
     );
     const transferMaterialsSourcePage = new TransferMaterialsSourcePage(page);
-    await page.goto("/case/12/case-management?transfer-materials-v1=true");
+    await page.goto("/case/12/case-management");
     await transferMaterialsSourcePage.verifyUrl("/case/12/case-management");
     await transferMaterialsSourcePage.verifyTransferSourceTableLoader(
       "egress",
@@ -173,7 +173,7 @@ test.describe("Transfer v1 skip link test ", () => {
     );
 
     const transferMaterialsSourcePage = new TransferMaterialsSourcePage(page);
-    await page.goto("/case/12/case-management?transfer-materials-v1=true");
+    await page.goto("/case/12/case-management");
     await transferMaterialsSourcePage.verifyUrl("/case/12/case-management");
     await transferMaterialsSourcePage.verifyTransferSourceTableLoader(
       "egress",

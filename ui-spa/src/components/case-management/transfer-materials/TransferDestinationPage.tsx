@@ -278,6 +278,7 @@ const TransferDestinationPage: React.FC = () => {
       );
       handleInitiateFileTransfer(initiateTransferPayload);
     } catch (error) {
+      setTransferStatus(null);
       if (
         error instanceof ApiError &&
         error.code == 403 &&
@@ -286,7 +287,7 @@ const TransferDestinationPage: React.FC = () => {
         navigate(`/case/${caseId}/case-management/transfer-permissions-error`);
         return;
       }
-      return;
+      throw error;
     }
   };
 

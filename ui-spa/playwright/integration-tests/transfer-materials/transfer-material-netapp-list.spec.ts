@@ -2,15 +2,14 @@ import { delay, HttpResponse, http } from "msw";
 import { test } from "../utils/test";
 import { TransferMaterialsSourcePage } from "../pages/transfer-material-source";
 
-test.describe("transfer material egress list", () => {
+test.describe("transfer material shared-drive list", () => {
   test("Should show the transfer material tab with correct initial content", async ({
     page,
   }) => {
-    await page.goto("/case/12/case-management?transfer-materials-v1=true");
+    await page.goto("/case/12/case-management");
     const transferMaterialsSourcePage = new TransferMaterialsSourcePage(page);
     await transferMaterialsSourcePage.verifyUrl("/case/12/case-management");
     await transferMaterialsSourcePage.verifyPageElements();
-    await transferMaterialsSourcePage.verifyEgressTransferSourceElements();
     await transferMaterialsSourcePage.verifyTransferSourceTableLoader(
       "egress",
       true,
@@ -19,27 +18,28 @@ test.describe("transfer material egress list", () => {
       "egress",
       false,
     );
+    await transferMaterialsSourcePage.clickToggleTransferDirection();
     await transferMaterialsSourcePage.verifyFolderPath([
-      "Egress: Workspace-Alpha",
+      "Shared Drive: netapp",
     ]);
     await transferMaterialsSourcePage.validateTableColumnHeaders();
 
     const folderRows = [
-      ["", "folder-1-0", "02/01/2000", "--"],
-      ["", "folder-1-1", "03/01/2000", "--"],
-      ["", "file-1-2.pdf", "03/01/2000", "1.23 KB"],
+      ["", "folder-1-0", "--", "--"],
+      ["", "folder-1-1", "--", "--"],
+      ["", "file-1-0.pdf", "02/01/2000", "1.23 KB"],
+      ["", "file-1-1.pdf", "03/01/2000", "2.26 MB"],
     ];
     await transferMaterialsSourcePage.validateTableRowValues(folderRows);
   });
 
-  test("Should correctly navigate through the egress folders and validate checkbox visibility", async ({
+  test("Should correctly navigate through the shared-drive folders and validate checkbox visibility", async ({
     page,
   }) => {
-    await page.goto("/case/12/case-management?transfer-materials-v1=true");
+    await page.goto("/case/12/case-management");
     const transferMaterialsSourcePage = new TransferMaterialsSourcePage(page);
     await transferMaterialsSourcePage.verifyUrl("/case/12/case-management");
     await transferMaterialsSourcePage.verifyPageElements();
-    await transferMaterialsSourcePage.verifyEgressTransferSourceElements();
     await transferMaterialsSourcePage.verifyTransferSourceTableLoader(
       "egress",
       true,
@@ -48,67 +48,72 @@ test.describe("transfer material egress list", () => {
       "egress",
       false,
     );
+    await transferMaterialsSourcePage.clickToggleTransferDirection();
+    await transferMaterialsSourcePage.verifySharedDriveTransferSourceElements();
     await transferMaterialsSourcePage.verifyFolderPath([
-      "Egress: Workspace-Alpha",
+      "Shared Drive: netapp",
     ]);
     await transferMaterialsSourcePage.validateTableColumnHeaders();
 
     await transferMaterialsSourcePage.validateTableRowValues([
-      ["", "folder-1-0", "02/01/2000", "--"],
-      ["", "folder-1-1", "03/01/2000", "--"],
-      ["", "file-1-2.pdf", "03/01/2000", "1.23 KB"],
+      ["", "folder-1-0", "--", "--"],
+      ["", "folder-1-1", "--", "--"],
+      ["", "file-1-0.pdf", "02/01/2000", "1.23 KB"],
+      ["", "file-1-1.pdf", "03/01/2000", "2.26 MB"],
     ]);
-    await transferMaterialsSourcePage.verifyCheckboxesVisibility(false, 4);
+    await transferMaterialsSourcePage.verifyCheckboxesVisibility(true, 5);
     await transferMaterialsSourcePage.handleFolderClick("folder-1-0");
     await transferMaterialsSourcePage.verifyTransferSourceTableLoader(
-      "egress",
+      "shared-drive",
       true,
     );
     await transferMaterialsSourcePage.verifyTransferSourceTableLoader(
-      "egress",
+      "shared-drive",
       false,
     );
     await transferMaterialsSourcePage.verifyFolderPath([
-      "Egress: Workspace-Alpha",
+      "Shared Drive: netapp",
       "folder-1-0",
     ]);
     await transferMaterialsSourcePage.validateTableRowValues([
-      ["", "folder-2-0", "02/01/2000", "--"],
-      ["", "folder-2-1", "03/01/2000", "--"],
-      ["", "file-2-2.pdf", "03/01/2000", "1.23 KB"],
+      ["", "folder-2-0", "--", "--"],
+      ["", "folder-2-1", "--", "--"],
+      ["", "file-2-0.pdf", "02/01/2000", "1.23 KB"],
+      ["", "file-2-1.pdf", "03/01/2000", "2.26 MB"],
     ]);
-    await transferMaterialsSourcePage.verifyCheckboxesVisibility(true, 4);
+    await transferMaterialsSourcePage.verifyCheckboxesVisibility(true, 5);
     await transferMaterialsSourcePage.handleFolderClick("folder-2-0");
     await transferMaterialsSourcePage.verifyTransferSourceTableLoader(
-      "egress",
+      "shared-drive",
       true,
     );
     await transferMaterialsSourcePage.verifyTransferSourceTableLoader(
-      "egress",
+      "shared-drive",
       false,
     );
     await transferMaterialsSourcePage.verifyFolderPath([
-      "Egress: Workspace-Alpha",
+      "Shared Drive: netapp",
       "folder-1-0",
       "folder-2-0",
     ]);
     await transferMaterialsSourcePage.validateTableRowValues([
-      ["", "folder-3-0", "02/01/2000", "--"],
-      ["", "folder-3-1", "03/01/2000", "--"],
-      ["", "file-3-2.pdf", "03/01/2000", "1.23 KB"],
+      ["", "folder-3-0", "--", "--"],
+      ["", "folder-3-1", "--", "--"],
+      ["", "file-3-0.pdf", "02/01/2000", "1.23 KB"],
+      ["", "file-3-1.pdf", "03/01/2000", "2.26 MB"],
     ]);
-    await transferMaterialsSourcePage.verifyCheckboxesVisibility(true, 4);
+    await transferMaterialsSourcePage.verifyCheckboxesVisibility(true, 5);
     await transferMaterialsSourcePage.handleFolderClick("folder-3-0");
     await transferMaterialsSourcePage.verifyTransferSourceTableLoader(
-      "egress",
+      "shared-drive",
       true,
     );
     await transferMaterialsSourcePage.verifyTransferSourceTableLoader(
-      "egress",
+      "shared-drive",
       false,
     );
     await transferMaterialsSourcePage.verifyFolderPath([
-      "Egress: Workspace-Alpha",
+      "Shared Drive: netapp",
       "folder-1-0",
       "folder-2-0",
       "folder-3-0",
@@ -118,46 +123,46 @@ test.describe("transfer material egress list", () => {
 
     await transferMaterialsSourcePage.handleFolderClick("folder-1-0");
     await transferMaterialsSourcePage.verifyTransferSourceTableLoader(
-      "egress",
+      "shared-drive",
       true,
     );
     await transferMaterialsSourcePage.verifyTransferSourceTableLoader(
-      "egress",
+      "shared-drive",
       false,
     );
     await transferMaterialsSourcePage.verifyFolderPath([
-      "Egress: Workspace-Alpha",
+      "Shared Drive: netapp",
       "folder-1-0",
     ]);
     await transferMaterialsSourcePage.validateTableRowValues([
-      ["", "folder-2-0", "02/01/2000", "--"],
-      ["", "folder-2-1", "03/01/2000", "--"],
-      ["", "file-2-2.pdf", "03/01/2000", "1.23 KB"],
+      ["", "folder-2-0", "--", "--"],
+      ["", "folder-2-1", "--", "--"],
+      ["", "file-2-0.pdf", "02/01/2000", "1.23 KB"],
+      ["", "file-2-1.pdf", "03/01/2000", "2.26 MB"],
     ]);
-    await transferMaterialsSourcePage.verifyCheckboxesVisibility(true, 4);
-    await transferMaterialsSourcePage.handleFolderClick(
-      "Egress: Workspace-Alpha",
-    );
+    await transferMaterialsSourcePage.verifyCheckboxesVisibility(true, 5);
+    await transferMaterialsSourcePage.handleFolderClick("Shared Drive: netapp");
     await transferMaterialsSourcePage.verifyTransferSourceTableLoader(
-      "egress",
+      "shared-drive",
       true,
     );
     await transferMaterialsSourcePage.verifyTransferSourceTableLoader(
-      "egress",
+      "shared-drive",
       false,
     );
     await transferMaterialsSourcePage.verifyFolderPath([
-      "Egress: Workspace-Alpha",
+      "Shared Drive: netapp",
     ]);
     await transferMaterialsSourcePage.validateTableRowValues([
-      ["", "folder-1-0", "02/01/2000", "--"],
-      ["", "folder-1-1", "03/01/2000", "--"],
-      ["", "file-1-2.pdf", "03/01/2000", "1.23 KB"],
+      ["", "folder-1-0", "--", "--"],
+      ["", "folder-1-1", "--", "--"],
+      ["", "file-1-0.pdf", "02/01/2000", "1.23 KB"],
+      ["", "file-1-1.pdf", "03/01/2000", "2.26 MB"],
     ]);
-    await transferMaterialsSourcePage.verifyCheckboxesVisibility(false, 4);
+    await transferMaterialsSourcePage.verifyCheckboxesVisibility(true, 5);
   });
 
-  test("Should show the egress workspace name in the Home path for Egress if the operation name is null", async ({
+  test("Should show the netapp folder path in the Home path for Shared Drive if the operation name is null", async ({
     page,
     worker,
   }) => {
@@ -176,11 +181,10 @@ test.describe("transfer material egress list", () => {
         });
       }),
     );
-    await page.goto("/case/12/case-management?transfer-materials-v1=true");
+    await page.goto("/case/12/case-management");
     const transferMaterialsSourcePage = new TransferMaterialsSourcePage(page);
     await transferMaterialsSourcePage.verifyUrl("/case/12/case-management");
     await transferMaterialsSourcePage.verifyPageElements("John Doe");
-    await transferMaterialsSourcePage.verifyEgressTransferSourceElements();
     await transferMaterialsSourcePage.verifyTransferSourceTableLoader(
       "egress",
       true,
@@ -189,8 +193,9 @@ test.describe("transfer material egress list", () => {
       "egress",
       false,
     );
+    await transferMaterialsSourcePage.clickToggleTransferDirection();
     await transferMaterialsSourcePage.verifyFolderPath([
-      "Egress: Workspace-Alpha",
+      "Shared Drive: netapp",
     ]);
   });
 });
