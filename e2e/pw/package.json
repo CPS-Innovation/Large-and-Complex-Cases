@@ -13,7 +13,8 @@
     "report": "npx playwright show-report ./playwright-report",
     "report:generate": "npx playwright test --reporter=html",
     "report:junit": "node -e \"require('fs').mkdirSync('test-results',{recursive:true})\" && npx playwright test --reporter=junit > test-results/results.xml",
-    "move-soak": "npx playwright test --config=move-soak/playwright.config.ts"
+    "move-soak": "npx playwright test --config=move-soak/playwright.config.ts",
+    "small-file-repro": "npx playwright test --config=move-soak/playwright.config.ts netapp-to-egress-small-files"
   },
   "devDependencies": {
     "@playwright/test": "^1.56.1",

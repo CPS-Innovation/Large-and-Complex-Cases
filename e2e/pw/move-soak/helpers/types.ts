@@ -28,13 +28,14 @@ export type TransferSourcePath = {
   fileId?: string;
   path: string;
   fullFilePath?: string;
+  relativePath?: string;
 };
 
 export type InitiateTransferPayload = {
   workspaceId: string;
   caseId: number;
   transferType: "Move" | "Copy";
-  transferDirection: "EgressToNetApp";
+  transferDirection: "EgressToNetApp" | "NetAppToEgress";
   sourcePaths: TransferSourcePath[];
   sourceRootFolderPath: string;
   destinationPath: string;

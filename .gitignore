@@ -312,6 +312,7 @@ ui-spa/playwright/integration-test-results.xml
 ui-spa/playwright/.nyc_output
 ui-spa/unit-test-results.xml
 e2e/pw/test-results/
+e2e/pw/move-soak/.small-file-repro/
 e2e/pw/.auth/
 e2e/pw/.state/
 e2e/pw/test-evidence/
