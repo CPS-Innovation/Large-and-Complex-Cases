@@ -23,15 +23,6 @@ function positiveIntEnv(name: string, defaultValue: string): number {
   return parsed;
 }
 
-function boolEnv(name: string, defaultValue: string): boolean {
-  const raw = optionalEnv(name, defaultValue).trim().toLowerCase();
-  if (["true", "1", "yes", "on"].includes(raw)) return true;
-  if (["false", "0", "no", "off", ""].includes(raw)) return false;
-  throw new Error(
-    `Invalid ${name}: expected a boolean (true/false), got "${raw}"`,
-  );
-}
-
 export function loadEnvConfig() {
   return {
     baseUrl: requireEnv("BASE_URL"),
@@ -65,11 +56,6 @@ export function loadEnvConfig() {
     testFileSizeMb: positiveIntEnv("TEST_FILE_SIZE_MB", "10"),
     testFileCount: positiveIntEnv("TEST_FILE_COUNT", "1"),
     largeTestFileSizeMb: positiveIntEnv("LARGE_TEST_FILE_SIZE_MB", "50"),
-
-    // Which Transfer Materials screen to drive: `true` = new (v1), `false` =
-    // old. Must match what the environment renders for the E2E user; it does
-    // not enable the SPA feature flag (see README).
-    transferMaterialsV1: boolEnv("TRANSFER_MATERIALS_V1", "false"),
 
     defaultWorkspaceId: process.env.DEFAULT_WORKSPACE_ID || "",
     defaultWorkspaceName: process.env.DEFAULT_WORKSPACE_NAME || "",
