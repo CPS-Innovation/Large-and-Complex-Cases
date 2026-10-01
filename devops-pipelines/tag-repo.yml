@@ -62,7 +62,7 @@ steps:
         highestVersion=$(printf '%s\n%s\n' "$latestTag" "$newTag" | sort -V | tail -n 1)
 
         if [[ "$highestVersion" == "$latestTag" ]]; then
-          echo "##vso[task.logissue type=error]The semver value of variable releaseVersion: $RELEASE_VERSION must be greater than ${latestTag#v}."
+          echo "##vso[task.logissue type=error]The semver value of variable releaseVersion: $RELEASE_VERSION must be greater than ${latestTag#$TAG_PREFIX}."
           exit 1
         fi
       fi
