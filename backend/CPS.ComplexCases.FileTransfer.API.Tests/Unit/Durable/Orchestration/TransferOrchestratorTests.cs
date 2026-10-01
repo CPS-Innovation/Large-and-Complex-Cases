@@ -265,6 +265,108 @@ public class TransferOrchestratorTests
     }
 
     [Fact]
+    public async Task RunOrchestrator_WithMixedFileSizes_FansOutLargeFilesInSmallerBatchesThanSmallFiles()
+    {
+        // Arrange
+        _sizeConfig.BatchSize = 10;
+        _sizeConfig.LargeFileBatchSize = 3;
+        _sizeConfig.MinMultipartSizeBytes = 5 * 1024 * 1024;
+
+        var transferPayload = CreateValidTransferPayload();
+        transferPayload.TransferType = TransferType.Copy;
+        transferPayload.SourcePaths =
+        [
+            .. Enumerable.Range(0, 12).Select(i => new TransferSourcePath { Path = $"small-{i}", FileSizeBytes = 1024 }),
+            .. Enumerable.Range(0, 7).Select(i => new TransferSourcePath { Path = $"large-{i}", FileSizeBytes = 10 * 1024 * 1024 }),
+        ];
+
+        _contextMock.Setup(c => c.GetInput<TransferPayload>())
+            .Returns(transferPayload);
+
+        _contextMock.Setup(c => c.CallActivityAsync<TransferResult>(It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
+            .Returns<TaskName, object, TaskOptions>((_, payload, _) => Task.FromResult(new TransferResult
+            {
+                IsSuccess = true,
+                SuccessfulItem = new TransferItem
+                {
+                    SourcePath = ((TransferFilePayload)payload!).SourcePath.Path,
+                    Status = TransferItemStatus.Completed,
+                    IsRenamed = false,
+                    Size = 0
+                }
+            }));
+
+        // One ApplyResultBatch call is made per completed fan-out batch, so the captured batches
+        // expose exactly how the orchestrator grouped the files.
+        var appliedBatches = new List<TransferResultBatch>();
+        _contextMock.Setup(c => c.Entities.CallEntityAsync(It.IsAny<EntityInstanceId>(), It.IsAny<string>(), It.IsAny<object>(), It.IsAny<CallEntityOptions>()))
+            .Returns(Task.CompletedTask)
+            .Callback<EntityInstanceId, string, object, CallEntityOptions>((_, operationName, input, _) =>
+            {
+                if (operationName == nameof(TransferEntityState.ApplyResultBatch) && input is TransferResultBatch batch)
+                {
+                    appliedBatches.Add(batch);
+                }
+            });
+
+        // Act
+        await _orchestrator.RunOrchestrator(_contextMock.Object);
+
+        // Assert
+        var batchPaths = appliedBatches.Select(b => b.SuccessfulItems.Select(i => i.SourcePath).ToList()).ToList();
+
+        Assert.Equal([10, 2, 3, 3, 1], batchPaths.Select(p => p.Count));
+        Assert.All(batchPaths.Take(2), paths => Assert.All(paths, p => Assert.StartsWith("small-", p)));
+        Assert.All(batchPaths.Skip(2), paths => Assert.All(paths, p => Assert.StartsWith("large-", p)));
+    }
+
+    [Fact]
+    public async Task RunOrchestrator_WhenFileSizesAreUnknown_KeepsTheFullBatchSize()
+    {
+        // Arrange
+        _sizeConfig.BatchSize = 10;
+        _sizeConfig.LargeFileBatchSize = 3;
+
+        var transferPayload = CreateValidTransferPayload();
+        transferPayload.TransferType = TransferType.Copy;
+        transferPayload.SourcePaths =
+            [.. Enumerable.Range(0, 12).Select(i => new TransferSourcePath { Path = $"unsized-{i}" })];
+
+        _contextMock.Setup(c => c.GetInput<TransferPayload>())
+            .Returns(transferPayload);
+
+        _contextMock.Setup(c => c.CallActivityAsync<TransferResult>(It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
+            .Returns<TaskName, object, TaskOptions>((_, payload, _) => Task.FromResult(new TransferResult
+            {
+                IsSuccess = true,
+                SuccessfulItem = new TransferItem
+                {
+                    SourcePath = ((TransferFilePayload)payload!).SourcePath.Path,
+                    Status = TransferItemStatus.Completed,
+                    IsRenamed = false,
+                    Size = 0
+                }
+            }));
+
+        var appliedBatches = new List<TransferResultBatch>();
+        _contextMock.Setup(c => c.Entities.CallEntityAsync(It.IsAny<EntityInstanceId>(), It.IsAny<string>(), It.IsAny<object>(), It.IsAny<CallEntityOptions>()))
+            .Returns(Task.CompletedTask)
+            .Callback<EntityInstanceId, string, object, CallEntityOptions>((_, operationName, input, _) =>
+            {
+                if (operationName == nameof(TransferEntityState.ApplyResultBatch) && input is TransferResultBatch batch)
+                {
+                    appliedBatches.Add(batch);
+                }
+            });
+
+        // Act
+        await _orchestrator.RunOrchestrator(_contextMock.Object);
+
+        // Assert
+        Assert.Equal([10, 2], appliedBatches.Select(b => b.SuccessfulItems.Count));
+    }
+
+    [Fact]
     public async Task RunOrchestrator_WithValidInput_CallsUpdateActivityLogWithCorrectCompletedPayload()
     {
         // Arrange

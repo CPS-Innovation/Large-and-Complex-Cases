@@ -15,7 +15,8 @@ namespace CPS.ComplexCases.FileTransfer.API.Durable.Activity;
 /// Lightweight source existence check run before transfer fan-out. Missing files are returned
 /// rather than thrown so the orchestrator can poll briefly, then fail them as SourceFileNotFound.
 /// Access/config failures are returned as Failed so they are not polled. 5xx is rethrown so a
-/// single Durable retry of this activity remains possible.
+/// single Durable retry of this activity remains possible. Available files also carry the size
+/// reported by the probe, which the orchestrator uses to size-tier its fan-out concurrency.
 /// </summary>
 public class ValidateSourceFiles(
     IStorageClientFactory storageClientFactory,
@@ -43,15 +44,18 @@ public class ValidateSourceFiles(
         {
             try
             {
-                var exists = await sourceClient.FileExistsAsync(
+                var probe = await sourceClient.ProbeFileAsync(
                     sourcePath.Path,
                     payload.WorkspaceId,
                     payload.BearerToken,
                     payload.BucketName,
                     sourcePath.FileId);
 
-                if (exists)
+                if (probe.Exists)
                 {
+                    // The size comes free with the existence check and lets the orchestrator fan out
+                    // large files at a lower concurrency than small ones.
+                    sourcePath.FileSizeBytes = probe.SizeBytes;
                     result.Available.Add(sourcePath);
                 }
                 else

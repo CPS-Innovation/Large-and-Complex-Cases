@@ -12,6 +12,12 @@ public class SizeConfig
     public int BatchSize { get; set; } = 12;
     public int MaxConcurrentPartUploads { get; set; } = 2;
 
+    // Files above MinMultipartSizeBytes take the multipart route, where each file holds up to
+    // MaxConcurrentPartUploads chunk PATCHes open at once. Fanning BatchSize of those out together
+    // overwhelmed Egress with 500s and dropped sockets, so large files run at a reduced fan-out
+    // while small single-upload files keep the full BatchSize throughput. Keep at or below BatchSize.
+    public int LargeFileBatchSize { get; set; } = 4;
+
     public int MaxOrchestratorRetries { get; set; } = 3; // default to 3
 
     // The orchestrator retry pass runs at lower concurrency than the first pass: a whole file retry

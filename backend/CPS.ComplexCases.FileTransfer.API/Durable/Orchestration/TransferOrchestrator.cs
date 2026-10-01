@@ -64,7 +64,7 @@ public class TransferOrchestrator(IOptions<SizeConfig> sizeConfig, ITelemetryCli
             filesProcessingStarted = true;
 
             var allResults = await FanOutTransferFilesAsync(
-                context, input, transferEntity, cleanFiles, entityId, transferOrchestrationEvent);
+                context, input, transferEntity, cleanFiles, entityId, transferOrchestrationEvent, logger);
 
             await RetryTransientFailuresAsync(
                 context, input, transferEntity, cleanFiles, entityId, allResults, transferOrchestrationEvent, logger);
@@ -332,7 +332,8 @@ public class TransferOrchestrator(IOptions<SizeConfig> sizeConfig, ITelemetryCli
         TransferEntity transferEntity,
         List<TransferSourcePath> cleanFiles,
         EntityInstanceId entityId,
-        TransferOrchestrationEvent transferOrchestrationEvent)
+        TransferOrchestrationEvent transferOrchestrationEvent,
+        ILogger logger)
     {
         await context.CallActivityAsync(
             nameof(UpdateTransferStatus),
@@ -342,12 +343,23 @@ public class TransferOrchestrator(IOptions<SizeConfig> sizeConfig, ITelemetryCli
                 Status = TransferStatus.InProgress,
             });
 
-        int batchSize = Math.Max(1, _sizeConfig.BatchSize);
+        var batches = SizeTieredBatcher.BuildBatches(
+            cleanFiles,
+            _sizeConfig.MinMultipartSizeBytes,
+            _sizeConfig.BatchSize,
+            _sizeConfig.LargeFileBatchSize);
+
         var allResults = new List<TransferResult>();
 
-        foreach (var chunk in cleanFiles.Chunk(batchSize))
+        foreach (var batch in batches)
         {
-            var batchResults = await Task.WhenAll(chunk.Select(sourcePath =>
+            logger.LogInformation(
+                "Fanning out {Count} {Tier} file(s) for TransferId {TransferId}.",
+                batch.Files.Length,
+                batch.IsLargeFileTier ? "large (multipart)" : "small (single-upload)",
+                input.TransferId);
+
+            var batchResults = await Task.WhenAll(batch.Files.Select(sourcePath =>
                 context.CallActivityAsync<TransferResult>(
                     nameof(TransferFile),
                     BuildTransferFilePayload(input, transferEntity, sourcePath))));
