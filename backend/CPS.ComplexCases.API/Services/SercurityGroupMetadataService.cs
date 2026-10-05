@@ -58,6 +58,20 @@ public class SecurityGroupMetadataService(ILogger<SecurityGroupMetadataService> 
         return groupIds;
     }
 
+    internal static string BuildSecurityGroupFilePath()
+    {
+        var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+        var regionName = Environment.GetEnvironmentVariable("NetAppOptions__RegionName");
+
+        var suffix = environment == "Production" ? "Production" : "PreProd";
+        var region = string.IsNullOrEmpty(regionName) ? "eu-west-1" : regionName;
+
+        return Path.Combine(
+            Directory.GetCurrentDirectory(),
+            "SourceFiles",
+            $"SecurityGroupMappings.{suffix}.{region}.json");
+    }
+
     private async Task<List<SecurityGroup>> GetSecurityGroupDetails()
     {
         if (_cachedSecurityGroups != null)
@@ -71,11 +85,7 @@ public class SecurityGroupMetadataService(ILogger<SecurityGroupMetadataService> 
             if (_cachedSecurityGroups != null)
                 return _cachedSecurityGroups;
 
-            var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
-            var regionName = Environment.GetEnvironmentVariable("NetAppOptions__RegionName");
-            var suffix = environment == "Production" ? "Production" : "PreProd";
-            var region = string.IsNullOrEmpty(regionName) ? "eu-west-1" : regionName;
-            var filePath = Path.Combine(Directory.GetCurrentDirectory(), $"SourceFiles/SecurityGroupMappings.{suffix}.{region}.json");
+            var filePath = BuildSecurityGroupFilePath();
 
             if (!File.Exists(filePath))
             {
