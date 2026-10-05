@@ -72,7 +72,8 @@ public class SecurityGroupMetadataService(ILogger<SecurityGroupMetadataService> 
                 return _cachedSecurityGroups;
 
             var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
-            var suffix = environment == "Production" ? "Production" : "PreProd";
+            var regionName = Environment.GetEnvironmentVariable("NetAppOptions__RegionName");
+            var suffix = environment == "Production" ? $"Production.{regionName}" : "PreProd";
             var filePath = Path.Combine(Directory.GetCurrentDirectory(), $"SourceFiles/SecurityGroupMappings.{suffix}.json");
 
             if (!File.Exists(filePath))
