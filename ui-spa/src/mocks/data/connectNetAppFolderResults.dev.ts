@@ -25,6 +25,32 @@ export const netAppRootFolderResultsDev: ConnectNetAppFolderResponse = {
   },
 };
 
+// Mirrors the API response for a user whose NTFS permissions are scoped to subfolders: the
+// bucket root is not listable, so the accessible entry prefixes are returned instead.
+export const netAppRestrictedRootFolderResultsDev: ConnectNetAppFolderResponse =
+  {
+    data: {
+      rootPath: "",
+      folders: [
+        {
+          folderPath: "RCF/",
+          caseId: null,
+        },
+        {
+          folderPath: "RCW/Cardiff/",
+          caseId: null,
+        },
+      ],
+      isRestrictedRoot: true,
+      accessibleRoots: ["RCF/", "RCW/Cardiff/"],
+    },
+
+    pagination: {
+      maxKeys: 2,
+      nextContinuationToken: null,
+    },
+  };
+
 export const getConnectNetAppFolderResultsDev = (path: string) => {
   if (!path || path === "abc") return netAppRootFolderResultsDev;
 

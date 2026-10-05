@@ -1,13 +1,17 @@
+using System.Diagnostics;
 using System.Net;
 using CPS.ComplexCases.API.Constants;
 using CPS.ComplexCases.API.Context;
+using CPS.ComplexCases.API.Domain.Models;
 using CPS.ComplexCases.API.Domain.Response;
 using CPS.ComplexCases.API.Services;
 using CPS.ComplexCases.Common.Attributes;
 using CPS.ComplexCases.Common.Handlers;
 using CPS.ComplexCases.Common.Services;
 using CPS.ComplexCases.NetApp.Client;
+using CPS.ComplexCases.NetApp.Exceptions;
 using CPS.ComplexCases.NetApp.Factories;
+using CPS.ComplexCases.NetApp.Models.Dto;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
@@ -70,7 +74,18 @@ public class ListNetAppFolders(ILogger<ListNetAppFolders> logger,
             context.BearerToken, persistedBucketName, requestedBucketName);
 
         var arg = _netAppArgFactory.CreateListFoldersInBucketArg(context.BearerToken, bucket.BucketName, operationName, continuationToken, take, path);
-        var response = await _netAppClient.ListFoldersInBucketAsync(arg);
+
+        ListNetAppObjectsDto? response;
+        try
+        {
+            response = await _netAppClient.ListFoldersInBucketAsync(arg);
+        }
+        catch (NetAppAccessDeniedException) when (string.IsNullOrEmpty(path) && bucket.NormalisedEntryPrefixes.Count > 0)
+        {
+            // The caller's NTFS permissions are scoped to subfolders, so the bucket root is not
+            // listable. Offer the configured entry prefixes they can actually reach instead.
+            return await ListAccessibleEntryPrefixesAsync(context.BearerToken, bucket);
+        }
 
         if (response == null)
         {
@@ -78,6 +93,63 @@ public class ListNetAppFolders(ILogger<ListNetAppFolders> logger,
         }
 
         var enrichedResponse = await _caseEnrichmentService.EnrichNetAppFoldersWithMetadataAsync(response);
+
+        return new OkObjectResult(enrichedResponse);
+    }
+
+    private async Task<IActionResult> ListAccessibleEntryPrefixesAsync(string bearerToken, SecurityGroup bucket)
+    {
+        var entryPrefixes = bucket.NormalisedEntryPrefixes;
+        var stopwatch = Stopwatch.StartNew();
+
+        var probeResults = await Task.WhenAll(entryPrefixes.Select(async prefix =>
+        {
+            var probeArg = _netAppArgFactory.CreateListFoldersInBucketArg(
+                bearerToken, bucket.BucketName, maxKeys: 1, prefix: prefix);
+            return (Prefix: prefix, IsAccessible: await _netAppClient.CanListPrefixAsync(probeArg));
+        }));
+
+        stopwatch.Stop();
+
+        var accessiblePrefixes = probeResults
+            .Where(result => result.IsAccessible)
+            .Select(result => result.Prefix)
+            .ToList();
+
+        _logger.LogInformation(
+            "Bucket root listing was denied for bucket {BucketName}. Probed {ProbeCount} entry prefixes in {ElapsedMs}ms and found {AccessibleCount} accessible: {AccessiblePrefixes}",
+            bucket.BucketName, entryPrefixes.Count, stopwatch.ElapsedMilliseconds, accessiblePrefixes.Count,
+            string.Join(", ", accessiblePrefixes));
+
+        if (accessiblePrefixes.Count == 0)
+        {
+            return new ObjectResult("No accessible folders found in this bucket")
+            {
+                StatusCode = StatusCodes.Status403Forbidden
+            };
+        }
+
+        var entryPrefixResponse = new ListNetAppObjectsDto
+        {
+            Data = new ListNetAppDataDto
+            {
+                BucketName = bucket.BucketName,
+                RootPath = string.Empty,
+                FolderData = accessiblePrefixes.Select(prefix => new ListNetAppFolderDataDto { Path = prefix }),
+                FileData = []
+            },
+            Pagination = new PaginationDto
+            {
+                ContinuationToken = null,
+                NextContinuationToken = null,
+                MaxKeys = accessiblePrefixes.Count,
+                KeyCount = accessiblePrefixes.Count
+            }
+        };
+
+        var enrichedResponse = await _caseEnrichmentService.EnrichNetAppFoldersWithMetadataAsync(entryPrefixResponse);
+        enrichedResponse.Data.IsRestrictedRoot = true;
+        enrichedResponse.Data.AccessibleRoots = accessiblePrefixes;
 
         return new OkObjectResult(enrichedResponse);
     }

@@ -17,6 +17,11 @@ public class ListNetAppObjectsDataResponse
     public string? RootPath { get; set; }
     public required IEnumerable<ListNetAppFoldersDataResponse> Folders { get; set; } = [];
     public required IEnumerable<ListNetAppFilesDataResponse> Files { get; set; } = [];
+
+    // Set when the caller cannot list the bucket root and the folders above are the configured
+    // entry prefixes they were found to have access to, rather than genuine root-level folders.
+    public bool IsRestrictedRoot { get; set; }
+    public IEnumerable<string>? AccessibleRoots { get; set; }
 }
 
 public class ListNetAppFoldersDataResponse

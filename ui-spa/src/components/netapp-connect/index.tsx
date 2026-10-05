@@ -26,6 +26,8 @@ const NetAppPage = () => {
     netappRootFolderPath ?? "",
   );
 
+  const [accessibleRoots, setAccessibleRoots] = useState<string[] | null>(null);
+
   const { data: netAppFolderResults, isLoading: isNetAppFolderResultsLoading } =
     useQuery({
       queryKey: [operationName, rootFolderPath],
@@ -36,6 +38,17 @@ const NetAppPage = () => {
       staleTime: 0,
       gcTime: 0,
     });
+
+  useEffect(() => {
+    if (!netAppFolderResults || rootFolderPath !== "") {
+      return;
+    }
+    setAccessibleRoots(
+      netAppFolderResults.isRestrictedRoot
+        ? (netAppFolderResults.accessibleRoots ?? [])
+        : null,
+    );
+  }, [netAppFolderResults, rootFolderPath]);
 
   useEffect(() => {
     if (location.pathname.endsWith("/netapp-connect")) {
@@ -78,6 +91,7 @@ const NetAppPage = () => {
       rootFolderPath={rootFolderPath}
       netAppFolderResults={netAppFolderResults ?? { rootPath: "", folders: [] }}
       isNetAppFolderResultsLoading={isNetAppFolderResultsLoading}
+      accessibleRoots={accessibleRoots}
       handleConnectFolder={handleConnectFolder}
       handleGetFolderContent={handleGetFolderContent}
     />
