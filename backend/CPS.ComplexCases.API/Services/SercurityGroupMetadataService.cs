@@ -73,8 +73,9 @@ public class SecurityGroupMetadataService(ILogger<SecurityGroupMetadataService> 
 
             var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
             var regionName = Environment.GetEnvironmentVariable("NetAppOptions__RegionName");
-            var suffix = environment == "Production" ? $"Production.{regionName}" : "PreProd";
-            var filePath = Path.Combine(Directory.GetCurrentDirectory(), $"SourceFiles/SecurityGroupMappings.{suffix}.json");
+            var suffix = environment == "Production" ? "Production" : "PreProd";
+            var region = string.IsNullOrEmpty(regionName) ? "eu-west-1" : regionName;
+            var filePath = Path.Combine(Directory.GetCurrentDirectory(), $"SourceFiles/SecurityGroupMappings.{suffix}.{region}.json");
 
             if (!File.Exists(filePath))
             {

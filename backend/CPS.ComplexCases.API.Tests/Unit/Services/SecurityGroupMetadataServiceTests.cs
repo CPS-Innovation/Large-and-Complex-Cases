@@ -45,7 +45,7 @@ public class SecurityGroupMetadataServiceTests
             new() { Id = Guid.NewGuid(), DisplayName = "Group3", BucketName = "Bucket3", VolumeUuid = Guid.NewGuid(), Description = "Test Group 3" }
         };
 
-        var filePath = Path.Combine(Directory.GetCurrentDirectory(), "SourceFiles/SecurityGroupMappings.PreProd.json");
+        var filePath = Path.Combine(Directory.GetCurrentDirectory(), "SourceFiles/SecurityGroupMappings.PreProd.eu-west-1.json");
         Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
         await File.WriteAllTextAsync(filePath, JsonSerializer.Serialize(securityGroups));
 
@@ -110,7 +110,7 @@ public class SecurityGroupMetadataServiceTests
             new () { Id = groupId2, DisplayName = "Group1", BucketName = "Bucket1", VolumeUuid = Guid.NewGuid(), Description = "Test Group 1" }
         };
 
-        var filePath = Path.Combine(Directory.GetCurrentDirectory(), "SourceFiles/SecurityGroupMappings.PreProd.json");
+        var filePath = Path.Combine(Directory.GetCurrentDirectory(), "SourceFiles/SecurityGroupMappings.PreProd.eu-west-1.json");
         Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
         await File.WriteAllTextAsync(filePath, JsonSerializer.Serialize(securityGroups));
 
@@ -145,7 +145,7 @@ public class SecurityGroupMetadataServiceTests
         var groupId = Guid.NewGuid();
         var bearerToken = GenerateJwtToken(new List<string> { groupId.ToString() });
 
-        var filePath = Path.Combine(Directory.GetCurrentDirectory(), "SourceFiles/SecurityGroupMappings.PreProd.json");
+        var filePath = Path.Combine(Directory.GetCurrentDirectory(), "SourceFiles/SecurityGroupMappings.PreProd.eu-west-1.json");
         if (File.Exists(filePath))
         {
             File.Delete(filePath);
@@ -173,7 +173,7 @@ public class SecurityGroupMetadataServiceTests
         var groupId = Guid.NewGuid();
         var bearerToken = GenerateJwtToken(new List<string> { groupId.ToString() });
 
-        var filePath = Path.Combine(Directory.GetCurrentDirectory(), "SourceFiles/SecurityGroupMappings.PreProd.json");
+        var filePath = Path.Combine(Directory.GetCurrentDirectory(), "SourceFiles/SecurityGroupMappings.PreProd.eu-west-1.json");
         Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
         await File.WriteAllTextAsync(filePath, "invalid json");
 
@@ -213,7 +213,7 @@ public class SecurityGroupMetadataServiceTests
             new() { Id = validGroupId, DisplayName = "Group1", BucketName = "Bucket1", VolumeUuid = Guid.NewGuid(), Description = "Test Group 1" }
         };
 
-        var filePath = Path.Combine(Directory.GetCurrentDirectory(), "SourceFiles/SecurityGroupMappings.PreProd.json");
+        var filePath = Path.Combine(Directory.GetCurrentDirectory(), "SourceFiles/SecurityGroupMappings.PreProd.eu-west-1.json");
         Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
         await File.WriteAllTextAsync(filePath, JsonSerializer.Serialize(securityGroups));
 
@@ -296,7 +296,7 @@ public class SecurityGroupMetadataServiceTests
             new() { Id = groupId, DisplayName = "Group1", BucketName = "Bucket1", VolumeUuid = Guid.NewGuid(), Description = "Test Group 1" }
         };
 
-        var filePath = Path.Combine(Directory.GetCurrentDirectory(), "SourceFiles/SecurityGroupMappings.PreProd.json");
+        var filePath = Path.Combine(Directory.GetCurrentDirectory(), "SourceFiles/SecurityGroupMappings.PreProd.eu-west-1.json");
         Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
         await File.WriteAllTextAsync(filePath, JsonSerializer.Serialize(securityGroups));
 
