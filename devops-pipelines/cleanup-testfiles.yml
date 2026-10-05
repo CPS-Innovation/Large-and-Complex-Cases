@@ -3,7 +3,7 @@ schedules:
     displayName: "Weekday 5am UTC cleanup"
     branches:
       include:
-        - main
+        - development
     always: true
 
 trigger: none

@@ -3,7 +3,7 @@ schedules:
     displayName: "Sun 1am UTC test"
     branches:
       include:
-        - main
+        - development
     always: true
 
 trigger: none
