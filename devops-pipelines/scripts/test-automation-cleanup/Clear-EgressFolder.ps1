@@ -43,7 +43,8 @@ Write-Host "[2/3] Listing files..." -ForegroundColor Yellow
 $filesToDelete = @()
 
 try {
-  $response = Invoke-RestMethod -Method Get `
+  $response = Invoke-EgressApiRequest `
+    -Method Get `
     -Uri "$BaseUrl/api/v1/workspaces/$WorkspaceId/files?path=$folderName" `
     -Headers $AuthHeader
 }
@@ -63,7 +64,8 @@ while ($true) {
 
   $nextUrl = $response.pagination.next_url -replace '^http://', 'https://'
 
-  $response = Invoke-RestMethod -Method Get `
+  $response = Invoke-EgressApiRequest `
+    -Method Get `
     -Uri $nextUrl `
     -Headers $AuthHeader
 }

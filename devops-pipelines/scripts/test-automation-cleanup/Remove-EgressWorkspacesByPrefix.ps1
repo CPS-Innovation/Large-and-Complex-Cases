@@ -51,10 +51,10 @@ Write-Host "[2/3] Listing Workspaces..." -ForegroundColor Yellow
 $workspacesToRemove = @()
 
 try {
-  $response = Invoke-RestMethod -Method Get `
+  $response = Invoke-EgressApiRequest `
+    -Method Get `
     -Uri "$BaseUrl/api/v1/workspaces?name=$escapedPrefix" `
-    -Headers $AuthHeader `
-    -ContentType 'application/json'
+    -Headers $AuthHeader
 }
 catch {
   Write-Error "Failed to list workspaces: $($_.Exception.Message)"
@@ -76,7 +76,8 @@ while ($true) {
 
   $nextUrl = $response.pagination.next_url -replace '^http://', 'https://'
 
-  $response = Invoke-RestMethod -Method Get `
+  $response = Invoke-EgressApiRequest `
+    -Method Get `
     -Uri $nextUrl `
     -Headers $AuthHeader
 }
@@ -120,10 +121,10 @@ $failed = @()
 
 foreach ($ws in $workspacesToRemove) {
   try {
-    $null = Invoke-RestMethod -Method Delete `
+    $null = Invoke-EgressApiRequest `
+      -Method Delete `
       -Uri "$BaseUrl/api/v1/workspaces/$($ws.id)" `
-      -Headers $AuthHeader `
-      -ContentType 'application/json'
+      -Headers $AuthHeader
   }
   catch {
     $failed += [pscustomobject]@{
