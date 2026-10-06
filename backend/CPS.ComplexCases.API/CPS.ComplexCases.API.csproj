@@ -65,7 +65,8 @@
     <Using Include="System.Threading.ExecutionContext" Alias="ExecutionContext" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="SourceFiles/SecurityGroupMappings.PreProd.json" CopyToOutputDirectory="Always" />
-    <None Include="SourceFiles/SecurityGroupMappings.Production.json" CopyToOutputDirectory="Always" />
+    <None Include="SourceFiles/SecurityGroupMappings.PreProd.eu-west-1.json" CopyToOutputDirectory="Always" />
+    <None Include="SourceFiles/SecurityGroupMappings.Production.eu-west-1.json" CopyToOutputDirectory="Always" />
+    <None Include="SourceFiles/SecurityGroupMappings.Production.eu-south-1.json" CopyToOutputDirectory="Always" />
   </ItemGroup>
 </Project>
