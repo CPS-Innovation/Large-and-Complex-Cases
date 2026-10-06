@@ -225,4 +225,27 @@ public class TransferFileHelperTests
             CreatePayload(direction: TransferDirection.NetAppToEgress),
             "source.txt"));
     }
+
+    // 5 MB chunks are what every environment is configured with, so a 6 MB file is a 5 MB head plus
+    // a 1 MB tail. The tail wins the race to Egress when both run concurrently, which is what loses
+    // the file, so two-part files must upload in order.
+    [Theory]
+    [InlineData(6 * 1024 * 1024, 1)]
+    [InlineData(10 * 1024 * 1024, 1)]
+    [InlineData(5 * 1024 * 1024, 1)]
+    [InlineData(20 * 1024 * 1024, 2)]
+    [InlineData(100 * 1024 * 1024, 2)]
+    public void ResolvePartUploadConcurrency_SerialisesTwoPartFilesOnly(long totalSize, int expected)
+    {
+        Assert.Equal(
+            expected,
+            TransferFile.ResolvePartUploadConcurrency(totalSize, 5 * 1024 * 1024, maxConcurrentPartUploads: 2));
+    }
+
+    [Fact]
+    public void ResolvePartUploadConcurrency_NeverReturnsLessThanOne()
+    {
+        Assert.Equal(1, TransferFile.ResolvePartUploadConcurrency(100, chunkSizeBytes: 0, maxConcurrentPartUploads: 0));
+        Assert.Equal(1, TransferFile.ResolvePartUploadConcurrency(100, chunkSizeBytes: 10, maxConcurrentPartUploads: 0));
+    }
 }

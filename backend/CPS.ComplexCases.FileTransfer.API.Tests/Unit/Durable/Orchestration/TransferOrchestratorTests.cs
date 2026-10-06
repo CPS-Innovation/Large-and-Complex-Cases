@@ -1306,6 +1306,159 @@ public class TransferOrchestratorTests
             Times.Never);
     }
 
+    [Fact]
+    public async Task RunOrchestrator_WhenEgressReportsSuccessButFileIsNotAtDestination_DemotesAndRetriesIt()
+    {
+        // Arrange
+        var transferPayload = CreateNetAppToEgressPayloadWithRoot();
+        var transferredPaths = new List<string>();
+        var demotions = new List<DemoteSuccessfulItemsPayload>();
+
+        _contextMock.Setup(c => c.GetInput<TransferPayload>()).Returns(transferPayload);
+
+        // Pre-flight duplicate check sees an empty destination, the first verification finds only
+        // a.txt, and the verification after the retry finds both.
+        _contextMock.SetupSequence(c => c.CallActivityAsync<HashSet<string>>(
+                It.Is<TaskName>(t => t.Name == nameof(ListDestinationFilePaths)),
+                It.IsAny<object>(),
+                It.IsAny<TaskOptions>()))
+            .ReturnsAsync([])
+            .ReturnsAsync(new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "/dest/a.txt" })
+            .ReturnsAsync(new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "/dest/a.txt", "/dest/b.txt" });
+
+        _contextMock.Setup(c => c.CallActivityAsync(It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
+            .Returns(Task.CompletedTask);
+
+        _contextMock.Setup(c => c.CreateTimer(It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        _contextMock.Setup(c => c.CallActivityAsync<TransferResult>(It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
+            .Returns<TaskName, object, TaskOptions>((_, payload, __) => Task.FromResult(
+                BuildSuccessResult((TransferFilePayload)payload!, transferredPaths)));
+
+        _contextMock.Setup(c => c.Entities.CallEntityAsync(It.IsAny<EntityInstanceId>(), It.IsAny<string>(), It.IsAny<object>(), It.IsAny<CallEntityOptions>()))
+            .Returns(Task.CompletedTask)
+            .Callback<EntityInstanceId, string, object, CallEntityOptions>((_, operation, payload, __) =>
+            {
+                if (operation == nameof(TransferEntityState.DemoteSuccessfulItems) && payload is DemoteSuccessfulItemsPayload demotion)
+                {
+                    demotions.Add(demotion);
+                }
+            });
+
+        // Act
+        await _orchestrator.RunOrchestrator(_contextMock.Object);
+
+        // Assert
+        var demoted = Assert.Single(demotions);
+        Assert.Equal(["/root/b.txt"], demoted.SourcePaths);
+        Assert.Equal(TransferOrchestrator.MissingFromDestinationMessage, demoted.ErrorMessage);
+
+        // Both files on the first pass, then b.txt again on the retry pass.
+        Assert.Equal(["/root/a.txt", "/root/b.txt", "/root/b.txt"], transferredPaths);
+    }
+
+    [Fact]
+    public async Task RunOrchestrator_WhenEveryTransferredFileIsAtTheDestination_DoesNotDemoteOrRetry()
+    {
+        // Arrange
+        var transferPayload = CreateNetAppToEgressPayloadWithRoot();
+        var transferredPaths = new List<string>();
+        var demotionCount = 0;
+
+        _contextMock.Setup(c => c.GetInput<TransferPayload>()).Returns(transferPayload);
+
+        _contextMock.SetupSequence(c => c.CallActivityAsync<HashSet<string>>(
+                It.Is<TaskName>(t => t.Name == nameof(ListDestinationFilePaths)),
+                It.IsAny<object>(),
+                It.IsAny<TaskOptions>()))
+            .ReturnsAsync([])
+            .ReturnsAsync(new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "/dest/a.txt", "/dest/b.txt" });
+
+        _contextMock.Setup(c => c.CallActivityAsync(It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
+            .Returns(Task.CompletedTask);
+
+        _contextMock.Setup(c => c.CreateTimer(It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        _contextMock.Setup(c => c.CallActivityAsync<TransferResult>(It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
+            .Returns<TaskName, object, TaskOptions>((_, payload, __) => Task.FromResult(
+                BuildSuccessResult((TransferFilePayload)payload!, transferredPaths)));
+
+        _contextMock.Setup(c => c.Entities.CallEntityAsync(It.IsAny<EntityInstanceId>(), It.IsAny<string>(), It.IsAny<object>(), It.IsAny<CallEntityOptions>()))
+            .Returns(Task.CompletedTask)
+            .Callback<EntityInstanceId, string, object, CallEntityOptions>((_, operation, _, __) =>
+            {
+                if (operation == nameof(TransferEntityState.DemoteSuccessfulItems))
+                {
+                    demotionCount++;
+                }
+            });
+
+        // Act
+        await _orchestrator.RunOrchestrator(_contextMock.Object);
+
+        // Assert
+        Assert.Equal(0, demotionCount);
+        Assert.Equal(["/root/a.txt", "/root/b.txt"], transferredPaths);
+
+        // Pre-flight listing plus a single verification listing, with no post-retry pass.
+        _contextMock.Verify(c => c.CallActivityAsync<HashSet<string>>(
+                It.Is<TaskName>(t => t.Name == nameof(ListDestinationFilePaths)),
+                It.IsAny<object>(),
+                It.IsAny<TaskOptions>()),
+            Times.Exactly(2));
+    }
+
+    [Fact]
+    public async Task RunOrchestrator_WhenNotNetAppToEgress_SkipsDestinationVerification()
+    {
+        // Arrange
+        var transferPayload = CreateValidTransferPayload();
+        transferPayload.TransferDirection = TransferDirection.NetAppToNetApp;
+
+        _contextMock.Setup(c => c.GetInput<TransferPayload>()).Returns(transferPayload);
+
+        _contextMock.Setup(c => c.CallActivityAsync(It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
+            .Returns(Task.CompletedTask);
+
+        _contextMock.Setup(c => c.CallActivityAsync<TransferResult>(It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
+            .Returns<TaskName, object, TaskOptions>((_, payload, __) => Task.FromResult(
+                BuildSuccessResult((TransferFilePayload)payload!, [])));
+
+        _contextMock.Setup(c => c.Entities.CallEntityAsync(It.IsAny<EntityInstanceId>(), It.IsAny<string>(), It.IsAny<object>(), It.IsAny<CallEntityOptions>()))
+            .Returns(Task.CompletedTask);
+
+        // Act
+        await _orchestrator.RunOrchestrator(_contextMock.Object);
+
+        // Assert
+        _contextMock.Verify(c => c.CallActivityAsync<HashSet<string>>(
+                It.Is<TaskName>(t => t.Name == nameof(ListDestinationFilePaths)),
+                It.IsAny<object>(),
+                It.IsAny<TaskOptions>()),
+            Times.Never);
+        _contextMock.Verify(c => c.CreateTimer(It.IsAny<DateTime>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    private static TransferResult BuildSuccessResult(TransferFilePayload payload, List<string> transferredPaths)
+    {
+        var sourcePath = payload.SourcePath.FullFilePath ?? payload.SourcePath.Path;
+        transferredPaths.Add(sourcePath);
+
+        return new TransferResult
+        {
+            IsSuccess = true,
+            SuccessfulItem = new TransferItem
+            {
+                SourcePath = sourcePath,
+                Status = TransferItemStatus.Completed,
+                IsRenamed = false,
+                Size = 100
+            }
+        };
+    }
+
     private TransferPayload CreateValidTransferPayload()
     {
         return new TransferPayload
