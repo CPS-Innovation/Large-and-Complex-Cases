@@ -30,66 +30,71 @@ public class SecurityGroupMetadataServiceTests
         return handler.WriteToken(token);
     }
 
-    private static void WithEnvironmentVariables(
-        string? environment,
-        string? region,
-        Action testAction)
+    private static string CreateTempJsonFile(string content)
     {
-        var originalEnvironment =
-            Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+        var filePath = Path.Combine(
+            Path.GetTempPath(),
+            $"SecurityGroupTest_{Guid.NewGuid()}.json");
 
-        var originalRegion =
-            Environment.GetEnvironmentVariable("NetAppOptions__RegionName");
+        File.WriteAllText(filePath, content);
 
-        try
-        {
-            Environment.SetEnvironmentVariable(
-                "ASPNETCORE_ENVIRONMENT",
-                environment);
-
-            Environment.SetEnvironmentVariable(
-                "NetAppOptions__RegionName",
-                region);
-
-            testAction();
-        }
-        finally
-        {
-            Environment.SetEnvironmentVariable(
-                "ASPNETCORE_ENVIRONMENT",
-                originalEnvironment);
-
-            Environment.SetEnvironmentVariable(
-                "NetAppOptions__RegionName",
-                originalRegion);
-        }
+        return filePath;
     }
 
     [Theory]
-    [InlineData("Production", "us-east-1",
-        "SecurityGroupMappings.Production.us-east-1.json")]
-    [InlineData(null, null,
-        "SecurityGroupMappings.PreProd.eu-west-1.json")]
+    [InlineData("Production", "eu-south-1", "SecurityGroupMappings.Production.eu-south-1.json")]
+    [InlineData("Production", "eu-west-1", "SecurityGroupMappings.Production.eu-west-1.json")]
+    [InlineData("Production", null, "SecurityGroupMappings.Production.eu-south-1.json")]
+    [InlineData("Production", "   ", "SecurityGroupMappings.Production.eu-south-1.json")]
+    [InlineData("Production", "EU-SOUTH-1", "SecurityGroupMappings.Production.eu-south-1.json")]
+    [InlineData("PreProd", "eu-south-1", "SecurityGroupMappings.PreProd.eu-west-1.json")]
+    [InlineData("PreProd", "eu-west-1", "SecurityGroupMappings.PreProd.eu-west-1.json")]
+    [InlineData("Development", null, "SecurityGroupMappings.PreProd.eu-west-1.json")]
+    [InlineData(null, null, "SecurityGroupMappings.PreProd.eu-west-1.json")]
     public void BuildSecurityGroupFilePath_ReturnsExpectedPath(
+        // Arrange
         string? environment,
         string? region,
         string expectedFileName)
     {
-        // Arrange
-        WithEnvironmentVariables(environment, region, () =>
+        // Act
+        var result = SecurityGroupMetadataService.BuildSecurityGroupFilePath(environment, region);
+
+        // Assert
+        var expected = Path.Combine(
+            Directory.GetCurrentDirectory(),
+            "SourceFiles",
+            expectedFileName);
+
+        Assert.Equal(expected, result);
+    }
+
+    [Theory]
+    [InlineData("SecurityGroupMappings.Production.eu-west-1.json")]
+    [InlineData("SecurityGroupMappings.Production.eu-south-1.json")]
+    [InlineData("SecurityGroupMappings.PreProd.eu-west-1.json")]
+    public void BundledMappingFiles_AreValidAndDeserializable(string fileName)
+    {
+        var filePath = Path.Combine(
+            Directory.GetCurrentDirectory(),
+            "SourceFiles",
+            fileName);
+
+        Assert.True(File.Exists(filePath), $"File {fileName} does not exist.");
+
+        var json = File.ReadAllText(filePath);
+        var groups = JsonSerializer.Deserialize<List<SecurityGroup>>(json);
+
+        Assert.NotNull(groups);
+        Assert.NotEmpty(groups);
+        Assert.All(groups, g =>
         {
-            // Act
-            var result = SecurityGroupMetadataService.BuildSecurityGroupFilePath();
-
-            // Assert
-            var expected = Path.Combine(
-                Directory.GetCurrentDirectory(),
-                "SourceFiles",
-                expectedFileName);
-
-            Assert.Equal(expected, result);
+            Assert.NotEqual(Guid.Empty, g.Id);
+            Assert.NotEqual(Guid.Empty, g.VolumeUuid);
+            Assert.False(string.IsNullOrWhiteSpace(g.BucketName));
         });
     }
+
 
     [Fact]
     public async Task GetUserSecurityGroupsAsync_ReturnsMatchingGroups_OnSuccess()
@@ -106,14 +111,17 @@ public class SecurityGroupMetadataServiceTests
             new() { Id = Guid.NewGuid(), DisplayName = "Group3", BucketName = "Bucket3", VolumeUuid = Guid.NewGuid(), Description = "Test Group 3" }
         };
 
-        var filePath = SecurityGroupMetadataService.BuildSecurityGroupFilePath();
-        Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
-        await File.WriteAllTextAsync(filePath, JsonSerializer.Serialize(securityGroups));
+        var filePath = CreateTempJsonFile(
+            JsonSerializer.Serialize(securityGroups));
+
+        var service = new SecurityGroupMetadataService(
+            _loggerMock.Object,
+            filePath);
 
         try
         {
             // Act
-            var result = await _service.GetUserSecurityGroupsAsync(bearerToken);
+            var result = await service.GetUserSecurityGroupsAsync(bearerToken);
 
             // Assert
             Assert.NotNull(result);
@@ -171,15 +179,19 @@ public class SecurityGroupMetadataServiceTests
             new () { Id = groupId2, DisplayName = "Group1", BucketName = "Bucket1", VolumeUuid = Guid.NewGuid(), Description = "Test Group 1" }
         };
 
-        var filePath = SecurityGroupMetadataService.BuildSecurityGroupFilePath();
-        Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
-        await File.WriteAllTextAsync(filePath, JsonSerializer.Serialize(securityGroups));
+        var filePath = CreateTempJsonFile(
+            JsonSerializer.Serialize(securityGroups));
+
+        var service = new SecurityGroupMetadataService(
+            _loggerMock.Object,
+            filePath);
+
 
         try
         {
             // Act & Assert
             var exception = await Assert.ThrowsAsync<MissingSecurityGroupException>(() =>
-                _service.GetUserSecurityGroupsAsync(bearerToken));
+                service.GetUserSecurityGroupsAsync(bearerToken));
 
             Assert.Equal("No matching security groups found for the provided IDs.", exception.Message);
             _loggerMock.Verify(
@@ -206,15 +218,17 @@ public class SecurityGroupMetadataServiceTests
         var groupId = Guid.NewGuid();
         var bearerToken = GenerateJwtToken(new List<string> { groupId.ToString() });
 
-        var filePath = SecurityGroupMetadataService.BuildSecurityGroupFilePath(); ;
-        if (File.Exists(filePath))
-        {
-            File.Delete(filePath);
-        }
+        var filePath = Path.Combine(
+            Path.GetTempPath(),
+            $"{Guid.NewGuid()}.json");
+
+        var service = new SecurityGroupMetadataService(
+            _loggerMock.Object,
+            filePath);
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<MissingSecurityGroupException>(() =>
-            _service.GetUserSecurityGroupsAsync(bearerToken));
+            service.GetUserSecurityGroupsAsync(bearerToken));
 
         Assert.Contains("Security group mapping file not found", exception.Message);
         _loggerMock.Verify(
@@ -234,15 +248,17 @@ public class SecurityGroupMetadataServiceTests
         var groupId = Guid.NewGuid();
         var bearerToken = GenerateJwtToken(new List<string> { groupId.ToString() });
 
-        var filePath = SecurityGroupMetadataService.BuildSecurityGroupFilePath();
-        Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
-        await File.WriteAllTextAsync(filePath, "invalid json");
+        var filePath = CreateTempJsonFile("invalid json");
+
+        var service = new SecurityGroupMetadataService(
+            _loggerMock.Object,
+            filePath);
 
         try
         {
             // Act & Assert
             var exception = await Assert.ThrowsAsync<JsonException>(() =>
-                _service.GetUserSecurityGroupsAsync(bearerToken));
+                service.GetUserSecurityGroupsAsync(bearerToken));
 
             Assert.Equal("'i' is an invalid start of a value. Path: $ | LineNumber: 0 | BytePositionInLine: 0.", exception.Message);
             _loggerMock.Verify(
@@ -274,14 +290,17 @@ public class SecurityGroupMetadataServiceTests
             new() { Id = validGroupId, DisplayName = "Group1", BucketName = "Bucket1", VolumeUuid = Guid.NewGuid(), Description = "Test Group 1" }
         };
 
-        var filePath = SecurityGroupMetadataService.BuildSecurityGroupFilePath();
-        Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
-        await File.WriteAllTextAsync(filePath, JsonSerializer.Serialize(securityGroups));
+        var filePath = CreateTempJsonFile(
+            JsonSerializer.Serialize(securityGroups));
+
+        var service = new SecurityGroupMetadataService(
+            _loggerMock.Object,
+            filePath);
 
         try
         {
             // Act
-            var result = await _service.GetUserSecurityGroupsAsync(bearerToken);
+            var result = await service.GetUserSecurityGroupsAsync(bearerToken);
 
             // Assert
             Assert.NotNull(result);
@@ -357,18 +376,21 @@ public class SecurityGroupMetadataServiceTests
             new() { Id = groupId, DisplayName = "Group1", BucketName = "Bucket1", VolumeUuid = Guid.NewGuid(), Description = "Test Group 1" }
         };
 
-        var filePath = SecurityGroupMetadataService.BuildSecurityGroupFilePath();
-        Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
-        await File.WriteAllTextAsync(filePath, JsonSerializer.Serialize(securityGroups));
+        var filePath = CreateTempJsonFile(
+            JsonSerializer.Serialize(securityGroups));
+
+        var service = new SecurityGroupMetadataService(
+            _loggerMock.Object,
+            filePath);
 
         // Act - First call should load from file
-        var result1 = await _service.GetUserSecurityGroupsAsync(bearerToken);
+        var result1 = await service.GetUserSecurityGroupsAsync(bearerToken);
 
         // Delete the file to prove the second call uses cache
         File.Delete(filePath);
 
         // Act - Second call should use cached data
-        var result2 = await _service.GetUserSecurityGroupsAsync(bearerToken);
+        var result2 = await service.GetUserSecurityGroupsAsync(bearerToken);
 
         // Assert
         Assert.NotNull(result1);

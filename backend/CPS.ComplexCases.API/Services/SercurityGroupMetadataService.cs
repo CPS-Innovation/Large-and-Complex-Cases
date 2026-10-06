@@ -6,9 +6,14 @@ using Microsoft.Extensions.Logging;
 
 namespace CPS.ComplexCases.API.Services;
 
-public class SecurityGroupMetadataService(ILogger<SecurityGroupMetadataService> logger) : ISecurityGroupMetadataService
+public class SecurityGroupMetadataService(
+    ILogger<SecurityGroupMetadataService> logger,
+    string? securityGroupFilePath = null)
+    : ISecurityGroupMetadataService
 {
     private readonly ILogger<SecurityGroupMetadataService> _logger = logger;
+    private readonly string? _securityGroupFilePath = securityGroupFilePath;
+
     private List<SecurityGroup>? _cachedSecurityGroups;
     private readonly SemaphoreSlim _cacheLock = new(1, 1);
 
@@ -58,18 +63,29 @@ public class SecurityGroupMetadataService(ILogger<SecurityGroupMetadataService> 
         return groupIds;
     }
 
-    internal static string BuildSecurityGroupFilePath()
+    internal static string BuildSecurityGroupFilePath(string? environment = null, string? regionName = null)
     {
-        var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
-        var regionName = Environment.GetEnvironmentVariable("NetAppOptions__RegionName");
+        environment ??= Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+        regionName ??= Environment.GetEnvironmentVariable("NetAppOptions__RegionName");
 
-        var suffix = environment == "Production" ? "Production" : "PreProd";
-        var region = string.IsNullOrEmpty(regionName) ? "eu-west-1" : regionName;
+        var isProduction = string.Equals(environment, "Production", StringComparison.OrdinalIgnoreCase);
+
+        if (!isProduction)
+        {
+            return Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "SourceFiles",
+                "SecurityGroupMappings.PreProd.eu-west-1.json");
+        }
+
+        var region = string.IsNullOrWhiteSpace(regionName)
+            ? "eu-south-1"
+            : regionName.Trim().ToLowerInvariant();
 
         return Path.Combine(
             Directory.GetCurrentDirectory(),
             "SourceFiles",
-            $"SecurityGroupMappings.{suffix}.{region}.json");
+            $"SecurityGroupMappings.Production.{region}.json");
     }
 
     private async Task<List<SecurityGroup>> GetSecurityGroupDetails()
@@ -85,7 +101,7 @@ public class SecurityGroupMetadataService(ILogger<SecurityGroupMetadataService> 
             if (_cachedSecurityGroups != null)
                 return _cachedSecurityGroups;
 
-            var filePath = BuildSecurityGroupFilePath();
+            var filePath = _securityGroupFilePath ?? BuildSecurityGroupFilePath();
 
             if (!File.Exists(filePath))
             {
