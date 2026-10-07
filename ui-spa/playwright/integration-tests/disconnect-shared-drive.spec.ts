@@ -20,9 +20,10 @@ test.describe("disconnect-shared-drive", () => {
       "Transfer materials",
     );
 
+    await page.getByRole("button", { name: "Disconnect" }).click();
     await page.getByRole("button", { name: "Disconnect Shared Drive" }).click();
     await expect(page).toHaveURL(
-      "/case/12/case-management/disconnect-shared-drive-confirmation",
+      "/case/12/case-management/disconnect-confirmation?type=shared-drive",
     );
     await expect(page.locator("h1")).toHaveText(
       `Disconnect this Shared Drive folder?`,
@@ -35,28 +36,27 @@ test.describe("disconnect-shared-drive", () => {
     );
 
     await page.getByRole("button", { name: "Continue" }).click();
-    await expect(
-      page.getByTestId("disconnect-shared-drive-error-summary"),
-    ).toBeVisible();
-    await expect(
-      page.getByTestId("disconnect-shared-drive-radio-link"),
-    ).toHaveText("Select whether you want to disconnect Shared Drive folder");
+    await expect(page.getByTestId("disconnect-error-summary")).toBeVisible();
+    await expect(page.getByTestId("disconnect-radio-link")).toHaveText(
+      "Select whether you want to disconnect Shared Drive folder",
+    );
     await page.getByLabel("No, keep this folder connected").check();
     await page.getByRole("button", { name: "Continue" }).click();
     await expect(
-      page.getByTestId("disconnect-shared-drive-error-summary"),
+      page.getByTestId("disconnect-error-summary"),
     ).not.toBeVisible();
     await expect(page).toHaveURL("/case/12/case-management");
     await expect(page.locator("h1")).toHaveText(`Thunderstruck`);
+    await page.getByRole("button", { name: "Disconnect" }).click();
     await page.getByRole("button", { name: "Disconnect Shared Drive" }).click();
     await expect(page).toHaveURL(
-      "/case/12/case-management/disconnect-shared-drive-confirmation",
+      "/case/12/case-management/disconnect-confirmation?type=shared-drive",
     );
     await page.getByLabel("Yes, disconnect this folder").check();
     await page.getByRole("button", { name: "Continue" }).click();
     await expect(page.getByRole("button", { name: "Continue" })).toBeDisabled();
     await expect(page).toHaveURL(
-      "/case/12/case-management/disconnect-shared-drive-success",
+      "/case/12/case-management/disconnect-success?type=shared-drive",
     );
     await expect(page.locator("h1")).toHaveText(`Shared Drive disconnected`);
     await expect(page.locator("p").nth(0)).toHaveText(
@@ -90,10 +90,10 @@ test.describe("disconnect-shared-drive", () => {
     await expect(page.getByTestId("tab-active")).toHaveText(
       "Transfer materials",
     );
-
+    await page.getByRole("button", { name: "Disconnect" }).click();
     await page.getByRole("button", { name: "Disconnect Shared Drive" }).click();
     await expect(page).toHaveURL(
-      "/case/12/case-management/disconnect-shared-drive-confirmation",
+      "/case/12/case-management/disconnect-confirmation?type=shared-drive",
     );
 
     await page.getByLabel("Yes, disconnect this folder").check();

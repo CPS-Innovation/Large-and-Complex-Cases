@@ -101,7 +101,6 @@ const CaseManagementPage = () => {
               caseMetaData.activeTransferId ??
               ""
             }
-            urn={caseMetaData.urn}
             transferSourceInitialValue={
               transferPage?.transferSource ?? "egress"
             }

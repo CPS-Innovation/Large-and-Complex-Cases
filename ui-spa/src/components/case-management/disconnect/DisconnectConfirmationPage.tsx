@@ -1,13 +1,23 @@
 import { useRef, useEffect, useState, useCallback, useMemo } from "react";
 import { Radios, Button, ErrorSummary } from "../../govuk";
-import { useNavigate, useParams } from "react-router";
-import { disconnectNetAppFolder } from "../../../apis/gateway-api";
-import styles from "./DisconnectSharedDriveConfirmationPage.module.scss";
+import { useNavigate, useParams, useLocation } from "react-router";
+import {
+  disconnectNetAppFolder,
+  disconnectEgressFolder,
+} from "../../../apis/gateway-api";
+import styles from "./DisconnectConfirmationPage.module.scss";
 
 type GeneralRadioValue = "yes" | "no" | "";
 
-const DisconnectSharedDriveConfirmationPage = () => {
+const DisconnectConfirmationPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { queryType } = useMemo(() => {
+    const params = new URLSearchParams(location.search);
+    return {
+      queryType: params.get("type") ?? "",
+    };
+  }, [location.search]);
 
   const { caseId } = useParams() as { caseId: string };
 
@@ -16,16 +26,16 @@ const DisconnectSharedDriveConfirmationPage = () => {
     inputErrorText?: string;
   };
   type FormDataErrors = {
-    disconnectSharedDriveRadio?: ErrorText;
+    disconnectRadio?: ErrorText;
   };
   const errorSummaryRef = useRef<HTMLInputElement>(null);
 
   const [disableButtons, setDisableButtons] = useState(false);
 
   const [formData, setFormData] = useState<{
-    disconnectSharedDriveRadio?: GeneralRadioValue;
+    disconnectRadio?: GeneralRadioValue;
   }>({
-    disconnectSharedDriveRadio: "",
+    disconnectRadio: "",
   });
 
   const [formDataErrors, setFormDataErrors] = useState<FormDataErrors>({});
@@ -34,8 +44,8 @@ const DisconnectSharedDriveConfirmationPage = () => {
     (errorKey: keyof FormDataErrors) => {
       return {
         children: formDataErrors[errorKey]?.errorSummaryText,
-        href: "#disconnect-shared-drive-radio-yes",
-        "data-testid": "disconnect-shared-drive-radio-link",
+        href: "#disconnect-radio-yes",
+        "data-testid": "disconnect-radio-link",
       };
     },
     [formDataErrors],
@@ -43,10 +53,10 @@ const DisconnectSharedDriveConfirmationPage = () => {
 
   const validateFormData = () => {
     const errors: FormDataErrors = {};
-    const { disconnectSharedDriveRadio = "" } = formData;
+    const { disconnectRadio = "" } = formData;
 
-    if (!disconnectSharedDriveRadio) {
-      errors.disconnectSharedDriveRadio = {
+    if (!disconnectRadio) {
+      errors.disconnectRadio = {
         errorSummaryText:
           "Select whether you want to disconnect Shared Drive folder",
         inputErrorText:
@@ -80,41 +90,46 @@ const DisconnectSharedDriveConfirmationPage = () => {
   const setFormValue = (value: string) => {
     setFormData({
       ...formData,
-      disconnectSharedDriveRadio: value as GeneralRadioValue,
+      disconnectRadio: value as GeneralRadioValue,
     });
   };
 
-  const handleSubmit = async (event: React.FormEvent) => {
+  const handleSubmit = async (event: React.SubmitEvent) => {
     event.preventDefault();
 
     if (!caseId) return;
 
     if (!validateFormData()) return;
 
-    if (formData.disconnectSharedDriveRadio === "no") {
-      navigate(`/case/${caseId}/case-management`);
+    if (formData.disconnectRadio === "no") {
+      void navigate(`/case/${caseId}/case-management`);
       return;
     }
     setDisableButtons(true);
     try {
-      const response = await disconnectNetAppFolder(parseInt(caseId));
+      const response =
+        queryType === "shared-drive"
+          ? await disconnectNetAppFolder(Number.parseInt(caseId))
+          : await disconnectEgressFolder(Number.parseInt(caseId));
       if (!response.ok) {
-        navigate(
-          `/case/${caseId}/case-management/disconnect-shared-drive-failure`,
+        void navigate(
+          `/case/${caseId}/case-management/disconnect-failure?type=${queryType}`,
         );
         return;
       }
     } catch (e) {
       console.error(e);
-      navigate(
-        `/case/${caseId}/case-management/disconnect-shared-drive-failure`,
+      void navigate(
+        `/case/${caseId}/case-management/disconnect-failure?type=${queryType}`,
       );
       return;
     } finally {
       setDisableButtons(false);
     }
 
-    navigate(`/case/${caseId}/case-management/disconnect-shared-drive-success`);
+    void navigate(
+      `/case/${caseId}/case-management/disconnect-success?type=${queryType}`,
+    );
   };
 
   return (
@@ -126,7 +141,7 @@ const DisconnectSharedDriveConfirmationPage = () => {
           className={styles.errorSummaryWrapper}
         >
           <ErrorSummary
-            data-testid={"disconnect-shared-drive-error-summary"}
+            data-testid={"disconnect-error-summary"}
             errorList={errorList}
             titleChildren="There is a problem"
           />
@@ -135,36 +150,46 @@ const DisconnectSharedDriveConfirmationPage = () => {
       <form onSubmit={handleSubmit}>
         <div className={styles.inputWrapper}>
           <Radios
-            name="disconnectSharedDriveConfirmationRadio"
+            name="disconnectConfirmationRadio"
             fieldset={{
               legend: {
-                children: <h1>Disconnect this Shared Drive folder?</h1>,
+                children: (
+                  <h1>
+                    {queryType === "shared-drive"
+                      ? "Disconnect this Shared Drive folder?"
+                      : "Disconnect Egress folder?"}
+                  </h1>
+                ),
               },
             }}
             errorMessage={
-              formDataErrors["disconnectSharedDriveRadio"]
+              formDataErrors["disconnectRadio"]
                 ? {
-                    children:
-                      formDataErrors["disconnectSharedDriveRadio"]
-                        .inputErrorText,
+                    children: formDataErrors["disconnectRadio"].inputErrorText,
                   }
                 : undefined
             }
             items={[
               {
-                id: "disconnect-shared-drive-radio-yes",
-                children: "Yes, disconnect this folder",
+                id: "disconnect-radio-yes",
+                children:
+                  queryType === "shared-drive"
+                    ? "Yes, disconnect this folder"
+                    : "Yes, disconnect an Egress case",
                 value: "yes",
-                "data-testid": "disconnect-shared-drive-radio-yes",
+                "data-testid": "disconnect-radio-yes",
               },
               {
-                id: "disconnect-shared-drive-radio-no",
-                children: "No, keep this folder connected",
+                id: "disconnect-radio-no",
+                children:
+                  queryType === "shared-drive"
+                    ? "No, keep this folder connected"
+                    : "No, keep Egress connected",
                 value: "no",
-                "data-testid": "disconnect-shared-drive-radio-no",
+                "data-testid": "disconnect-radio-no",
               },
             ]}
-            value={formData.disconnectSharedDriveRadio}
+            value={formData.disconnectRadio}
             onChange={(value) => {
               if (value) setFormValue(value);
             }}
@@ -180,4 +205,4 @@ const DisconnectSharedDriveConfirmationPage = () => {
   );
 };
 
-export default DisconnectSharedDriveConfirmationPage;
+export default DisconnectConfirmationPage;

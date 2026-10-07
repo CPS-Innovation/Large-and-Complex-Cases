@@ -115,7 +115,7 @@ export class TransferMaterialsSourcePage {
     ).toHaveText("View Shared Drive");
     await expect(this.page.getByTestId("transfer-controls")).toHaveCount(2);
     await expect(
-      this.page.getByRole("button", { name: "Disconnect Shared Drive" }),
+      this.page.getByRole("button", { name: "Disconnect" }),
     ).toBeVisible();
   }
 

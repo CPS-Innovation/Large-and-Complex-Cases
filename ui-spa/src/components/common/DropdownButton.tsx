@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
-import DownArrow from "../svgs/down.svg?react";
-import { LinkButton } from "../govuk";
+import FilledArrow from "../svgs/filledArrow.svg?react";
+import { Button } from "../govuk";
 
 import classes from "./DropdownButton.module.scss";
 import { useGlobalDropdownClose } from "../../common/hooks/useGlobalDropdownClose";
@@ -29,8 +29,7 @@ export const DropdownButton: React.FC<DropdownButtonProps> = ({
   dataTestId = "dropdown-btn",
   ariaLabel = "dropdown",
   disabled = false,
-  showLastItemSeparator = false,
-  icon = <DownArrow />,
+  icon = <FilledArrow className={classes.icon} />,
 }) => {
   const dropDownBtnRef = useRef<HTMLButtonElement | null>(null);
   const panelRef = useRef<HTMLDivElement | null>(null);
@@ -50,15 +49,12 @@ export const DropdownButton: React.FC<DropdownButtonProps> = ({
 
   return (
     <div className={classes.dropDownButtonWrapper}>
-      <LinkButton
+      <Button
         id={dataTestId}
-        dataTestId={dataTestId}
         ref={dropDownBtnRef}
-        ariaLabel={ariaLabel}
-        ariaExpanded={buttonOpen}
-        className={`${classes.dropDownButton} ${
-          buttonOpen && classes.upArrow
-        } ${name && classes.btnWithText}`}
+        aria-label={ariaLabel}
+        aria-expanded={buttonOpen}
+        className={`govuk-button--secondary ${buttonOpen && classes.upArrow}`}
         disabled={disabled}
         onClick={() => {
           setButtonOpen((buttonOpen) => !buttonOpen);
@@ -66,7 +62,7 @@ export const DropdownButton: React.FC<DropdownButtonProps> = ({
       >
         {name && <span className={classes.dropdownBtnName}>{name}</span>}
         {icon}
-      </LinkButton>
+      </Button>
 
       {buttonOpen && (
         <div
@@ -75,24 +71,19 @@ export const DropdownButton: React.FC<DropdownButtonProps> = ({
           id="dropdown-panel"
           data-testid={`dropdown-panel`}
         >
-          <ul
-            className={
-              showLastItemSeparator
-                ? `${classes.panelList} ${classes.panelListWithSeparator}`
-                : `${classes.panelList}`
-            }
-          >
+          <ul className={classes.panelList}>
             {dropDownItems.map((item) => (
               <li key={item.id} className={classes.panelListItem}>
-                <LinkButton
-                  ariaLabel={item.ariaLabel}
+                <Button
+                  className="govuk-button--secondary"
+                  aria-label={item.ariaLabel}
                   disabled={item.disabled}
                   onClick={() => {
                     handleBtnClick(item.id);
                   }}
                 >
                   {item.label}
-                </LinkButton>
+                </Button>
               </li>
             ))}
           </ul>
