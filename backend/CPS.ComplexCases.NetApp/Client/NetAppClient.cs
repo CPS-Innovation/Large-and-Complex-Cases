@@ -313,9 +313,9 @@ public class NetAppClient(
             await ListFoldersInBucketCoreAsync(arg);
             return true;
         }
-        catch (AmazonS3Exception ex)
+        catch (AmazonS3Exception ex) when (ex.StatusCode == HttpStatusCode.Forbidden || ex.ErrorCode == S3ErrorCodes.AccessDenied)
         {
-            _logger.LogInformation(
+            _logger.LogInformation(ex,
                 "Prefix {Prefix} is not listable in bucket {BucketName} (StatusCode={StatusCode}, ErrorCode={ErrorCode}).",
                 arg.Prefix, arg.BucketName, ex.StatusCode, ex.ErrorCode);
             return false;

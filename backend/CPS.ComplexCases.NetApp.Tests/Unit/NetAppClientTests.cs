@@ -523,6 +523,29 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
             _amazonS3Mock.Verify(x => x.ListObjectsV2Async(It.IsAny<ListObjectsV2Request>(), default), Times.Once);
         }
 
+        [Theory]
+        [InlineData(HttpStatusCode.InternalServerError, S3ErrorCodes.InternalError)]
+        [InlineData(HttpStatusCode.ServiceUnavailable, "ServiceUnavailable")]
+        [InlineData(HttpStatusCode.RequestTimeout, "RequestTimeout")]
+        public async Task CanListPrefixAsync_WhenServerError_PropagatesException(HttpStatusCode statusCode, string errorCode)
+        {
+            // Arrange - a NetApp outage must not be reported as a permissions problem, so anything
+            // other than an authorisation failure has to continue through the exception-handling path.
+            var arg = _fixture.Create<ListFoldersInBucketArg>();
+            arg.BearerToken = BearerToken;
+
+            _amazonS3Mock.Setup(x => x.ListObjectsV2Async(It.IsAny<ListObjectsV2Request>(), default))
+                .ThrowsAsync(new AmazonS3Exception(errorCode) { StatusCode = statusCode, ErrorCode = errorCode });
+
+            // Act
+            var ex = await Assert.ThrowsAsync<AmazonS3Exception>(() => _client.CanListPrefixAsync(arg));
+
+            // Assert
+            Assert.Equal(statusCode, ex.StatusCode);
+            Assert.Equal(errorCode, ex.ErrorCode);
+            _s3ClientFactoryMock.Verify(x => x.InvalidateClientAsync(), Times.Never);
+        }
+
         [Fact]
         public async Task InitiateMultipartUploadAsync_ReturnsResponse_OnSuccess()
         {

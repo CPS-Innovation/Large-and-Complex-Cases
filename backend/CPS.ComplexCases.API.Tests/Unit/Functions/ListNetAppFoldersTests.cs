@@ -373,6 +373,34 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
         }
 
         [Fact]
+        public async Task Run_WhenProbingFailsForNonAuthorisationReason_Throws()
+        {
+            // Arrange — a NetApp outage during probing must not be reported to the user as a
+            // permission problem, so the failure continues through the exception-handling path.
+            var queryParams = new Dictionary<string, string>
+            {
+                [InputParameters.OperationName] = "opName",
+                [InputParameters.Take] = "50"
+            };
+
+            ArrangeBucketWithEntryPrefixes("RCF/", "RCB/");
+            ArrangeDeniedRootListing(queryParams);
+            ArrangeProbeResults(accessiblePrefixes: []);
+
+            _netAppClientMock
+                .Setup(c => c.CanListPrefixAsync(It.IsAny<ListFoldersInBucketArg>()))
+                .ThrowsAsync(new InvalidOperationException("NetApp unavailable"));
+
+            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername, _testBearerToken);
+
+            // Act & Assert
+            await Assert.ThrowsAsync<InvalidOperationException>(() =>
+                _function.Run(HttpRequestStubHelper.CreateHttpRequestWithQueryParameters(queryParams), functionContext));
+
+            _caseEnrichmentServiceMock.Verify(s => s.EnrichNetAppFoldersWithMetadataAsync(It.IsAny<ListNetAppObjectsDto>()), Times.Never);
+        }
+
+        [Fact]
         public async Task Run_WhenSubfolderListingDenied_ThrowsWithoutProbing()
         {
             // Arrange — probing only applies to the bucket root. A denial deeper in the tree is a
