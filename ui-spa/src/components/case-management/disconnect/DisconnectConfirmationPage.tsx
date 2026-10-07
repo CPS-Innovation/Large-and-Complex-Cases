@@ -58,9 +58,13 @@ const DisconnectConfirmationPage = () => {
     if (!disconnectRadio) {
       errors.disconnectRadio = {
         errorSummaryText:
-          "Select whether you want to disconnect Shared Drive folder",
+          queryType === "shared-drive"
+            ? "Select whether you want to disconnect Shared Drive folder"
+            : "Select whether you want to disconnect Egress",
         inputErrorText:
-          "Select whether you want to disconnect Shared Drive folder",
+          queryType === "shared-drive"
+            ? "Select whether you want to disconnect Shared Drive folder"
+            : "Select whether you want to disconnect Egress",
       };
     }
 
@@ -157,7 +161,7 @@ const DisconnectConfirmationPage = () => {
                   <h1>
                     {queryType === "shared-drive"
                       ? "Disconnect this Shared Drive folder?"
-                      : "Disconnect Egress folder?"}
+                      : "Disconnect Egress"}
                   </h1>
                 ),
               },

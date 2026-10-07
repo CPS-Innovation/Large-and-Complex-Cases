@@ -25,7 +25,7 @@ const DisconnectSharedDriveFailurePage = () => {
       {queryType === "shared-drive" ? (
         <h1>Could not disconnect the Shared Drive folder</h1>
       ) : (
-        <h1>Could not disconnect the Egress</h1>
+        <h1>Could not disconnect Egress</h1>
       )}
       <p>Try again.</p>
       <p>If the problem continues, contact the product team for support.</p>
