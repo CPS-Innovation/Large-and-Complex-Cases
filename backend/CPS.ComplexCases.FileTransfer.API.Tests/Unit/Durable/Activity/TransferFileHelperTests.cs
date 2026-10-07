@@ -227,19 +227,35 @@ public class TransferFileHelperTests
     }
 
     // 5 MB chunks are what every environment is configured with, so a 6 MB file is a 5 MB head plus
-    // a 1 MB tail. The tail wins the race to Egress when both run concurrently, which is what loses
-    // the file, so two-part files must upload in order.
+    // a 1 MB tail, and an 11 MB file is two 5 MB parts plus a 1 MB tail. The tail wins the race to
+    // Egress whenever it is dispatched before part 1 has landed, which is what loses the file. At
+    // the configured concurrency of 2 that covers everything up to three parts (15 MB).
     [Theory]
+    [InlineData(5 * 1024 * 1024, 1)]
     [InlineData(6 * 1024 * 1024, 1)]
     [InlineData(10 * 1024 * 1024, 1)]
-    [InlineData(5 * 1024 * 1024, 1)]
+    [InlineData(11 * 1024 * 1024, 1)]
+    [InlineData(15 * 1024 * 1024, 1)]
+    [InlineData(16 * 1024 * 1024, 2)]
     [InlineData(20 * 1024 * 1024, 2)]
     [InlineData(100 * 1024 * 1024, 2)]
-    public void ResolvePartUploadConcurrency_SerialisesTwoPartFilesOnly(long totalSize, int expected)
+    public void ResolvePartUploadConcurrency_SerialisesFilesWhoseTailCanOvertakeTheHead(long totalSize, int expected)
     {
         Assert.Equal(
             expected,
             TransferFile.ResolvePartUploadConcurrency(totalSize, 5 * 1024 * 1024, maxConcurrentPartUploads: 2));
+    }
+
+    // The serial threshold tracks the configured concurrency: at 4 concurrent parts the tail of a
+    // five-part file still goes out alongside part 1, so that file has to be serialised too.
+    [Theory]
+    [InlineData(25 * 1024 * 1024, 1)]
+    [InlineData(30 * 1024 * 1024, 4)]
+    public void ResolvePartUploadConcurrency_ScalesThresholdWithConfiguredConcurrency(long totalSize, int expected)
+    {
+        Assert.Equal(
+            expected,
+            TransferFile.ResolvePartUploadConcurrency(totalSize, 5 * 1024 * 1024, maxConcurrentPartUploads: 4));
     }
 
     [Fact]

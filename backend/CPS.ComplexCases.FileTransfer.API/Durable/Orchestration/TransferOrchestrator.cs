@@ -28,6 +28,9 @@ public class TransferOrchestrator(IOptions<SizeConfig> sizeConfig, ITelemetryCli
     internal const string MissingFromDestinationMessage =
         "The destination service reported the file as uploaded but it is not present at the destination. Please try again.";
 
+    internal const string IncompleteAtDestinationMessage =
+        "The destination service reported the file as uploaded but the file at the destination is incomplete. Please try again.";
+
     [Function(nameof(TransferOrchestrator))]
     public async Task RunOrchestrator(
         [OrchestrationTrigger] TaskOrchestrationContext context)
@@ -70,7 +73,8 @@ public class TransferOrchestrator(IOptions<SizeConfig> sizeConfig, ITelemetryCli
                 context, input, transferEntity, cleanFiles, entityId, transferOrchestrationEvent, logger);
 
             await VerifyEgressDestinationAsync(
-                context, input, cleanFiles, entityId, allResults, transferOrchestrationEvent, logger);
+                context, input, cleanFiles, entityId, allResults, transferOrchestrationEvent, logger,
+                retriesRemaining: true);
 
             var retriesAttempted = await RetryTransientFailuresAsync(
                 context, input, transferEntity, cleanFiles, entityId, allResults, transferOrchestrationEvent, logger);
@@ -81,7 +85,8 @@ public class TransferOrchestrator(IOptions<SizeConfig> sizeConfig, ITelemetryCli
             if (retriesAttempted)
             {
                 await VerifyEgressDestinationAsync(
-                    context, input, cleanFiles, entityId, allResults, transferOrchestrationEvent, logger);
+                    context, input, cleanFiles, entityId, allResults, transferOrchestrationEvent, logger,
+                    retriesRemaining: false);
             }
 
             await DeleteSourceFilesIfMoveAsync(context, input);
@@ -155,9 +160,7 @@ public class TransferOrchestrator(IOptions<SizeConfig> sizeConfig, ITelemetryCli
             return input.SourcePaths;
         }
 
-        var destinationFiles = await context.CallActivityAsync<HashSet<string>>(
-            nameof(ListDestinationFilePaths),
-            new ListDestinationPayload(input.WorkspaceId, input.DestinationPath));
+        var destinationFiles = await ListDestinationFilesAsync(context, input);
 
         var (duplicates, cleanFiles) = PartitionByDestinationCollision(
             input.SourcePaths, input.DestinationPath, input.SourceRootFolderPath, destinationFiles);
@@ -260,12 +263,28 @@ public class TransferOrchestrator(IOptions<SizeConfig> sizeConfig, ITelemetryCli
         return available;
     }
 
+
+    private static async Task<Dictionary<string, long?>> ListDestinationFilesAsync(
+        TaskOrchestrationContext context,
+        TransferPayload input)
+    {
+        var destinationFiles = await context.CallActivityAsync<Dictionary<string, long?>>(
+            nameof(ListDestinationFilePaths),
+            new ListDestinationPayload(input.WorkspaceId, input.DestinationPath));
+
+        return destinationFiles is null
+            ? new Dictionary<string, long?>(StringComparer.OrdinalIgnoreCase)
+            : new Dictionary<string, long?>(destinationFiles, StringComparer.OrdinalIgnoreCase);
+    }
+
+    // Only the presence of a destination path matters here: a file that is already there is a
+    // conflict whatever size it is.
     internal static (List<(TransferSourcePath Source, string DestPath)> Duplicates, List<TransferSourcePath> CleanFiles)
         PartitionByDestinationCollision(
             List<TransferSourcePath> sourcePaths,
             string destinationPath,
             string? sourceRootFolderPath,
-            HashSet<string> destinationFiles)
+            IReadOnlyDictionary<string, long?> destinationFiles)
     {
         var duplicates = new List<(TransferSourcePath Source, string DestPath)>();
         var cleanFiles = new List<TransferSourcePath>();
@@ -273,7 +292,7 @@ public class TransferOrchestrator(IOptions<SizeConfig> sizeConfig, ITelemetryCli
         foreach (var sourcePath in sourcePaths)
         {
             var destPath = GetEgressDestinationPath(destinationPath, sourcePath.RelativePath, sourceRootFolderPath);
-            if (destinationFiles.Contains(destPath))
+            if (destinationFiles.ContainsKey(destPath))
             {
                 duplicates.Add((sourcePath, destPath));
             }
@@ -398,20 +417,23 @@ public class TransferOrchestrator(IOptions<SizeConfig> sizeConfig, ITelemetryCli
         EntityInstanceId entityId,
         List<TransferResult> allResults,
         TransferOrchestrationEvent transferOrchestrationEvent,
-        ILogger logger)
+        ILogger logger,
+        bool retriesRemaining)
     {
         if (input.TransferDirection != TransferDirection.NetAppToEgress)
         {
             return;
         }
 
-        var successfulPaths = allResults
-            .Where(r => r != null && r.IsSuccess && r.SuccessfulItem != null)
-            .Select(r => r.SuccessfulItem!.SourcePath)
-            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var uploadedSizes = new Dictionary<string, long>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var result in allResults.Where(r => r != null && r.IsSuccess && r.SuccessfulItem != null))
+        {
+            uploadedSizes[result.SuccessfulItem!.SourcePath] = result.SuccessfulItem.Size;
+        }
 
         var transferredSources = cleanFiles
-            .Where(f => successfulPaths.Contains(f.FullFilePath ?? f.Path))
+            .Where(f => uploadedSizes.ContainsKey(f.FullFilePath ?? f.Path))
             .ToList();
 
         if (transferredSources.Count == 0)
@@ -428,23 +450,19 @@ public class TransferOrchestrator(IOptions<SizeConfig> sizeConfig, ITelemetryCli
             await context.CreateTimer(verifyAt, CancellationToken.None);
         }
 
-        var landedFiles = await context.CallActivityAsync<HashSet<string>>(
-            nameof(ListDestinationFilePaths),
-            new ListDestinationPayload(input.WorkspaceId, input.DestinationPath));
+        var landedFiles = await ListDestinationFilesAsync(context, input);
 
-        // Reuses the pre-flight collision logic in reverse: a "collision" against the destination
-        // listing means the file landed, so the clean partition is what is missing.
-        var (_, missing) = PartitionByDestinationCollision(
-            transferredSources, input.DestinationPath, input.SourceRootFolderPath, landedFiles);
+        var unverified = FindUnverifiedTransfers(
+            transferredSources, input.DestinationPath, input.SourceRootFolderPath, landedFiles, uploadedSizes);
 
-        if (missing.Count == 0)
+        if (unverified.Count == 0)
         {
             return;
         }
 
-        var missingSourcePaths = new List<string>();
+        var demoted = new List<(string SourcePath, string Reason)>();
 
-        foreach (var source in missing)
+        foreach (var (source, destPath, reason) in unverified)
         {
             var sourceIdentifier = source.FullFilePath ?? source.Path;
             var result = allResults.FirstOrDefault(r =>
@@ -458,11 +476,17 @@ public class TransferOrchestrator(IOptions<SizeConfig> sizeConfig, ITelemetryCli
                 continue;
             }
 
+            // This pass also runs after the retries, where demoting the file is the final outcome
+            // rather than a route back into the retry pass.
             logger.LogWarning(
-                "Egress reported a successful upload for {SourcePath} but the file is not present at {DestinationPath} for TransferId {TransferId}. Marking it as a transient failure so it is re-attempted.",
+                "Egress reported a successful upload for {SourcePath} but it did not verify at {DestinationPath} for TransferId {TransferId}: {Reason} {Outcome}",
                 sourceIdentifier,
-                GetEgressDestinationPath(input.DestinationPath, source.RelativePath, input.SourceRootFolderPath),
-                input.TransferId);
+                destPath,
+                input.TransferId,
+                reason,
+                retriesRemaining
+                    ? "Marking it as a transient failure so the retry pass can re-attempt it."
+                    : "No retry passes remain, so it stays failed.");
 
             transferOrchestrationEvent.TotalFilesTransferred--;
             transferOrchestrationEvent.TotalBytesTransferred -= result.SuccessfulItem!.Size;
@@ -475,21 +499,61 @@ public class TransferOrchestrator(IOptions<SizeConfig> sizeConfig, ITelemetryCli
                 SourcePath = sourceIdentifier,
                 Status = TransferItemStatus.Failed,
                 ErrorCode = TransferErrorCode.Transient,
-                ErrorMessage = MissingFromDestinationMessage
+                ErrorMessage = reason
             };
 
-            missingSourcePaths.Add(sourceIdentifier);
+            demoted.Add((sourceIdentifier, reason));
         }
 
-        if (missingSourcePaths.Count == 0)
+        // The entity records one message per call, so files that went missing are demoted
+        // separately from files that landed at the wrong size.
+        foreach (var reasonGroup in demoted.GroupBy(d => d.Reason, StringComparer.Ordinal))
         {
-            return;
+            await context.Entities.CallEntityAsync(
+                entityId,
+                nameof(TransferEntityState.DemoteSuccessfulItems),
+                new DemoteSuccessfulItemsPayload(
+                    [.. reasonGroup.Select(d => d.SourcePath)],
+                    reasonGroup.Key));
+        }
+    }
+
+    // A file only counts as transferred when the destination listing reports both its path and the
+    // number of bytes that were uploaded. Egress can leave a 0-byte or truncated file behind when a
+    // commit fails, and a path-only check reads that as a successful transfer.
+    internal static List<(TransferSourcePath Source, string DestPath, string Reason)> FindUnverifiedTransfers(
+        List<TransferSourcePath> transferredSources,
+        string destinationPath,
+        string? sourceRootFolderPath,
+        IReadOnlyDictionary<string, long?> landedFiles,
+        IReadOnlyDictionary<string, long> uploadedSizes)
+    {
+        var unverified = new List<(TransferSourcePath Source, string DestPath, string Reason)>();
+
+        foreach (var source in transferredSources)
+        {
+            var destPath = GetEgressDestinationPath(destinationPath, source.RelativePath, sourceRootFolderPath);
+
+            if (!landedFiles.TryGetValue(destPath, out var landedSize))
+            {
+                unverified.Add((source, destPath, MissingFromDestinationMessage));
+                continue;
+            }
+
+            // Egress does not report a size for every listing entry. With nothing to compare
+            // against, the path is the only evidence available, so take it rather than re-uploading
+            // a file that is most likely fine.
+            if (!landedSize.HasValue
+                || !uploadedSizes.TryGetValue(source.FullFilePath ?? source.Path, out var uploadedSize)
+                || landedSize.Value == uploadedSize)
+            {
+                continue;
+            }
+
+            unverified.Add((source, destPath, IncompleteAtDestinationMessage));
         }
 
-        await context.Entities.CallEntityAsync(
-            entityId,
-            nameof(TransferEntityState.DemoteSuccessfulItems),
-            new DemoteSuccessfulItemsPayload(missingSourcePaths, MissingFromDestinationMessage));
+        return unverified;
     }
 
     private async Task<bool> RetryTransientFailuresAsync(

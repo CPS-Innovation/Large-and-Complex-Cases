@@ -1730,11 +1730,24 @@ public class TransferFileTests
     }
 
     [Fact]
-    public async Task Run_MultipartWithMoreThanTwoParts_KeepsConfiguredConcurrency()
+    public async Task Run_MultipartWithThreeParts_UploadsPartsSequentially()
     {
-        var partEvents = await RunMultipartAndRecordPartEvents(contentLength: 12, chunkSizeBytes: 4);
+        // 11 bytes at a 4 byte chunk size is two full parts and a 3 byte tail, the same shape as an
+        // 11 MB file at the configured 5 MB chunk size. At a concurrency of 2 the tail would be
+        // dispatched as soon as part 2 finished, while the slower part 1 was still in flight.
+        var partEvents = await RunMultipartAndRecordPartEvents(contentLength: 11, chunkSizeBytes: 4);
 
-        Assert.Equal(3, partEvents.Count(e => e.StartsWith("start-")));
+        Assert.Equal(["start-1", "end-1", "start-2", "end-2", "start-3", "end-3"], partEvents);
+    }
+
+    [Fact]
+    public async Task Run_MultipartWithMorePartsThanTheSerialThreshold_KeepsConfiguredConcurrency()
+    {
+        // 16 bytes at a 4 byte chunk size is four parts, one more than a concurrency of 2 can have
+        // in flight alongside part 1, so the configured concurrency applies.
+        var partEvents = await RunMultipartAndRecordPartEvents(contentLength: 16, chunkSizeBytes: 4);
+
+        Assert.Equal(4, partEvents.Count(e => e.StartsWith("start-")));
         Assert.True(
             Array.IndexOf(partEvents, "start-2") < Array.IndexOf(partEvents, "end-1"),
             $"Expected part 2 to start before part 1 finished, got: {string.Join(", ", partEvents)}");
