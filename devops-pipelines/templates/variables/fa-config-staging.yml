@@ -53,6 +53,8 @@ variables:
     value: "5"
   - name: SizeConfigSourceValidationRetryIntervalSeconds
     value: "10"
+  - name: SizeConfigEgressVerificationSettleDelaySeconds
+    value: "5"
   - name: NetAppOptionsSearchMaxSubstringScanItems
     value: "10000"
   - name: FeatureFlagsManageMaterials

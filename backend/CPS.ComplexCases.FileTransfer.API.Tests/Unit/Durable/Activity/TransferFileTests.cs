@@ -1719,6 +1719,102 @@ public class TransferFileTests
         }
     }
 
+    [Fact]
+    public async Task Run_MultipartWithTwoParts_UploadsPartsSequentially()
+    {
+        // 6 bytes at a 4 byte chunk size is a 4 byte head and a 2 byte tail, the same shape as a
+        // 6 MB file at the configured 5 MB chunk size. The tail must not reach the destination first.
+        var partEvents = await RunMultipartAndRecordPartEvents(contentLength: 6, chunkSizeBytes: 4);
+
+        Assert.Equal(["start-1", "end-1", "start-2", "end-2"], partEvents);
+    }
+
+    [Fact]
+    public async Task Run_MultipartWithThreeParts_UploadsPartsSequentially()
+    {
+        // 11 bytes at a 4 byte chunk size is two full parts and a 3 byte tail, the same shape as an
+        // 11 MB file at the configured 5 MB chunk size. At a concurrency of 2 the tail would be
+        // dispatched as soon as part 2 finished, while the slower part 1 was still in flight.
+        var partEvents = await RunMultipartAndRecordPartEvents(contentLength: 11, chunkSizeBytes: 4);
+
+        Assert.Equal(["start-1", "end-1", "start-2", "end-2", "start-3", "end-3"], partEvents);
+    }
+
+    [Fact]
+    public async Task Run_MultipartWithMorePartsThanTheSerialThreshold_KeepsConfiguredConcurrency()
+    {
+        // 16 bytes at a 4 byte chunk size is four parts, one more than a concurrency of 2 can have
+        // in flight alongside part 1, so the configured concurrency applies.
+        var partEvents = await RunMultipartAndRecordPartEvents(contentLength: 16, chunkSizeBytes: 4);
+
+        Assert.Equal(4, partEvents.Count(e => e.StartsWith("start-")));
+        Assert.True(
+            Array.IndexOf(partEvents, "start-2") < Array.IndexOf(partEvents, "end-1"),
+            $"Expected part 2 to start before part 1 finished, got: {string.Join(", ", partEvents)}");
+    }
+
+    // Drives a multipart transfer through the generic IStorageClient mock (neither Egress nor NetApp,
+    // so every size takes the multipart path) and records when each part upload starts and finishes.
+    // Part 1 is deliberately the slow one so a concurrent part 2 would overtake it.
+    private async Task<string[]> RunMultipartAndRecordPartEvents(int contentLength, int chunkSizeBytes)
+    {
+        var payload = CreatePayload();
+        var content = Encoding.UTF8.GetBytes(new string('x', contentLength));
+        var partEvents = new ConcurrentQueue<string>();
+
+        var activity = new TransferFile(
+            _storageClientFactoryMock.Object,
+            _loggerMock.Object,
+            Options.Create(new SizeConfig { ChunkSizeBytes = chunkSizeBytes, MaxConcurrentPartUploads = 2 }),
+            _egressOptions,
+            _initializationHandlerMock.Object,
+            _telemetryClientMock.Object);
+
+        _storageClientFactoryMock
+            .Setup(x => x.GetClientsForDirection(payload.TransferDirection))
+            .Returns((_sourceClientMock.Object, _destinationClientMock.Object));
+
+        _sourceClientMock
+            .Setup(x => x.OpenReadStreamAsync(
+                payload.SourcePath.Path,
+                payload.WorkspaceId,
+                payload.SourcePath.FileId,
+                payload.BearerToken,
+                payload.BucketName))
+            .ReturnsAsync((new MemoryStream(content), (long)content.Length));
+
+        _destinationClientMock
+            .Setup(x => x.InitiateUploadAsync(
+                It.IsAny<string>(), It.IsAny<long>(), It.IsAny<string>(), It.IsAny<string?>(),
+                It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<string?>()))
+            .ReturnsAsync(new UploadSession { UploadId = "upload-1" });
+
+        _destinationClientMock
+            .Setup(x => x.UploadChunkAsync(
+                It.IsAny<UploadSession>(), It.IsAny<int>(), It.IsAny<byte[]>(),
+                It.IsAny<long?>(), It.IsAny<long?>(), It.IsAny<long?>(),
+                It.IsAny<string?>(), It.IsAny<string?>()))
+            .Returns<UploadSession, int, byte[], long?, long?, long?, string?, string?>(
+                async (_, partNumber, _, _, _, _, _, _) =>
+                {
+                    partEvents.Enqueue($"start-{partNumber}");
+                    await Task.Delay(partNumber == 1 ? 200 : 1);
+                    partEvents.Enqueue($"end-{partNumber}");
+                    return new UploadChunkResult(TransferDirection.NetAppToEgress);
+                });
+
+        _destinationClientMock
+            .Setup(x => x.CompleteUploadAsync(
+                It.IsAny<UploadSession>(), It.IsAny<string?>(), It.IsAny<Dictionary<int, string>?>(),
+                It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<string?>()))
+            .ReturnsAsync(true);
+
+        var result = await activity.Run(payload);
+
+        Assert.True(result.IsSuccess);
+        return [.. partEvents];
+    }
+
     private static (EgressStorageClient Client, Mock<IEgressRequestFactory> Factory, HttpClient HttpClient) CreateEgressDestination(string uploadId)
     {
         var handler = new Mock<HttpMessageHandler>();

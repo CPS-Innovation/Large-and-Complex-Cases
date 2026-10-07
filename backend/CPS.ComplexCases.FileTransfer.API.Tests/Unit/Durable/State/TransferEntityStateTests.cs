@@ -275,6 +275,90 @@ public class TransferEntityStateTests
     }
 
     [Fact]
+    public void DemoteSuccessfulItems_MovesItemToTransientFailureWithoutChangingProcessedCount()
+    {
+        // Arrange
+        var state = new TransferEntityState();
+        state.Initialize(new TransferEntity { DestinationPath = "dest", BearerToken = "fakeBearerToken" });
+
+        state.AddSuccessfulItem(new TransferItem { SourcePath = "landed", Status = TransferItemStatus.Completed, IsRenamed = false, Size = 100 });
+        state.AddSuccessfulItem(new TransferItem { SourcePath = "missing", Status = TransferItemStatus.Completed, IsRenamed = false, Size = 200 });
+
+        // Act
+        state.DemoteSuccessfulItems(new DemoteSuccessfulItemsPayload(["missing"], "not at the destination"));
+
+        // Assert
+        Assert.Single(state.CurrentState.SuccessfulItems);
+        Assert.Equal("landed", state.CurrentState.SuccessfulItems[0].SourcePath);
+        Assert.Equal(1, state.CurrentState.SuccessfulFiles);
+
+        var failed = Assert.Single(state.CurrentState.FailedItems);
+        Assert.Equal("missing", failed.SourcePath);
+        Assert.Equal(TransferErrorCode.Transient, failed.ErrorCode);
+        Assert.Equal("not at the destination", failed.ErrorMessage);
+        Assert.Equal(1, state.CurrentState.FailedFiles);
+
+        // The file was already counted as processed on the first pass.
+        Assert.Equal(2, state.CurrentState.ProcessedFiles);
+    }
+
+    [Fact]
+    public void DemoteSuccessfulItems_MatchesSourcePathCaseInsensitively()
+    {
+        // Arrange
+        var state = new TransferEntityState();
+        state.Initialize(new TransferEntity { DestinationPath = "dest", BearerToken = "fakeBearerToken" });
+
+        state.AddSuccessfulItem(new TransferItem { SourcePath = "/Root/File.txt", Status = TransferItemStatus.Completed, IsRenamed = false, Size = 100 });
+
+        // Act
+        state.DemoteSuccessfulItems(new DemoteSuccessfulItemsPayload(["/root/file.txt"], "not at the destination"));
+
+        // Assert
+        Assert.Empty(state.CurrentState.SuccessfulItems);
+        Assert.Equal(0, state.CurrentState.SuccessfulFiles);
+        Assert.Single(state.CurrentState.FailedItems);
+    }
+
+    [Fact]
+    public void DemoteSuccessfulItems_WhenSourcePathIsUnknown_LeavesStateUnchanged()
+    {
+        // Arrange
+        var state = new TransferEntityState();
+        state.Initialize(new TransferEntity { DestinationPath = "dest", BearerToken = "fakeBearerToken" });
+
+        state.AddSuccessfulItem(new TransferItem { SourcePath = "landed", Status = TransferItemStatus.Completed, IsRenamed = false, Size = 100 });
+
+        // Act
+        state.DemoteSuccessfulItems(new DemoteSuccessfulItemsPayload(["never-transferred"], "not at the destination"));
+
+        // Assert
+        Assert.Single(state.CurrentState.SuccessfulItems);
+        Assert.Equal(1, state.CurrentState.SuccessfulFiles);
+        Assert.Empty(state.CurrentState.FailedItems);
+        Assert.Equal(0, state.CurrentState.FailedFiles);
+        Assert.Equal(1, state.CurrentState.ProcessedFiles);
+    }
+
+    [Fact]
+    public void DemoteSuccessfulItems_ThenRemoveTransientFailures_ClearsTheDemotedItem()
+    {
+        // The orchestrator's retry pass clears transient failures before re-attempting them, so a
+        // demoted item must not linger as a failure once it is re-queued.
+        var state = new TransferEntityState();
+        state.Initialize(new TransferEntity { DestinationPath = "dest", BearerToken = "fakeBearerToken" });
+
+        state.AddSuccessfulItem(new TransferItem { SourcePath = "missing", Status = TransferItemStatus.Completed, IsRenamed = false, Size = 100 });
+        state.DemoteSuccessfulItems(new DemoteSuccessfulItemsPayload(["missing"], "not at the destination"));
+
+        state.RemoveTransientFailures();
+
+        Assert.Empty(state.CurrentState.FailedItems);
+        Assert.Equal(0, state.CurrentState.FailedFiles);
+        Assert.Equal(1, state.CurrentState.ProcessedFiles);
+    }
+
+    [Fact]
     public void RemoveTransientFailures_WhenNoTransientFailures_DoesNotModifyCounts()
     {
         // Arrange
