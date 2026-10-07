@@ -524,7 +524,8 @@ public class TransferFile(
             payload.BearerToken,
             payload.BucketName);
 
-        var uploadSemaphore = new SemaphoreSlim(_sizeConfig.MaxConcurrentPartUploads);
+        var uploadSemaphore = new SemaphoreSlim(ResolvePartUploadConcurrency(
+            totalSize, _sizeConfig.ChunkSizeBytes, _sizeConfig.MaxConcurrentPartUploads));
         var uploadedEtags = new Dictionary<int, string>();
         var uploadTasks = new List<Task>();
 
@@ -599,6 +600,19 @@ public class TransferFile(
                 md5,
                 uploadedEtags);
         }
+    }
+
+    // Egress assembles the parts server-side and drops the upload when a trailing part lands before
+    // the head part. The last part is normally a short tail (a 6 MB file at a 5 MB chunk size ends
+    // with a 1 MB part), so it wins that race whenever it is dispatched while part 1 is still in
+    // flight. At a concurrency of C the tail only goes out that early when the file has at most
+    // C + 1 parts, so those files upload strictly in order. Longer files dispatch their tail many
+    // parts later, once part 1 has long since landed, and keep the configured concurrency.
+    internal static int ResolvePartUploadConcurrency(long totalSize, int chunkSizeBytes, int maxConcurrentPartUploads)
+    {
+        var maxConcurrency = Math.Max(1, maxConcurrentPartUploads);
+        var totalParts = (long)Math.Ceiling((double)totalSize / Math.Max(1, chunkSizeBytes));
+        return totalParts <= maxConcurrency + 1 ? 1 : maxConcurrency;
     }
 
     internal static async Task<int> ReadExactPartAsync(
