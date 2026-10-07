@@ -18,15 +18,22 @@ const NetAppPage = () => {
   const [searchParams] = useSearchParams();
   const location = useLocation();
 
-  const { searchQueryString, netappRootFolderPath } =
-    state.appData.connectSharedDrivePage;
+  const {
+    searchQueryString,
+    netappRootFolderPath,
+    accessibleRoots: persistedAccessibleRoots,
+  } = state.appData.connectSharedDrivePage;
 
   const [operationName, setOperationName] = useState<string>("");
   const [rootFolderPath, setRootFolderPath] = useState(
     netappRootFolderPath ?? "",
   );
 
-  const [accessibleRoots, setAccessibleRoots] = useState<string[] | null>(null);
+  // Only the root listing reports the restriction, so when we return from the confirmation page
+  // mid-tree there is nothing to re-derive it from and we have to reuse the persisted value.
+  const [accessibleRoots, setAccessibleRoots] = useState<string[] | null>(
+    persistedAccessibleRoots ?? null,
+  );
 
   const { data: netAppFolderResults, isLoading: isNetAppFolderResultsLoading } =
     useQuery({
@@ -80,6 +87,7 @@ const NetAppPage = () => {
       type: "SET_SHARED_DRIVE_CONNECT_PAGE",
       payload: {
         netappRootFolderPath: rootFolderPath,
+        accessibleRoots,
       },
     });
     navigate(`/case/${caseId}/netapp-connect/confirmation`);

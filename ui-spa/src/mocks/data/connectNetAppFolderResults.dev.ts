@@ -51,27 +51,38 @@ export const netAppRestrictedRootFolderResultsDev: ConnectNetAppFolderResponse =
     },
   };
 
-export const getConnectNetAppFolderResultsDev = (path: string) => {
-  if (!path || path === "abc") return netAppRootFolderResultsDev;
+// Browse with ?operation-name=restricted to exercise the prefix-scoped flow locally.
+export const RESTRICTED_ROOT_OPERATION_NAME = "restricted";
+
+export const getConnectNetAppFolderResultsDev = (
+  path: string,
+  operationName?: string | null,
+) => {
+  // Only the root listing reports the restriction, matching the API, which falls back to the entry
+  // prefixes just for the bucket root.
+  const rootResults =
+    operationName === RESTRICTED_ROOT_OPERATION_NAME
+      ? netAppRestrictedRootFolderResultsDev
+      : netAppRootFolderResultsDev;
+
+  if (!path || path === "abc") return rootResults;
 
   const levels = path.split("/").filter((part) => part.length > 0);
   if (levels.length > 3) {
     return {
-      ...netAppRootFolderResultsDev,
+      ...rootResults,
       data: {
         rootPath: path,
         folders: [],
       },
     };
   }
-  const newFolders = netAppRootFolderResultsDev.data.folders.map(
-    (item, index) => {
-      return { ...item, folderPath: `${path}folder-${index}/` };
-    },
-  );
+  const newFolders = rootResults.data.folders.map((item, index) => {
+    return { ...item, folderPath: `${path}folder-${index}/` };
+  });
 
   return {
-    ...netAppRootFolderResultsDev,
+    ...rootResults,
     data: {
       rootPath: path,
       folders: newFolders,

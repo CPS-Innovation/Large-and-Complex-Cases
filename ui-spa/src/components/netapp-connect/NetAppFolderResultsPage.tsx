@@ -50,8 +50,11 @@ const NetAppFolderResultsPage: React.FC<NetAppFolderResultsPageProps> = ({
     // When the user's access is scoped to an entry prefix, the segments inside that prefix are
     // shown for context but are not listable, so only the accessible root onwards is clickable.
     // Home stays clickable because re-listing the root returns the entry prefixes again.
+    // NTFS and ONTAP paths are case-insensitive, so the casing of a configured prefix need not
+    // match the path we are browsing.
+    const lowerRootFolderPath = rootFolderPath.toLowerCase();
     const accessibleRoot = accessibleRoots?.find((root) =>
-      rootFolderPath.startsWith(root),
+      lowerRootFolderPath.startsWith(root.toLowerCase()),
     );
 
     const result = parts.map((folderName, index) => {

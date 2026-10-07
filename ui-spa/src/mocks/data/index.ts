@@ -4,10 +4,7 @@ export { casesSearchResultsDev } from "./caseSearchResults.dev";
 export { casesSearchResultsPlaywright } from "./caseSearchResults.playwright";
 export { egressSearchResultsDev } from "./egressSearchResults.dev";
 export { egressSearchResultsPlaywright } from "./egressSearchResults.playwright";
-export {
-  getConnectNetAppFolderResultsDev,
-  netAppRestrictedRootFolderResultsDev,
-} from "./connectNetAppFolderResults.dev";
+export { getConnectNetAppFolderResultsDev } from "./connectNetAppFolderResults.dev";
 export { getConnectNetAppFolderResultsPlaywright } from "./connectNetAppFolderResults.playwright";
 export { caseMetaDataDev } from "./caseMetaData.dev";
 export { caseMetaDataPlaywright } from "./caseMetaData.playwright";

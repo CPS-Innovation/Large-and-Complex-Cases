@@ -131,4 +131,26 @@ describe("NetAppFolderResultsPage", () => {
       within(items[2]).getByRole("button", { name: "Cardiff" }),
     ).toBeInTheDocument();
   });
+
+  it("matches the accessible root regardless of casing", () => {
+    // NTFS and ONTAP paths are case-insensitive, so a prefix configured as RCW/Cardiff/ must still
+    // restrict a path browsed as rcw/cardiff/.
+    renderPage({
+      rootFolderPath: "rcw/cardiff/Case123/",
+      netAppFolderResults: { rootPath: "rcw/cardiff/Case123/", folders: [] },
+      accessibleRoots: ["RCF/", "RCW/Cardiff/"],
+    });
+
+    const items = within(screen.getByTestId("folder-path")).getAllByRole(
+      "listitem",
+    );
+
+    expect(
+      within(items[1]).queryByRole("button", { name: "rcw" }),
+    ).not.toBeInTheDocument();
+    expect(within(items[1]).getByText("rcw")).toBeInTheDocument();
+    expect(
+      within(items[2]).getByRole("button", { name: "cardiff" }),
+    ).toBeInTheDocument();
+  });
 });
