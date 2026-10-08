@@ -54,13 +54,13 @@ export const DropdownButton: React.FC<DropdownButtonProps> = ({
         ref={dropDownBtnRef}
         aria-label={ariaLabel}
         aria-expanded={buttonOpen}
-        className={`govuk-button--secondary ${buttonOpen && classes.upArrow}`}
+        className={`govuk-button--secondary ${buttonOpen && classes.upArrow} ${classes.dropDownButton}`}
         disabled={disabled}
         onClick={() => {
           setButtonOpen((buttonOpen) => !buttonOpen);
         }}
       >
-        {name && <span className={classes.dropdownBtnName}>{name}</span>}
+        {name}
         {icon}
       </Button>
 

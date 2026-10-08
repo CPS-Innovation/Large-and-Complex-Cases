@@ -16,6 +16,7 @@ import {
   getActivityLog,
   downloadActivityLog,
   disconnectNetAppFolder,
+  disconnectEgressFolder,
   logTelemetryEvent,
 } from "./gateway-api";
 import { ApiError } from "../common/errors/ApiError";
@@ -2466,6 +2467,72 @@ describe("gateway apis", () => {
       (globalThis.fetch as any).mockRejectedValue(new Error("network down"));
       await expect(disconnectNetAppFolder(123)).rejects.toThrow(
         "API Error: gateway_url/api/v1/netapp/connections?case-id=123 returned 0 Network Error - Error: network down",
+      );
+    });
+  });
+
+  describe("disconnectEgressFolder", () => {
+    it("disconnectEgressFolder - should return correct response if the DELETE request is successful", async () => {
+      (v4 as any).mockReturnValue("id_123");
+      (getAccessToken as any).mockResolvedValue("access_token");
+      (fetch as any).mockResolvedValue({
+        ok: true,
+      });
+
+      const result = await disconnectEgressFolder(123);
+      expect(result).toEqual({ ok: true });
+      expect(fetch).toHaveBeenCalledWith(
+        `gateway_url/api/v1/egress/connections?case-id=123`,
+        expect.objectContaining({
+          method: "DELETE",
+          credentials: "include",
+          headers: {
+            Authorization: "Bearer access_token",
+            "Correlation-Id": "id_123",
+          },
+        }),
+      );
+    });
+
+    it("disconnectEgressFolder - should return correct response if the DELETE request is unsuccessful", async () => {
+      (v4 as any).mockReturnValue("id_123");
+      (getAccessToken as any).mockResolvedValue("access_token");
+      (fetch as any).mockResolvedValue({
+        ok: false,
+        status: 500,
+        statusText: "Internal Server Error",
+      });
+
+      await expect(disconnectEgressFolder(123)).rejects.toThrow(
+        new ApiError(
+          `Disconnecting Egress failed`,
+          "gateway_url/api/v1/egress/connections?case-id=123",
+          {
+            status: 500,
+            statusText: "Internal Server Error",
+          },
+          {
+            correlationId: "id_123",
+          },
+        ),
+      );
+      expect(fetch).toHaveBeenCalledWith(
+        `gateway_url/api/v1/egress/connections?case-id=123`,
+        expect.objectContaining({
+          method: "DELETE",
+          credentials: "include",
+          headers: {
+            Authorization: "Bearer access_token",
+            "Correlation-Id": "id_123",
+          },
+        }),
+      );
+    });
+
+    it("disconnectEgressFolder - catches network/auth errors and warns", async () => {
+      (globalThis.fetch as any).mockRejectedValue(new Error("network down"));
+      await expect(disconnectEgressFolder(123)).rejects.toThrow(
+        "API Error: gateway_url/api/v1/egress/connections?case-id=123 returned 0 Network Error - Error: network down",
       );
     });
   });

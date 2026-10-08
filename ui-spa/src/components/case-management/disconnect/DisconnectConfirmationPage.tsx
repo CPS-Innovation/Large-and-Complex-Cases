@@ -161,7 +161,7 @@ const DisconnectConfirmationPage = () => {
                   <h1>
                     {queryType === "shared-drive"
                       ? "Disconnect this Shared Drive folder?"
-                      : "Disconnect Egress"}
+                      : "Disconnect Egress?"}
                   </h1>
                 ),
               },

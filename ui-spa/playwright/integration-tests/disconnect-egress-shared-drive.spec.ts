@@ -134,7 +134,7 @@ test.describe("disconnect Egress / Shared drive", () => {
     await expect(page).toHaveURL(
       "/case/12/case-management/disconnect-confirmation?type=egress",
     );
-    await expect(page.locator("h1")).toHaveText(`Disconnect Egress`);
+    await expect(page.locator("h1")).toHaveText(`Disconnect Egress?`);
     await expect(page.locator("label").nth(0)).toHaveText(
       "Yes, disconnect an Egress case",
     );
