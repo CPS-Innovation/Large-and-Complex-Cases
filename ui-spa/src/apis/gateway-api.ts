@@ -334,6 +334,19 @@ export const disconnectNetAppFolder = async (caseId: number) => {
   return response;
 };
 
+export const disconnectEgressFolder = async (caseId: number) => {
+  const url = `${GATEWAY_BASE_URL}/api/v1/egress/connections?case-id=${caseId}`;
+  const headers = await buildCommonHeaders();
+  const response = await fetchOrThrow(url, headers, "DELETE");
+
+  if (!response.ok) {
+    throw new ApiError(`Disconnecting Egress failed`, url, response, {
+      correlationId: headers[CORRELATION_ID],
+    });
+  }
+  return response;
+};
+
 export const getCaseMetaData = async (caseId: string) => {
   const url = `${GATEWAY_BASE_URL}/api/v1/cases/${caseId}`;
   const headers = await buildCommonHeaders();

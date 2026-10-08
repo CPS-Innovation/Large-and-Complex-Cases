@@ -6,7 +6,7 @@ import {
   useRef,
   useContext,
 } from "react";
-import { NotificationBanner, Button, Details, LinkButton } from "../../govuk";
+import { NotificationBanner, Details, LinkButton } from "../../govuk";
 import { Spinner } from "../../common/Spinner";
 import {
   getEgressFolders,
@@ -40,6 +40,7 @@ import {
 } from "../../../common/utils/sortUtils";
 import { MainStateContext } from "../../../providers/MainStateProvider";
 import { telemetryService } from "../../../TelemetryLogger";
+import { DropdownButton } from "../../common/DropdownButton";
 import styles from "./index.module.scss";
 
 type TransferMaterialsPageProp = {
@@ -50,7 +51,6 @@ type TransferMaterialsPageProp = {
   egressWorkspaceName: string;
   netAppPath: string;
   activeTransferId: string;
-  urn: string;
   transferEgressFolderPathInitialValue: string | null;
   transferNetAppFolderPathInitialValue: string | null;
   transferSourceInitialValue: "egress" | "netapp";
@@ -65,7 +65,6 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProp> = ({
   egressWorkspaceName,
   netAppPath,
   activeTransferId,
-  urn,
   transferSourceInitialValue,
   transferEgressFolderPathInitialValue,
   transferNetAppFolderPathInitialValue,
@@ -125,6 +124,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProp> = ({
     return getPathFolders(egressFolderPath, "Egress", "", egressWorkspaceName);
   }, [egressFolderPath, getPathFolders, egressWorkspaceName]);
   const netAppPathFolders = useMemo(() => {
+    if (netAppPath === null) return [];
     return getPathFolders(
       netAppFolderPath,
       "Shared Drive",
@@ -542,19 +542,6 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProp> = ({
     navigate(`/case/${caseId}/case-management/transfer-destination-page`);
   };
 
-  const handleDisconnectSharedDrive = async () => {
-    navigate(
-      `/case/${caseId}/case-management/disconnect-shared-drive-confirmation`,
-      {
-        state: {
-          isRouteValid: true,
-          caseId: caseId,
-          urn: urn,
-        },
-      },
-    );
-  };
-
   const handleFolderClick = (data: EgressFolder | NetAppFileFolder) => {
     if (transferSource === "egress") {
       setEgressFolderPath(data.path);
@@ -750,6 +737,19 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProp> = ({
     handleStatusResponse,
   ]);
 
+  const handleDisconnect = (id: string) => {
+    if (id === "disconnect-shared-drive") {
+      void navigate(
+        `/case/${caseId}/case-management/disconnect-confirmation?type=shared-drive`,
+      );
+    }
+    if (id === "disconnect-egress") {
+      void navigate(
+        `/case/${caseId}/case-management/disconnect-confirmation?type=egress`,
+      );
+    }
+  };
+
   if (!isTabActive) return <> </>;
 
   return (
@@ -830,13 +830,27 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProp> = ({
                   }
                 />
                 {featureFlags?.disconnectSharedDrive && (
-                  <Button
-                    className={`govuk-button--secondary ${styles.disconnectButton}`}
-                    name="secondary"
-                    onClick={handleDisconnectSharedDrive}
-                  >
-                    Disconnect Shared Drive
-                  </Button>
+                  <div className={styles.disconnectButton}>
+                    <DropdownButton
+                      name="Disconnect"
+                      dropDownItems={[
+                        {
+                          id: "disconnect-shared-drive",
+                          label: "Disconnect Shared Drive",
+                          ariaLabel: "Disconnect Shared Drive",
+                          disabled: false,
+                        },
+                        {
+                          id: "disconnect-egress",
+                          label: "Disconnect Egress",
+                          ariaLabel: "Disconnect Egress",
+                          disabled: false,
+                        },
+                      ]}
+                      callBackFn={handleDisconnect}
+                      dataTestId={"disconnect-actions-dropdown"}
+                    />
+                  </div>
                 )}
               </div>
             </div>

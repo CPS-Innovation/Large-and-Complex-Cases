@@ -202,6 +202,10 @@ export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
       await delay(1500);
       return new HttpResponse(null, { status: 200 });
     }),
+    http.delete(`${baseUrl}/api/v1/egress/connections`, async () => {
+      await delay(1500);
+      return new HttpResponse(null, { status: 200 });
+    }),
   ];
 };
 
