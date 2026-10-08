@@ -86,34 +86,35 @@ const CaseManagementPage = () => {
       id: "transfer-materials",
       label: "Transfer materials",
       panel: {
-        children: caseMetaData ? (
-          <TransferMaterialsPage
-            isTabActive={activeTabId === "transfer-materials"}
-            caseId={caseId}
-            operationName={operationNameOrDefendantName}
-            egressWorkspaceId={caseMetaData.egressWorkspaceId}
-            egressWorkspaceName={
-              caseMetaData.egressWorkspaceName || operationNameOrDefendantName
-            }
-            netAppPath={caseMetaData.netappFolderPath}
-            activeTransferId={
-              initiateFileTransferResponseData?.id ??
-              caseMetaData.activeTransferId ??
-              ""
-            }
-            transferSourceInitialValue={
-              transferPage?.transferSource ?? "egress"
-            }
-            transferEgressFolderPathInitialValue={
-              transferPage?.transferSourceEgressFolderPath ?? null
-            }
-            transferNetAppFolderPathInitialValue={
-              transferPage?.transferSourceNetAppFolderPath ?? null
-            }
-          />
-        ) : (
-          <></>
-        ),
+        children:
+          caseMetaData?.egressWorkspaceId && caseMetaData?.netappFolderPath ? (
+            <TransferMaterialsPage
+              isTabActive={activeTabId === "transfer-materials"}
+              caseId={caseId}
+              operationName={operationNameOrDefendantName}
+              egressWorkspaceId={caseMetaData.egressWorkspaceId}
+              egressWorkspaceName={
+                caseMetaData.egressWorkspaceName || operationNameOrDefendantName
+              }
+              netAppPath={caseMetaData.netappFolderPath}
+              activeTransferId={
+                initiateFileTransferResponseData?.id ??
+                caseMetaData.activeTransferId ??
+                ""
+              }
+              transferSourceInitialValue={
+                transferPage?.transferSource ?? "egress"
+              }
+              transferEgressFolderPathInitialValue={
+                transferPage?.transferSourceEgressFolderPath ?? null
+              }
+              transferNetAppFolderPathInitialValue={
+                transferPage?.transferSourceNetAppFolderPath ?? null
+              }
+            />
+          ) : (
+            <></>
+          ),
       },
     });
 
