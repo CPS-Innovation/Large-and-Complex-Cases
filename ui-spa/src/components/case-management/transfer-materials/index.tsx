@@ -124,6 +124,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProp> = ({
     return getPathFolders(egressFolderPath, "Egress", "", egressWorkspaceName);
   }, [egressFolderPath, getPathFolders, egressWorkspaceName]);
   const netAppPathFolders = useMemo(() => {
+    if (netAppPath === null) return [];
     return getPathFolders(
       netAppFolderPath,
       "Shared Drive",
