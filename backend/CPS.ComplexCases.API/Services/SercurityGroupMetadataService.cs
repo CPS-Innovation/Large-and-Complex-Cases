@@ -6,9 +6,14 @@ using Microsoft.Extensions.Logging;
 
 namespace CPS.ComplexCases.API.Services;
 
-public class SecurityGroupMetadataService(ILogger<SecurityGroupMetadataService> logger) : ISecurityGroupMetadataService
+public class SecurityGroupMetadataService(
+    ILogger<SecurityGroupMetadataService> logger,
+    string? securityGroupFilePath = null)
+    : ISecurityGroupMetadataService
 {
     private readonly ILogger<SecurityGroupMetadataService> _logger = logger;
+    private readonly string? _securityGroupFilePath = securityGroupFilePath;
+
     private List<SecurityGroup>? _cachedSecurityGroups;
     private readonly SemaphoreSlim _cacheLock = new(1, 1);
 
@@ -58,6 +63,31 @@ public class SecurityGroupMetadataService(ILogger<SecurityGroupMetadataService> 
         return groupIds;
     }
 
+    internal static string BuildSecurityGroupFilePath(string? environment = null, string? regionName = null)
+    {
+        environment ??= Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+        regionName ??= Environment.GetEnvironmentVariable("NetAppOptions__RegionName");
+
+        var isProduction = string.Equals(environment, "Production", StringComparison.OrdinalIgnoreCase);
+
+        if (!isProduction)
+        {
+            return Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "SourceFiles",
+                "SecurityGroupMappings.PreProd.eu-west-1.json");
+        }
+
+        var region = string.IsNullOrWhiteSpace(regionName)
+            ? "eu-south-1"
+            : regionName.Trim().ToLowerInvariant();
+
+        return Path.Combine(
+            Directory.GetCurrentDirectory(),
+            "SourceFiles",
+            $"SecurityGroupMappings.Production.{region}.json");
+    }
+
     private async Task<List<SecurityGroup>> GetSecurityGroupDetails()
     {
         if (_cachedSecurityGroups != null)
@@ -71,9 +101,7 @@ public class SecurityGroupMetadataService(ILogger<SecurityGroupMetadataService> 
             if (_cachedSecurityGroups != null)
                 return _cachedSecurityGroups;
 
-            var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
-            var suffix = environment == "Production" ? "Production" : "PreProd";
-            var filePath = Path.Combine(Directory.GetCurrentDirectory(), $"SourceFiles/SecurityGroupMappings.{suffix}.json");
+            var filePath = _securityGroupFilePath ?? BuildSecurityGroupFilePath();
 
             if (!File.Exists(filePath))
             {
