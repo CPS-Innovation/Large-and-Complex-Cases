@@ -64,8 +64,9 @@ export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
       const url = new URL(req.request.url);
 
       const path = url.searchParams.get("path");
+      const operationName = url.searchParams.get("operation-name");
       const netAppRootFolderResults = isDevMock()
-        ? getConnectNetAppFolderResultsDev(path as string)
+        ? getConnectNetAppFolderResultsDev(path as string, operationName)
         : getConnectNetAppFolderResultsPlaywright(path as string);
       await delay(500);
 

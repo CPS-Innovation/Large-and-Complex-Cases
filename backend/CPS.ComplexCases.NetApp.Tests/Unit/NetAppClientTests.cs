@@ -486,6 +486,67 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
         }
 
         [Fact]
+        public async Task CanListPrefixAsync_WhenListingSucceeds_ReturnsTrue()
+        {
+            // Arrange
+            var arg = _fixture.Create<ListFoldersInBucketArg>();
+            arg.BearerToken = BearerToken;
+
+            _amazonS3Mock.Setup(x => x.ListObjectsV2Async(It.IsAny<ListObjectsV2Request>(), default))
+                .ReturnsAsync(new ListObjectsV2Response { CommonPrefixes = ["case1/"] });
+
+            // Act
+            var result = await _client.CanListPrefixAsync(arg);
+
+            // Assert
+            Assert.True(result);
+        }
+
+        [Fact]
+        public async Task CanListPrefixAsync_WhenAccessDenied_ReturnsFalseWithoutInvalidatingCredentials()
+        {
+            // Arrange - an NTFS denial must not regenerate the user's keys, which would break any
+            // transfer they have in flight.
+            var arg = _fixture.Create<ListFoldersInBucketArg>();
+            arg.BearerToken = BearerToken;
+
+            _amazonS3Mock.Setup(x => x.ListObjectsV2Async(It.IsAny<ListObjectsV2Request>(), default))
+                .ThrowsAsync(new AmazonS3Exception("Access Denied")
+                { StatusCode = HttpStatusCode.Forbidden, ErrorCode = S3ErrorCodes.AccessDenied });
+
+            // Act
+            var result = await _client.CanListPrefixAsync(arg);
+
+            // Assert
+            Assert.False(result);
+            _s3ClientFactoryMock.Verify(x => x.InvalidateClientAsync(), Times.Never);
+            _amazonS3Mock.Verify(x => x.ListObjectsV2Async(It.IsAny<ListObjectsV2Request>(), default), Times.Once);
+        }
+
+        [Theory]
+        [InlineData(HttpStatusCode.InternalServerError, S3ErrorCodes.InternalError)]
+        [InlineData(HttpStatusCode.ServiceUnavailable, "ServiceUnavailable")]
+        [InlineData(HttpStatusCode.RequestTimeout, "RequestTimeout")]
+        public async Task CanListPrefixAsync_WhenServerError_PropagatesException(HttpStatusCode statusCode, string errorCode)
+        {
+            // Arrange - a NetApp outage must not be reported as a permissions problem, so anything
+            // other than an authorisation failure has to continue through the exception-handling path.
+            var arg = _fixture.Create<ListFoldersInBucketArg>();
+            arg.BearerToken = BearerToken;
+
+            _amazonS3Mock.Setup(x => x.ListObjectsV2Async(It.IsAny<ListObjectsV2Request>(), default))
+                .ThrowsAsync(new AmazonS3Exception(errorCode) { StatusCode = statusCode, ErrorCode = errorCode });
+
+            // Act
+            var ex = await Assert.ThrowsAsync<AmazonS3Exception>(() => _client.CanListPrefixAsync(arg));
+
+            // Assert
+            Assert.Equal(statusCode, ex.StatusCode);
+            Assert.Equal(errorCode, ex.ErrorCode);
+            _s3ClientFactoryMock.Verify(x => x.InvalidateClientAsync(), Times.Never);
+        }
+
+        [Fact]
         public async Task InitiateMultipartUploadAsync_ReturnsResponse_OnSuccess()
         {
             var arg = _fixture.Create<InitiateMultipartUploadArg>();

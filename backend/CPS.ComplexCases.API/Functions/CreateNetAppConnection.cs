@@ -65,7 +65,9 @@ public class CreateNetAppConnection(ILogger<CreateNetAppConnection> logger,
         var bucketName = (await _userBucketAccessService.ResolveBucketAsync(
             context.BearerToken, null, netAppConnectionRequest.Value.BucketName)).BucketName;
 
-        var netAppArg = _netAppArgFactory.CreateListFoldersInBucketArg(context.BearerToken, bucketName, netAppConnectionRequest.Value.OperationName, null, 1, null);
+        // Validate against the folder being connected rather than the bucket root, so users whose
+        // NTFS permissions are scoped to a subfolder can still connect folders they can reach.
+        var netAppArg = _netAppArgFactory.CreateListFoldersInBucketArg(context.BearerToken, bucketName, netAppConnectionRequest.Value.OperationName, null, 1, netAppConnectionRequest.Value.NetAppFolderPath);
         var hasNetAppPermission = await _netAppClient.ListFoldersInBucketAsync(netAppArg);
 
         if (hasNetAppPermission == null)

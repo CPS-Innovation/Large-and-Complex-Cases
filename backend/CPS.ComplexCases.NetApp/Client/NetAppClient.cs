@@ -302,6 +302,26 @@ public class NetAppClient(
         }
     }
 
+    // Probes whether the caller may list a prefix, deliberately bypassing the credential-retry
+    // wrapper. NetApp returns AccessDenied both for stale keys and for an NTFS denial, so the
+    // wrapper would regenerate the user's keys on every denied prefix. Callers only probe after a
+    // listing has already exhausted that wrapper, so the cached client already holds fresh keys.
+    public async Task<bool> CanListPrefixAsync(ListFoldersInBucketArg arg)
+    {
+        try
+        {
+            await ListFoldersInBucketCoreAsync(arg);
+            return true;
+        }
+        catch (AmazonS3Exception ex) when (ex.StatusCode == HttpStatusCode.Forbidden || ex.ErrorCode == S3ErrorCodes.AccessDenied)
+        {
+            _logger.LogInformation(ex,
+                "Prefix {Prefix} is not listable in bucket {BucketName} (StatusCode={StatusCode}, ErrorCode={ErrorCode}).",
+                arg.Prefix, arg.BucketName, ex.StatusCode, ex.ErrorCode);
+            return false;
+        }
+    }
+
     private async Task<ListNetAppObjectsDto?> ListFoldersInBucketCoreAsync(ListFoldersInBucketArg arg)
     {
         var s3Client = await _s3ClientFactory.GetS3ClientAsync(arg.BearerToken);

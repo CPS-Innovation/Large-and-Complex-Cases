@@ -67,6 +67,35 @@ describe("FolderPath", () => {
     expect(within(items[1]).getByText("folder1")).toBeInTheDocument();
   });
 
+  it("It renders a non-navigable folder as text rather than a button", async () => {
+    render(
+      <FolderPath
+        disabled={false}
+        folders={[
+          { folderName: "Home", folderPath: "", folderId: "1" },
+          {
+            folderName: "folder1",
+            folderPath: "folder1/",
+            folderId: "2",
+            isNavigable: false,
+          },
+          { folderName: "folder2", folderPath: "folder1/folder2/" },
+        ]}
+        handleFolderPathClick={handleFolderPathClickMock}
+      />,
+    );
+    const list = screen.getByRole("list");
+    const items = within(list).getAllByRole("listitem");
+
+    expect(
+      within(items[1]).queryByRole("button", { name: "folder1" }),
+    ).not.toBeInTheDocument();
+    expect(within(items[1]).getByText("folder1")).toBeInTheDocument();
+    expect(
+      within(items[0]).getByRole("button", { name: "Home" }),
+    ).toBeInTheDocument();
+  });
+
   it("It should not render any folder path items for empty folders list", async () => {
     render(
       <FolderPath

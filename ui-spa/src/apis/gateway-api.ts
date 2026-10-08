@@ -269,6 +269,8 @@ export const getConnectNetAppFolders = async (
     return {
       rootPath: data.rootPath,
       folders: updatedFolders,
+      isRestrictedRoot: data.isRestrictedRoot,
+      accessibleRoots: data.accessibleRoots,
     };
   }
   return getConnectNetAppFolders(

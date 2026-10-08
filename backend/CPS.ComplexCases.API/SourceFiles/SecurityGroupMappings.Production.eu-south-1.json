@@ -4,6 +4,9 @@
     "displayName": "Rose-Court-Groups-Cases",
     "bucketName": "rctgroups",
     "volumeUuid": "b39dd185-c7b9-4a0d-b65e-3ac67b3dee38",
+    "entryPrefixes": [
+      "RCF/"
+    ],
     "description": "RWD Midlands and Wales Users security group for CPS Complex Cases"
   },
   {
