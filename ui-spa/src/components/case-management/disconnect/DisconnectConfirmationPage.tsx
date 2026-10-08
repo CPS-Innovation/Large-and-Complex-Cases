@@ -98,7 +98,7 @@ const DisconnectConfirmationPage = () => {
     });
   };
 
-  const handleSubmit = async (event: React.SubmitEvent) => {
+  const handleSubmit = async (event: React.SyntheticEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     if (!caseId) return;
@@ -111,6 +111,10 @@ const DisconnectConfirmationPage = () => {
     }
     setDisableButtons(true);
     try {
+      if (queryType !== "shared-drive" && queryType !== "egress") {
+        void navigate(`/case/${caseId}/case-management`);
+        return;
+      }
       const response =
         queryType === "shared-drive"
           ? await disconnectNetAppFolder(Number.parseInt(caseId))

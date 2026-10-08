@@ -26,6 +26,8 @@
   left: 0;
   background: #fff;
   z-index: 7;
+  border: 1px solid #b1b4b6;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
   .panelList {
     & :global(.govuk-button--secondary) {
       width: 100%;

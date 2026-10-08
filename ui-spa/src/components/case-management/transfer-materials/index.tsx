@@ -848,7 +848,6 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProp> = ({
                         },
                       ]}
                       callBackFn={handleDisconnect}
-                      ariaLabel="disconnect actions dropdown"
                       dataTestId={"disconnect-actions-dropdown"}
                     />
                   </div>

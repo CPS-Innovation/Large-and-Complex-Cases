@@ -3,7 +3,7 @@ import { Button } from "../../govuk";
 import { useNavigate, useParams, useLocation } from "react-router";
 import styles from "./DisconnectFailurePage.module.scss";
 
-const DisconnectSharedDriveFailurePage = () => {
+const DisconnectFailurePage = () => {
   const { caseId } = useParams() as { caseId: string };
   const navigate = useNavigate();
   const location = useLocation();
@@ -31,10 +31,10 @@ const DisconnectSharedDriveFailurePage = () => {
       <p>If the problem continues, contact the product team for support.</p>
 
       <div className={styles.buttonWrapper}>
-        <Button onClick={handleSubmit}>continue</Button>
+        <Button onClick={handleSubmit}>Continue</Button>
       </div>
     </div>
   );
 };
 
-export default DisconnectSharedDriveFailurePage;
+export default DisconnectFailurePage;

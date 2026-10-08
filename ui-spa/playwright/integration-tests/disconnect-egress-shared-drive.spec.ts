@@ -116,7 +116,7 @@ test.describe("disconnect Egress / Shared drive", () => {
   }) => {
     await worker.use(
       http.delete(
-        "https://mocked-out-api/api/v1/netapp/connections",
+        "https://mocked-out-api/api/v1/egress/connections",
         async () => {
           await delay(500);
           return new HttpResponse(null, { status: 200 });

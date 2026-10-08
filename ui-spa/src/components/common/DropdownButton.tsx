@@ -15,7 +15,6 @@ export type DropdownButtonProps = {
   name?: string;
   dropDownItems: DropdownButtonItem[];
   callBackFn: (id: string) => void;
-  ariaLabel?: string;
   dataTestId?: string;
   disabled?: boolean;
   showLastItemSeparator?: boolean;
@@ -27,7 +26,6 @@ export const DropdownButton: React.FC<DropdownButtonProps> = ({
   callBackFn,
   name,
   dataTestId = "dropdown-btn",
-  ariaLabel = "dropdown",
   disabled = false,
   icon = <FilledArrow className={classes.icon} />,
 }) => {
@@ -52,7 +50,7 @@ export const DropdownButton: React.FC<DropdownButtonProps> = ({
       <Button
         id={dataTestId}
         ref={dropDownBtnRef}
-        aria-label={ariaLabel}
+        aria-haspopup="true"
         aria-expanded={buttonOpen}
         className={`govuk-button--secondary ${buttonOpen && classes.upArrow} ${classes.dropDownButton}`}
         disabled={disabled}
