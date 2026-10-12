@@ -130,7 +130,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
                     netAppConnectionRequest.OperationName,
                     null,
                     1,
-                    null))
+                    netAppConnectionRequest.NetAppFolderPath))
                 .Returns(netAppArg);
 
             _netAppClientMock
@@ -164,7 +164,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
                 });
 
             _netAppArgFactoryMock
-                .Setup(x => x.CreateListFoldersInBucketArg(_testBearerToken, _testBucketName, netAppConnectionRequest.OperationName, null, 1, null))
+                .Setup(x => x.CreateListFoldersInBucketArg(_testBearerToken, _testBucketName, netAppConnectionRequest.OperationName, null, 1, netAppConnectionRequest.NetAppFolderPath))
                 .Returns(netAppArg);
 
             _netAppClientMock
@@ -228,7 +228,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
                 });
 
             _netAppArgFactoryMock
-                .Setup(x => x.CreateListFoldersInBucketArg(_testBearerToken, _testBucketName, netAppConnectionRequest.OperationName, null, 1, null))
+                .Setup(x => x.CreateListFoldersInBucketArg(_testBearerToken, _testBucketName, netAppConnectionRequest.OperationName, null, 1, netAppConnectionRequest.NetAppFolderPath))
                 .Returns(netAppArg);
 
             _netAppClientMock
@@ -302,7 +302,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
                 });
 
             _netAppArgFactoryMock
-                .Setup(x => x.CreateListFoldersInBucketArg(_testBearerToken, _testBucketName, netAppConnectionRequest.OperationName, null, 1, null))
+                .Setup(x => x.CreateListFoldersInBucketArg(_testBearerToken, _testBucketName, netAppConnectionRequest.OperationName, null, 1, netAppConnectionRequest.NetAppFolderPath))
                 .Returns(netAppArg);
 
             _netAppClientMock
@@ -351,7 +351,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
                 });
 
             _netAppArgFactoryMock
-                .Setup(x => x.CreateListFoldersInBucketArg(_testBearerToken, _testBucketName, netAppConnectionRequest.OperationName, null, 1, null))
+                .Setup(x => x.CreateListFoldersInBucketArg(_testBearerToken, _testBucketName, netAppConnectionRequest.OperationName, null, 1, netAppConnectionRequest.NetAppFolderPath))
                 .Returns(netAppArg);
 
             _netAppClientMock
@@ -364,14 +364,15 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
             // Act
             await _function.Run(request, functionContext);
 
-            // Assert
+            // Assert — permissions are validated against the folder being connected, not the
+            // bucket root, so users whose access is scoped to a subfolder can still connect.
             _netAppArgFactoryMock.Verify(x => x.CreateListFoldersInBucketArg(
                 _testBearerToken,
                 _testBucketName,
                 netAppConnectionRequest.OperationName,
                 null,
                 1,
-                null), Times.Once);
+                netAppConnectionRequest.NetAppFolderPath), Times.Once);
         }
 
         [Fact]
@@ -390,7 +391,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
                 });
 
             _netAppArgFactoryMock
-                .Setup(x => x.CreateListFoldersInBucketArg(_testBearerToken, _testBucketName, netAppConnectionRequest.OperationName, null, 1, null))
+                .Setup(x => x.CreateListFoldersInBucketArg(_testBearerToken, _testBucketName, netAppConnectionRequest.OperationName, null, 1, netAppConnectionRequest.NetAppFolderPath))
                 .Returns(netAppArg);
 
             _netAppClientMock
@@ -423,7 +424,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
                 });
 
             _netAppArgFactoryMock
-                .Setup(x => x.CreateListFoldersInBucketArg(_testBearerToken, _testBucketName, netAppConnectionRequest.OperationName, null, 1, null))
+                .Setup(x => x.CreateListFoldersInBucketArg(_testBearerToken, _testBucketName, netAppConnectionRequest.OperationName, null, 1, netAppConnectionRequest.NetAppFolderPath))
                 .Returns(netAppArg);
 
             _netAppClientMock
@@ -464,7 +465,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
                 });
 
             _netAppArgFactoryMock
-                .Setup(x => x.CreateListFoldersInBucketArg(_testBearerToken, _testBucketName, netAppConnectionRequest.OperationName, null, 1, null))
+                .Setup(x => x.CreateListFoldersInBucketArg(_testBearerToken, _testBucketName, netAppConnectionRequest.OperationName, null, 1, netAppConnectionRequest.NetAppFolderPath))
                 .Returns(netAppArg);
 
             _netAppClientMock
@@ -551,7 +552,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
                 });
 
             _netAppArgFactoryMock
-                .Setup(x => x.CreateListFoldersInBucketArg(_testBearerToken, requestedBucket, netAppConnectionRequest.OperationName, null, 1, null))
+                .Setup(x => x.CreateListFoldersInBucketArg(_testBearerToken, requestedBucket, netAppConnectionRequest.OperationName, null, 1, netAppConnectionRequest.NetAppFolderPath))
                 .Returns(netAppArg);
 
             _netAppClientMock
@@ -617,7 +618,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
                 });
 
             _netAppArgFactoryMock
-                .Setup(x => x.CreateListFoldersInBucketArg(_testBearerToken, _testBucketName, netAppConnectionRequest.OperationName, null, 1, null))
+                .Setup(x => x.CreateListFoldersInBucketArg(_testBearerToken, _testBucketName, netAppConnectionRequest.OperationName, null, 1, netAppConnectionRequest.NetAppFolderPath))
                 .Returns(netAppArg);
 
             _netAppClientMock

@@ -34,4 +34,9 @@ public class SizeConfig
     // 5 attempts including the first, 10s apart, gives a 50s maximum wait.
     public int SourceValidationRetryAttempts { get; set; } = 5;
     public int SourceValidationRetryIntervalSeconds { get; set; } = 10;
+
+    // Egress commits uploads asynchronously, so a destination listing taken as soon as the last
+    // upload completes can miss files that are still landing. Wait this long before verifying that
+    // every acknowledged upload actually exists at the destination.
+    public int EgressVerificationSettleDelaySeconds { get; set; } = 5;
 }

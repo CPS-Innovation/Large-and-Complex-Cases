@@ -584,7 +584,8 @@ public class EgressStorageClient(
             {
                 Id = d.Id,
                 SourcePath = ConstructRelativePath(baseFolderPath, d.Path, d.FileName),
-                FullFilePath = d.Path.EnsureTrailingSlash() + d.FileName
+                FullFilePath = d.Path.EnsureTrailingSlash() + d.FileName,
+                FileSizeBytes = d.FileSize
             })
             .ToList();
         var folders = allPagesData.Where(d => d.IsFolder).ToList();

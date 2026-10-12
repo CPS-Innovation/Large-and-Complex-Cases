@@ -106,6 +106,40 @@ public class TransferEntityState : TaskEntity<TransferEntity>
         State.UpdatedAt = DateTime.UtcNow;
     }
 
+    // Egress can accept and acknowledge an upload without the file ever materialising in the
+    // destination folder. When the post-transfer verification pass finds such a file, move it out of
+    // the successful items so the UI does not report it as transferred and the orchestrator's
+    // transient retry pass can re-queue it.
+    public void DemoteSuccessfulItems(DemoteSuccessfulItemsPayload payload)
+    {
+        foreach (var sourcePath in payload.SourcePaths ?? [])
+        {
+            var item = State.SuccessfulItems
+                .FirstOrDefault(i => string.Equals(i.SourcePath, sourcePath, StringComparison.OrdinalIgnoreCase));
+
+            if (item is null)
+            {
+                continue;
+            }
+
+            State.SuccessfulItems.Remove(item);
+            State.SuccessfulFiles--;
+
+            State.FailedItems.Add(new TransferFailedItem
+            {
+                SourcePath = sourcePath,
+                Status = TransferItemStatus.Failed,
+                ErrorCode = TransferErrorCode.Transient,
+                ErrorMessage = payload.ErrorMessage
+            });
+            State.FailedFiles++;
+            // ProcessedFiles deliberately NOT incremented
+            // the file was already counted as processed on the first pass
+        }
+
+        State.UpdatedAt = DateTime.UtcNow;
+    }
+
     public void AddSuccessfulRetryItem(TransferItem transferItem)
     {
         State.SuccessfulItems.Add(transferItem);

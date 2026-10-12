@@ -13,9 +13,9 @@ import MetaDataErrorPage from "./case-management/transfer-materials/MetaDataErro
 import FolderAccessErrorPage from "./case-management/transfer-materials/FolderAccessErrorPage";
 import TransferErrorPage from "./case-management/transfer-materials/TransferErrorPage";
 import TransferMovePermissionsErrorPage from "./case-management/transfer-materials/TransferMovePermissionsErrorPage";
-import DisconnectSharedDriveConfirmationPage from "./case-management/netapp-disconnect/DisconnectSharedDriveConfirmationPage";
-import DisconnectSharedDriveSuccessPage from "./case-management/netapp-disconnect/DisconnectSharedDriveSuccessPage";
-import DisconnectSharedDriveFailurePage from "./case-management/netapp-disconnect/DisconnectSharedDriveFailurePage";
+import DisconnectConfirmationPage from "./case-management/disconnect/DisconnectConfirmationPage";
+import DisconnectSuccessPage from "./case-management/disconnect/DisconnectSuccessPage";
+import DisconnectFailurePage from "./case-management/disconnect/DisconnectFailurePage";
 import TransferDestinationPage from "./case-management/transfer-materials/TransferDestinationPage";
 import MaintenancePage from "./maintenance-page";
 import UnAuthorisedPage from "./unauthorised";
@@ -72,16 +72,16 @@ const AppRoutes = () => {
           element={<CaseManagementPage />}
         />
         <Route
-          path="/case/:caseId/case-management/disconnect-shared-drive-confirmation"
-          element={<DisconnectSharedDriveConfirmationPage />}
+          path="/case/:caseId/case-management/disconnect-confirmation"
+          element={<DisconnectConfirmationPage />}
         />
         <Route
-          path="/case/:caseId/case-management/disconnect-shared-drive-success"
-          element={<DisconnectSharedDriveSuccessPage />}
+          path="/case/:caseId/case-management/disconnect-success"
+          element={<DisconnectSuccessPage />}
         />
         <Route
-          path="/case/:caseId/case-management/disconnect-shared-drive-failure"
-          element={<DisconnectSharedDriveFailurePage />}
+          path="/case/:caseId/case-management/disconnect-failure"
+          element={<DisconnectFailurePage />}
         />
         <Route path="/case/:caseId/egress-connect" element={<EgressPage />} />
         <Route

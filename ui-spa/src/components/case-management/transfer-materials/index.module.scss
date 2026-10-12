@@ -66,10 +66,17 @@
   .disconnectButton {
     position: relative;
     margin: 0.65rem 0 0 0;
+
     @media (min-width: 50rem) {
       position: absolute;
       right: 0;
       bottom: 0;
+    }
+    & :global(#dropdown-panel) {
+      @media (min-width: 50rem) {
+        right: 0;
+        left: auto;
+      }
     }
   }
 }

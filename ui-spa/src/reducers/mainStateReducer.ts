@@ -41,6 +41,7 @@ export type MainState = {
     connectSharedDrivePage: {
       searchQueryString: string;
       netappRootFolderPath: string;
+      accessibleRoots: string[] | null;
     };
     egressConnectConfirmationPage: {
       backLinkUrl: string;
@@ -99,6 +100,7 @@ export const initialState: MainState = {
     connectSharedDrivePage: {
       searchQueryString: "",
       netappRootFolderPath: "",
+      accessibleRoots: null,
     },
     egressConnectConfirmationPage: {
       backLinkUrl: "",
@@ -196,6 +198,7 @@ export type MainStateActions =
       payload: Partial<{
         searchQueryString: string;
         netappRootFolderPath: string;
+        accessibleRoots: string[] | null;
       }>;
     }
   | {
