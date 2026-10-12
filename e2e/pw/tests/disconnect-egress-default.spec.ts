@@ -7,10 +7,17 @@ import { SearchResultsPage } from "../pages/SearchResultsPage";
 import { CaseManagementPage } from "../pages/CaseManagementPage";
 
 const config = loadEnvConfig();
+
+if (!config.defaultCaseId || !config.defaultCaseUrn || !config.defaultWorkspaceId || !config.defaultWorkspaceName) {
+  throw new Error(
+    "DEFAULT_CASE_ID, DEFAULT_CASE_URN, DEFAULT_WORKSPACE_ID and DEFAULT_WORKSPACE_NAME are required for disconnect-egress-default.spec.ts. Check your .env file.",
+  );
+}
+
 const caseId = Number(config.defaultCaseId);
 const caseUrn = config.defaultCaseUrn;
 const apiBaseUrl = config.lccApiBaseUrl || new URL(config.cmsLoginPage).origin;
-const DISCONNECT_EGRESS_ROUTE = "**/api/v1/egress/connections?case-id=*";
+const DISCONNECT_EGRESS_ROUTE = /\/api\/v1\/egress\/connections\?case-id=/;
 
 let cachedToken: { value: string; expiresAt: number } | undefined;
 
@@ -123,16 +130,20 @@ test.describe("Disconnect Egress (RLCC-100)", () => {
         : route.continue(),
     );
 
-    await chooseDisconnectEgress(page);
-    await answerConfirmation(page, "yes");
+    try {
+      await chooseDisconnectEgress(page);
+      await answerConfirmation(page, "yes");
 
-    await expect(page).toHaveURL(new RegExp(`/case/${caseId}/case-management/disconnect-failure\\?type=egress`));
-    await expect(page.locator("h1")).toHaveText("Could not disconnect Egress");
-    await expect(page.getByText("If the problem continues, contact the product team for support.")).toBeVisible();
+      await expect(page).toHaveURL(new RegExp(`/case/${caseId}/case-management/disconnect-failure\\?type=egress`));
+      await expect(page.locator("h1")).toHaveText("Could not disconnect Egress");
+      await expect(page.getByText("If the problem continues, contact the product team for support.")).toBeVisible();
 
-    await page.getByRole("button", { name: "Continue" }).click();
-    await expect(page).toHaveURL(new RegExp(`/case/${caseId}/case-management$`));
-    expect(await getCaseEgressWorkspaceId(page)).toBe(config.defaultWorkspaceId);
+      await page.getByRole("button", { name: "Continue" }).click();
+      await expect(page).toHaveURL(new RegExp(`/case/${caseId}/case-management$`));
+      expect(await getCaseEgressWorkspaceId(page)).toBe(config.defaultWorkspaceId);
+    } finally {
+      await page.unroute(DISCONNECT_EGRESS_ROUTE);
+    }
   });
 
   test("Yes disconnects Egress and offers a link to connect again", async ({ page }) => {
