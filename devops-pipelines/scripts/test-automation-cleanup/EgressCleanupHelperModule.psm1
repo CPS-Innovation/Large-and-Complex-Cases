@@ -67,7 +67,7 @@ function Connect-EgressServiceAccount {
       -Headers @{
         Accept        = "application/json"
         Authorization = "Basic $AuthToken"
-    }
+      }
   }
   catch {
     throw "Authentication failed: $($_.Exception.Message)"
@@ -112,7 +112,8 @@ function Remove-EgressFiles {
     -Method Delete `
     -Uri "$BaseUrl/api/v1/workspaces/$WorkspaceId/files" `
     -Headers $headers `
-    -Body $body
+    -Body $body `
+    -TimeoutSec 180
 
   $failed = $response.results | Where-Object { $_.code -ne 0 }
 
