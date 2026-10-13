@@ -253,14 +253,7 @@ test.describe("egress connect", () => {
       "Sorry, there is a problem with the service",
     );
     await expect(
-      page.getByText(
-        "Please try this case again later. If the problem continues, contact the product team.",
-      ),
-    ).toBeVisible();
-    await expect(
-      page.getByText(
-        "API_ERROR: An error occurred contacting the server at https://mocked-out-api/api/v1/egress/workspaces: Searching for Egress workspaces failed; status - Internal Server Error (500)",
-      ),
+      page.getByText("Contact the product team and give them the error code."),
     ).toBeVisible();
   });
 

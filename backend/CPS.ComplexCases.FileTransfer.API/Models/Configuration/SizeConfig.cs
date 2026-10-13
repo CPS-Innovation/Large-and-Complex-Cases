@@ -7,10 +7,16 @@ public class SizeConfig
     public int ChunkSizeBytes { get; set; } = 8 * 1024 * 1024; // default to 8 MB
     public int MinMultipartSizeBytes { get; set; } = 5 * 1024 * 1024; // Default to 5 MB
 
-    // Files per batch and concurrent part uploads per file are kept conservative for large (~1 GB)
-    // files: at 4 files x 2 parts that is 8 concurrent chunk PATCH'
-    public int BatchSize { get; set; } = 4; // Default to 4 files per batch
+    // Files per batch and concurrent part uploads per file stay inside the Egress Polly
+    // concurrency limit of 30. At 12 files x 2 parts that is 24 concurrent chunk PATCHes.
+    public int BatchSize { get; set; } = 12;
     public int MaxConcurrentPartUploads { get; set; } = 2;
+
+    // Files above MinMultipartSizeBytes take the multipart route, where each file holds up to
+    // MaxConcurrentPartUploads chunk PATCHes open at once. Fanning BatchSize of those out together
+    // overwhelmed Egress with 500s and dropped sockets, so large files run at a reduced fan-out
+    // while small single-upload files keep the full BatchSize throughput. Keep at or below BatchSize.
+    public int LargeFileBatchSize { get; set; } = 4;
 
     public int MaxOrchestratorRetries { get; set; } = 3; // default to 3
 
@@ -28,4 +34,9 @@ public class SizeConfig
     // 5 attempts including the first, 10s apart, gives a 50s maximum wait.
     public int SourceValidationRetryAttempts { get; set; } = 5;
     public int SourceValidationRetryIntervalSeconds { get; set; } = 10;
+
+    // Egress commits uploads asynchronously, so a destination listing taken as soon as the last
+    // upload completes can miss files that are still landing. Wait this long before verifying that
+    // every acknowledged upload actually exists at the destination.
+    public int EgressVerificationSettleDelaySeconds { get; set; } = 5;
 }

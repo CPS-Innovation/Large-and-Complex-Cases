@@ -11,6 +11,9 @@ export type Folder = {
   folderName: string;
   folderPath: string;
   folderId?: string;
+  // Set to false for ancestors the user has no permission to list, so the crumb is shown for
+  // context but cannot be clicked. Defaults to navigable.
+  isNavigable?: boolean;
 };
 
 const FolderPath: React.FC<FolderPathProps> = ({
@@ -27,7 +30,7 @@ const FolderPath: React.FC<FolderPathProps> = ({
               key={`${folder.folderName}-${index}`}
               className={styles.listItem}
             >
-              {index !== folders.length - 1 ? (
+              {index !== folders.length - 1 && folder.isNavigable !== false ? (
                 <LinkButton
                   onClick={() => handleFolderPathClick(folder.folderPath)}
                   disabled={disabled}

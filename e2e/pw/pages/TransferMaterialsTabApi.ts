@@ -1,10 +1,9 @@
 import type { Response } from "@playwright/test";
 
 /**
- * Screen-agnostic Transfer Materials contract, implemented by both
- * `TransferMaterialsTab` (old) and `TransferMaterialsTabV1` (new). Specs build
- * via `getTransferMaterialsTab` and depend only on this surface, never a
- * screen-specific selector.
+ * Transfer Materials contract, implemented by `TransferMaterialsTabV1`. Specs
+ * build via `getTransferMaterialsTab` and depend only on this surface, never a
+ * concrete page object's selectors.
  */
 export interface TransferMaterialsTabApi {
   waitForEgressFiles(): Promise<void>;
@@ -17,17 +16,13 @@ export interface TransferMaterialsTabApi {
   sortNetAppByDateDescending(): Promise<void>;
   selectEgressFileByName(fileName: string): Promise<void>;
   /**
-   * Initiate a transfer in the given direction (default Egress → NetApp).
-   * `direction` only matters on the old screen, which has a Copy/Move control in
-   * each panel's inset; the new screen has a single shared control and ignores
-   * it (direction is implied by the current source).
+   * Initiate a Copy or Move of the selected files. The screen has a single
+   * shared Copy/Move control; the direction is set by the current view
+   * (see `switchToNetAppSource`), not by this call.
    */
-  selectAction(
-    action: "Copy" | "Move",
-    direction?: "egressToNetApp" | "netAppToEgress",
-  ): Promise<void>;
+  selectAction(action: "Copy" | "Move"): Promise<void>;
   /** Confirm the pending transfer. `action` must match the Copy/Move just
-   * initiated — the new screen's confirm button reads "<action> to <folder>". */
+   * initiated — the confirm button reads "<action> to <folder>". */
   confirmTransfer(action: "Copy" | "Move"): Promise<void>;
   waitForTransferComplete(timeout?: number): Promise<void>;
   /** Call before `waitForTransferComplete`. */
@@ -39,8 +34,7 @@ export interface TransferMaterialsTabApi {
    * be re-entered. No-op when not on an error page. */
   dismissTransferErrorIfPresent(): Promise<void>;
   /** Assert the named file is present in the NetApp / shared-drive panel
-   * (old screen checks in place; new screen switches to the shared drive
-   * first). Throws if it never appears. */
+   * (switches to the shared drive first). Throws if it never appears. */
   verifyNetAppContainsFile(fileName: string, timeout?: number): Promise<void>;
   navigateToFolder(folderName: string): Promise<void>;
   waitForEgressFileByName(

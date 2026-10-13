@@ -33,7 +33,7 @@ public class ListDestinationFilePathsTests
     }
 
     [Fact]
-    public async Task Run_ReturnsHashSetOfFilePaths_WhenFilesExist()
+    public async Task Run_ReturnsFilePathsWithTheirSizes_WhenFilesExist()
     {
         // Arrange
         var payload = new ListDestinationPayload(_workspaceId, "dest/path");
@@ -42,15 +42,19 @@ public class ListDestinationFilePathsTests
         {
             new() {
                 SourcePath = "path/file1.txt",
-                FullFilePath = "dest/file1.txt"
+                FullFilePath = "dest/file1.txt",
+                FileSizeBytes = 100
             },
             new() {
                 SourcePath = "path/file2.txt",
-                FullFilePath = "dest/file2.txt"
+                FullFilePath = "dest/file2.txt",
+                FileSizeBytes = 0
             },
+            // Egress does not report a size for every listing entry.
             new() {
                 SourcePath = "path/file3.txt",
-                FullFilePath = "dest/file3.txt"
+                FullFilePath = "dest/file3.txt",
+                FileSizeBytes = null
             }
         };
 
@@ -64,9 +68,9 @@ public class ListDestinationFilePathsTests
         // Assert
         Assert.NotNull(result);
         Assert.Equal(3, result.Count);
-        Assert.Contains("dest/file1.txt", result);
-        Assert.Contains("dest/file2.txt", result);
-        Assert.Contains("dest/file3.txt", result);
+        Assert.Equal(100, result["dest/file1.txt"]);
+        Assert.Equal(0, result["dest/file2.txt"]);
+        Assert.Null(result["dest/file3.txt"]);
     }
 
     [Fact]
@@ -101,9 +105,7 @@ public class ListDestinationFilePathsTests
         // Assert
         Assert.NotNull(result);
         Assert.Equal(2, result.Count);
-        Assert.Contains("dest/file1.txt", result);
-        Assert.Contains("dest/file3.txt", result);
-        Assert.DoesNotContain(null!, result);
+        Assert.Equal(["dest/file1.txt", "dest/file3.txt"], result.Keys);
     }
 
     [Fact]
@@ -138,13 +140,11 @@ public class ListDestinationFilePathsTests
         // Assert
         Assert.NotNull(result);
         Assert.Equal(2, result.Count);
-        Assert.Contains("dest/file1.txt", result);
-        Assert.Contains("dest/file3.txt", result);
-        Assert.DoesNotContain("", result);
+        Assert.Equal(["dest/file1.txt", "dest/file3.txt"], result.Keys);
     }
 
     [Fact]
-    public async Task Run_ReturnsEmptyHashSet_WhenNoFilesExist()
+    public async Task Run_ReturnsEmptyListing_WhenNoFilesExist()
     {
         // Arrange
         var payload = new ListDestinationPayload(_workspaceId, "dest/path");
@@ -164,7 +164,7 @@ public class ListDestinationFilePathsTests
     }
 
     [Fact]
-    public async Task Run_ReturnsEmptyHashSet_WhenAllFilesHaveNullOrEmptyFullFilePath()
+    public async Task Run_ReturnsEmptyListing_WhenAllFilesHaveNullOrEmptyFullFilePath()
     {
         // Arrange
         var payload = new ListDestinationPayload(_workspaceId, "dest/path");
@@ -203,15 +203,18 @@ public class ListDestinationFilePathsTests
         {
             new() {
                 SourcePath = "path/file1.txt",
-                FullFilePath = "dest/File1.txt"
+                FullFilePath = "dest/File1.txt",
+                FileSizeBytes = 100
             },
             new() {
                 SourcePath = "path/file1.txt",
-                FullFilePath = "dest/file1.txt"
+                FullFilePath = "dest/file1.txt",
+                FileSizeBytes = 100
             },
             new() {
                 SourcePath = "path/file1.txt",
-                FullFilePath = "dest/FILE1.TXT"
+                FullFilePath = "dest/FILE1.TXT",
+                FileSizeBytes = 100
             }
         };
 
@@ -225,9 +228,9 @@ public class ListDestinationFilePathsTests
         // Assert
         Assert.NotNull(result);
         Assert.Single(result);
-        Assert.Contains("dest/File1.txt", result);
-        Assert.Contains("dest/file1.txt", result);
-        Assert.Contains("dest/FILE1.TXT", result);
+        Assert.Equal(100, result["dest/File1.txt"]);
+        Assert.Equal(100, result["dest/file1.txt"]);
+        Assert.Equal(100, result["dest/FILE1.TXT"]);
     }
 
     [Fact]

@@ -13,6 +13,9 @@ public interface IStorageClient
     Task<IEnumerable<FileTransferInfo>> ListFilesForTransferAsync(List<TransferEntityDto> selectedEntities, string? workspaceId = null, int? caseId = null, string? bearerToken = null, string? bucketName = null);
     Task<DeleteFilesResult> DeleteFilesAsync(List<DeletionEntityDto> filesToDelete, string? workspaceId = null, string? bearerToken = null, string? bucketName = null);
     Task<bool> FileExistsAsync(string path, string? workspaceId = null, string? bearerToken = null, string? bucketName = null, string? fileId = null);
+    // Existence check that also reports the file size, so callers that already pay for a metadata
+    // lookup can size-classify a file without a second round trip.
+    Task<FileProbeResult> ProbeFileAsync(string path, string? workspaceId = null, string? bearerToken = null, string? bucketName = null, string? fileId = null);
     Task<List<FileTransferInfo>> GetAllFilesFromFolderAsync(string folderPath, string? workspaceId = null);
     Task<bool> CreateFolderAsync(string folderPath, string? workspaceId = null, string? bearerToken = null, string? bucketName = null);
 }

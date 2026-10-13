@@ -20,6 +20,7 @@ using CPS.ComplexCases.NetApp.Client;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Polly;
 
 namespace CPS.ComplexCases.FileTransfer.API.Durable.Activity;
 
@@ -88,9 +89,9 @@ public class TransferFile(
                     return CreateNonPositiveSizeFailure(payload, totalSize, telemetryEvent);
                 }
 
-                // Egress has no single-PUT path and cannot materialise a 0-byte object via multipart
-                // (create-upload + complete with no parts returns OK but leaves no file). Skip so the
-                // batch is not failed and the item is reported rather than falsely marked transferred.
+                // A 0-byte object cannot be materialised in Egress. Whole-file upload is only used
+                // for non-empty files at or under the multipart threshold. Skip so the batch is not
+                // failed and the item is reported rather than falsely marked transferred.
                 if (totalSize == 0 && payload.TransferDirection == TransferDirection.NetAppToEgress)
                 {
                     _logger.LogInformation(
@@ -212,11 +213,12 @@ public class TransferFile(
         CancellationToken cancellationToken,
         DateTime startTime)
     {
-        bool needsMd5 = destinationClient is EgressStorageClient;
+        bool isEgress = destinationClient is EgressStorageClient;
         bool isNetApp = destinationClient is NetAppStorageClient;
 
-        // Small NetApp files (including 0-byte) use single PUT
-        if (isNetApp && totalSize <= _sizeConfig.MinMultipartSizeBytes)
+        // Small NetApp files (including 0-byte) and Egress files at or under 5 MB use a single
+        // upload. 0-byte Egress files are skipped before this method runs.
+        if ((isNetApp || isEgress) && totalSize <= _sizeConfig.MinMultipartSizeBytes)
         {
             return await HandleSingleUpload(
                 sourceStream,
@@ -227,14 +229,13 @@ public class TransferFile(
                 startTime);
         }
 
-        // All Egress + large NetApp files use multipart upload
         return await HandleMultipartUpload(
             sourceStream,
             destinationClient,
             payload,
             sourceFilePath,
             totalSize,
-            needsMd5,
+            isEgress,
             cancellationToken,
             startTime);
     }
@@ -248,7 +249,7 @@ public class TransferFile(
         telemetryEvent.TransferEndTime =
             result.SuccessfulItem?.EndTime ?? result.SkippedItem?.EndTime ?? DateTime.UtcNow;
         telemetryEvent.IsSuccessful = result.IsSuccess || result.IsSkipped;
-        telemetryEvent.IsMultipart = result.IsSuccess && result.SuccessfulItem!.TotalPartsCount > 1;
+        telemetryEvent.IsMultipart = result.IsSuccess && result.SuccessfulItem!.IsMultipart;
         telemetryEvent.TotalPartsCount = result.IsSuccess ? result.SuccessfulItem!.TotalPartsCount : 0;
 
         if (!result.IsSuccess && !result.IsSkipped && result.FailedItem != null)
@@ -312,6 +313,35 @@ public class TransferFile(
             };
         }
 
+        // An open circuit (and any other Polly strategy that sheds load) rejects the call without
+        // reaching Egress. The destination is overloaded, not the file bad, so classify it as
+        // transient: the break has long expired by the time the orchestrator's retry pass runs.
+        if (ex is ExecutionRejectedException rejected)
+        {
+            var errorMessage = $"Destination call rejected by the resilience pipeline: {rejected.Message}";
+            logger?.LogWarning(rejected, "Destination call was rejected before reaching the service");
+            return new MappedExceptionOutcome
+            {
+                Rethrow = false,
+                ErrorCode = TransferErrorCode.Transient,
+                DiagnosticMessage = errorMessage,
+                Exception = rejected
+            };
+        }
+
+        // The storage client already retried this internally and the destination kept failing.
+        if (ex is TransientStorageException transientStorage)
+        {
+            logger?.LogWarning(transientStorage, "Destination exhausted the storage client's own retries");
+            return new MappedExceptionOutcome
+            {
+                Rethrow = false,
+                ErrorCode = TransferErrorCode.Transient,
+                DiagnosticMessage = transientStorage.Message,
+                Exception = transientStorage
+            };
+        }
+
         if (ex is AmazonS3Exception s3
             && ((int)s3.StatusCode >= 500
                 || s3.StatusCode == System.Net.HttpStatusCode.NotFound
@@ -324,6 +354,21 @@ public class TransferFile(
                 ErrorCode = TransferErrorCode.Transient,
                 DiagnosticMessage = errorMessage,
                 Exception = s3
+            };
+        }
+
+        // A connection-level failure (reset socket, TLS or DNS error) carries no status code. Egress
+        // drops sockets when too many streams hit it at once, which is recoverable on a later pass.
+        if (ex is HttpRequestException connectionFailure && connectionFailure.StatusCode is null)
+        {
+            var errorMessage = $"Transient connection failure: {connectionFailure.Message}";
+            logger?.LogWarning(connectionFailure, "Connection failed during transfer with no HTTP status code");
+            return new MappedExceptionOutcome
+            {
+                Rethrow = false,
+                ErrorCode = TransferErrorCode.Transient,
+                DiagnosticMessage = errorMessage,
+                Exception = connectionFailure
             };
         }
 
@@ -420,17 +465,33 @@ public class TransferFile(
         long totalSize,
         DateTime startTime)
     {
-        _logger.LogInformation(
-            "File size {TotalSize} <= {MinMultipartSize} bytes, using single PUT.",
-            totalSize,
-            _sizeConfig.MinMultipartSizeBytes);
+        if (destinationClient is EgressStorageClient)
+        {
+            _logger.LogInformation(
+                "File size {TotalSize} <= {MinMultipartSize} bytes, using Egress single-upload.",
+                totalSize,
+                _sizeConfig.MinMultipartSizeBytes);
+        }
+        else
+        {
+            _logger.LogInformation(
+                "File size {TotalSize} <= {MinMultipartSize} bytes, using single PUT.",
+                totalSize,
+                _sizeConfig.MinMultipartSizeBytes);
+        }
+
+        // Egress folder placement uses the source relative path, matching multipart create-upload.
+        // NetApp single PUT uses the object key.
+        var uploadRelativePath = destinationClient is EgressStorageClient
+            ? payload.SourcePath.RelativePath ?? sourceFilePath
+            : sourceFilePath;
 
         await destinationClient.UploadFileAsync(
             payload.DestinationPath,
             sourceStream,
             totalSize,
             payload.WorkspaceId,
-            sourceFilePath,
+            uploadRelativePath,
             payload.SourceRootFolderPath,
             payload.BearerToken,
             payload.BucketName);
@@ -448,6 +509,11 @@ public class TransferFile(
         CancellationToken cancellationToken,
         DateTime startTime)
     {
+        _logger.LogInformation(
+            "Using multipart upload for {Source} ({TotalSize} bytes).",
+            payload.SourcePath.Path,
+            totalSize);
+
         var session = await destinationClient.InitiateUploadAsync(
             payload.DestinationPath,
             totalSize,
@@ -458,7 +524,8 @@ public class TransferFile(
             payload.BearerToken,
             payload.BucketName);
 
-        var uploadSemaphore = new SemaphoreSlim(_sizeConfig.MaxConcurrentPartUploads);
+        var uploadSemaphore = new SemaphoreSlim(ResolvePartUploadConcurrency(
+            totalSize, _sizeConfig.ChunkSizeBytes, _sizeConfig.MaxConcurrentPartUploads));
         var uploadedEtags = new Dictionary<int, string>();
         var uploadTasks = new List<Task>();
 
@@ -529,10 +596,23 @@ public class TransferFile(
                 sourceFilePath,
                 totalSize,
                 startTime,
-                partNumber,
+                uploadTasks.Count,
                 md5,
                 uploadedEtags);
         }
+    }
+
+    // Egress assembles the parts server-side and drops the upload when a trailing part lands before
+    // the head part. The last part is normally a short tail (a 6 MB file at a 5 MB chunk size ends
+    // with a 1 MB part), so it wins that race whenever it is dispatched while part 1 is still in
+    // flight. At a concurrency of C the tail only goes out that early when the file has at most
+    // C + 1 parts, so those files upload strictly in order. Longer files dispatch their tail many
+    // parts later, once part 1 has long since landed, and keep the configured concurrency.
+    internal static int ResolvePartUploadConcurrency(long totalSize, int chunkSizeBytes, int maxConcurrentPartUploads)
+    {
+        var maxConcurrency = Math.Max(1, maxConcurrentPartUploads);
+        var totalParts = (long)Math.Ceiling((double)totalSize / Math.Max(1, chunkSizeBytes));
+        return totalParts <= maxConcurrency + 1 ? 1 : maxConcurrency;
     }
 
     internal static async Task<int> ReadExactPartAsync(
@@ -638,6 +718,8 @@ public class TransferFile(
         }
     }
 
+    internal static bool ShouldSettleAfterParts(int uploadTaskCount) => uploadTaskCount > 1;
+
     private static async Task AwaitPartsThenSettleAsync(
         List<Task> uploadTasks,
         CancellationToken cancellationToken)
@@ -645,9 +727,12 @@ public class TransferFile(
         await Task.WhenAll(uploadTasks);
 
         // Allow S3/StorageGRID to finalise part registration before completing the upload.
-        // Without this delay, CompleteMultipartUpload can receive a transient 500
-        // when parts have not yet been fully registered internally.
-        await Task.Delay(TimeSpan.FromSeconds(2), cancellationToken);
+        // A single part does not need this delay. Without it, CompleteMultipartUpload can
+        // receive a transient 500 when multiple parts have not yet been fully registered.
+        if (ShouldSettleAfterParts(uploadTasks.Count))
+        {
+            await Task.Delay(TimeSpan.FromSeconds(2), cancellationToken);
+        }
     }
 
     internal static string? BuildMultipartCompletionFilePath(
@@ -669,7 +754,7 @@ public class TransferFile(
         string sourceFilePath,
         long totalSize,
         DateTime startTime,
-        int partNumber,
+        int totalParts,
         System.Security.Cryptography.MD5? md5,
         Dictionary<int, string> uploadedEtags)
     {
@@ -692,7 +777,7 @@ public class TransferFile(
         _logger.LogInformation("Completed parallel multipart transfer for {Source} -> {Dest}",
             payload.SourcePath.Path, payload.DestinationPath);
 
-        return CreateSuccessResult(payload, totalSize, startTime, partNumber);
+        return CreateSuccessResult(payload, totalSize, startTime, totalParts, isMultipart: true);
     }
 
     private static async Task<bool> CompleteUpload(
@@ -716,7 +801,7 @@ public class TransferFile(
     }
 
     private static TransferResult CreateSuccessResult(TransferFilePayload payload, long totalSize, DateTime startTime,
-        int totalParts = 1)
+        int totalParts = 1, bool isMultipart = false)
     {
         var endTime = DateTime.UtcNow;
 
@@ -729,7 +814,8 @@ public class TransferFile(
             FileId = payload.SourcePath.FileId,
             StartTime = startTime,
             EndTime = endTime,
-            TotalPartsCount = totalParts
+            TotalPartsCount = totalParts,
+            IsMultipart = isMultipart
         };
 
         return new TransferResult { IsSuccess = true, SuccessfulItem = item };

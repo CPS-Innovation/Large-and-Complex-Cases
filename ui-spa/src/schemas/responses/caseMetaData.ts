@@ -3,9 +3,9 @@ import { z } from "zod";
 export const caseMetaDataResponseSchema = z
   .object({
     caseId: z.number(),
-    egressWorkspaceId: z.string(),
+    egressWorkspaceId: z.string().nullable(),
     egressWorkspaceName: z.string().nullable(),
-    netappFolderPath: z.string(),
+    netappFolderPath: z.string().nullable(),
     operationName: z.string().nullable(),
     leadDefendantName: z.string().nullable(),
     activeTransferId: z.string().nullable(),

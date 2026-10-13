@@ -5,7 +5,8 @@
     "Storage": "UseDevelopmentStorage=true",
     "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated",
     "SizeConfig__ChunkSizeBytes": "10485760",
-    "SizeConfig__BatchSize": "4",
+    "SizeConfig__BatchSize": "12",
+    "SizeConfig__LargeFileBatchSize": "4",
     "SizeConfig__MaxConcurrentPartUploads": "2",
     "EgressOptions__Url": "http://localhost:<port>",
     "EgressOptions__Username": "<username",
@@ -28,6 +29,7 @@
     "SizeConfig__FolderPreCreateBackoffCoefficient": "2.0",
     "SizeConfig__SourceValidationRetryAttempts": "5",
     "SizeConfig__SourceValidationRetryIntervalSeconds": "10",
+    "SizeConfig__EgressVerificationSettleDelaySeconds": "5",
     "ManageMaterialsCleanupSchedule": "0 0 2 * * *",
     "FileTransfer__ManageMaterialsCleanup__MaxAgeHours": "24"
   },

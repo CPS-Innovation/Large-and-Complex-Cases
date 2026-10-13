@@ -12,4 +12,8 @@ public class TransferItem
     public DateTime? StartTime { get; set; }
     public DateTime? EndTime { get; set; }
     public int TotalPartsCount { get; set; }
+
+    // A file just over MinMultipartSizeBytes takes the multipart path but produces a single part,
+    // so the part count alone cannot distinguish it from a single upload.
+    public bool IsMultipart { get; set; }
 }

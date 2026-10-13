@@ -58,6 +58,7 @@ const SearchResults: React.FC<SearchResultsProps> = ({
           payload: {
             searchQueryString: searchQueryString,
             netappRootFolderPath: "",
+            accessibleRoots: null,
           },
         });
 

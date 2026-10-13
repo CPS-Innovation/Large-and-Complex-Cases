@@ -7,6 +7,8 @@ using CPS.ComplexCases.Common.Models.Requests;
 using CPS.ComplexCases.FileTransfer.API.Durable.Activity;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads;
 using CPS.ComplexCases.FileTransfer.API.Models.Domain.Enums;
+using Polly.CircuitBreaker;
+using Polly.RateLimiting;
 
 namespace CPS.ComplexCases.FileTransfer.API.Tests.Unit.Durable.Activity;
 
@@ -131,6 +133,56 @@ public class TransferFileHelperTests
     }
 
     [Fact]
+    public void MapExceptionToFailureResult_BrokenCircuit_IsTransient()
+    {
+        var mapped = TransferFile.MapExceptionToFailureResult(
+            new BrokenCircuitException("The circuit is now open and is not allowing calls."),
+            TransferDirection.NetAppToEgress,
+            isCancellationRequested: false);
+
+        Assert.False(mapped.Rethrow);
+        Assert.Equal(TransferErrorCode.Transient, mapped.ErrorCode);
+    }
+
+    [Fact]
+    public void MapExceptionToFailureResult_RateLimiterRejected_IsTransient()
+    {
+        var mapped = TransferFile.MapExceptionToFailureResult(
+            new RateLimiterRejectedException(),
+            TransferDirection.NetAppToEgress,
+            isCancellationRequested: false);
+
+        Assert.False(mapped.Rethrow);
+        Assert.Equal(TransferErrorCode.Transient, mapped.ErrorCode);
+    }
+
+    [Fact]
+    public void MapExceptionToFailureResult_TransientStorageException_IsTransient()
+    {
+        var mapped = TransferFile.MapExceptionToFailureResult(
+            new TransientStorageException("Chunk 3 upload for upload abc failed after 4 attempts."),
+            TransferDirection.NetAppToEgress,
+            isCancellationRequested: false);
+
+        Assert.False(mapped.Rethrow);
+        Assert.Equal(TransferErrorCode.Transient, mapped.ErrorCode);
+        Assert.Contains("failed after 4 attempts", mapped.DiagnosticMessage);
+    }
+
+    [Fact]
+    public void MapExceptionToFailureResult_ConnectionFailureWithoutStatusCode_IsTransient()
+    {
+        var mapped = TransferFile.MapExceptionToFailureResult(
+            new HttpRequestException("The connection was closed unexpectedly."),
+            TransferDirection.NetAppToEgress,
+            isCancellationRequested: false);
+
+        Assert.False(mapped.Rethrow);
+        Assert.Equal(TransferErrorCode.Transient, mapped.ErrorCode);
+        Assert.Contains("Transient connection failure", mapped.DiagnosticMessage);
+    }
+
+    [Fact]
     public async Task ReadExactPartAsync_FillsBuffer()
     {
         var bytes = Encoding.UTF8.GetBytes("abcdefghij");
@@ -172,5 +224,44 @@ public class TransferFileHelperTests
         Assert.Null(TransferFile.BuildMultipartCompletionFilePath(
             CreatePayload(direction: TransferDirection.NetAppToEgress),
             "source.txt"));
+    }
+
+    // 5 MB chunks are what every environment is configured with, so a 6 MB file is a 5 MB head plus
+    // a 1 MB tail, and an 11 MB file is two 5 MB parts plus a 1 MB tail. The tail wins the race to
+    // Egress whenever it is dispatched before part 1 has landed, which is what loses the file. At
+    // the configured concurrency of 2 that covers everything up to three parts (15 MB).
+    [Theory]
+    [InlineData(5 * 1024 * 1024, 1)]
+    [InlineData(6 * 1024 * 1024, 1)]
+    [InlineData(10 * 1024 * 1024, 1)]
+    [InlineData(11 * 1024 * 1024, 1)]
+    [InlineData(15 * 1024 * 1024, 1)]
+    [InlineData(16 * 1024 * 1024, 2)]
+    [InlineData(20 * 1024 * 1024, 2)]
+    [InlineData(100 * 1024 * 1024, 2)]
+    public void ResolvePartUploadConcurrency_SerialisesFilesWhoseTailCanOvertakeTheHead(long totalSize, int expected)
+    {
+        Assert.Equal(
+            expected,
+            TransferFile.ResolvePartUploadConcurrency(totalSize, 5 * 1024 * 1024, maxConcurrentPartUploads: 2));
+    }
+
+    // The serial threshold tracks the configured concurrency: at 4 concurrent parts the tail of a
+    // five-part file still goes out alongside part 1, so that file has to be serialised too.
+    [Theory]
+    [InlineData(25 * 1024 * 1024, 1)]
+    [InlineData(30 * 1024 * 1024, 4)]
+    public void ResolvePartUploadConcurrency_ScalesThresholdWithConfiguredConcurrency(long totalSize, int expected)
+    {
+        Assert.Equal(
+            expected,
+            TransferFile.ResolvePartUploadConcurrency(totalSize, 5 * 1024 * 1024, maxConcurrentPartUploads: 4));
+    }
+
+    [Fact]
+    public void ResolvePartUploadConcurrency_NeverReturnsLessThanOne()
+    {
+        Assert.Equal(1, TransferFile.ResolvePartUploadConcurrency(100, chunkSizeBytes: 0, maxConcurrentPartUploads: 0));
+        Assert.Equal(1, TransferFile.ResolvePartUploadConcurrency(100, chunkSizeBytes: 10, maxConcurrentPartUploads: 0));
     }
 }

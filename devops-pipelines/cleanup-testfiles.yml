@@ -29,15 +29,51 @@ jobs:
         displayName: "Install PowerShell"
 
       - task: PowerShell@2
-        displayName: "Clear integration-tests Egress folder"
+        displayName: "Clear integration-tests Egress folders"
         inputs:
-          filePath: "$(System.DefaultWorkingDirectory)/devops-pipelines/scripts/test-automation-cleanup/Clear-EgressFolder.ps1"
-          arguments: >
-            -BaseUrl $(EgressOptionsUrl)
-            -ServiceAccountAuth $(EgressServiceAccountAuth)
-            -WorkspaceId $(EgressWorkspaceId)
-            -FolderName "integration-tests"
-            -Force
+          targetType: "inline"
+          workingDirectory: "$(System.DefaultWorkingDirectory)/devops-pipelines/scripts/test-automation-cleanup"
+          script: |
+            $workspaceIds = @(
+              $env:devWorkspace
+              $env:stgWorkspace
+            ) | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Select-Object -Unique
+
+            $failedWorkspaces = @()
+
+            foreach ($id in $workspaceIds) {
+              Write-Host "Attempting to clear the integration-tests folder in workspace $id..."
+
+              try {
+                & ./Clear-EgressFolder.ps1 `
+                  -BaseUrl "$(EgressOptionsUrl)" `
+                  -ServiceAccountAuth "$(EgressServiceAccountAuth)" `
+                  -WorkspaceId "$Id" `
+                  -FolderName "integration-tests" `
+                  -Force
+              }
+              catch {
+                Write-Host "[ERROR] $_"
+                $failedWorkspaces += @{
+                  workspaceId = $id
+                  error = $_
+                }
+              }
+            }
+
+            if ($failedWorkspaces.Count -gt 0) {
+              Write-Host "The integration-tests folder failed to clear in one or more workspaces:"
+              foreach ($failed in $failedWorkspaces) {
+                Write-Host " - $($failed.workspaceId) : $($failed.error) "
+              }
+
+              throw "Egress cleanup failed for $($failedWorkspaces.Count) workspace(s)."
+            }
+
+            Write-Host "All integration-tests folders cleared successfully."
+        env:
+          devWorkspace: "$(EgressWorkspaceId)"
+          stgWorkspace: "$(EgressWorkspaceIdIntegrationMain)"
 
       - task: PowerShell@2
         displayName: "Clear ExistingCaseAutomation Egress folders"

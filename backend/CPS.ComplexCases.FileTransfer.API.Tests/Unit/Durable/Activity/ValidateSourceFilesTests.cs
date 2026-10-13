@@ -1,6 +1,7 @@
 using System.Net;
 using Amazon.S3;
 using CPS.ComplexCases.Common.Handlers;
+using CPS.ComplexCases.Common.Models.Domain;
 using CPS.ComplexCases.Common.Models.Domain.Enums;
 using CPS.ComplexCases.Common.Models.Requests;
 using CPS.ComplexCases.Common.Storage;
@@ -56,7 +57,7 @@ public class ValidateSourceFilesTests
         Assert.Empty(result.Missing);
         Assert.Empty(result.Failed);
         _sourceClientMock.Verify(
-            c => c.FileExistsAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<string?>()),
+            c => c.ProbeFileAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<string?>()),
             Times.Never);
     }
 
@@ -68,8 +69,8 @@ public class ValidateSourceFilesTests
         payload.TransferDirection = TransferDirection.EgressToNetApp;
 
         _sourceClientMock
-            .Setup(c => c.FileExistsAsync(source.Path, payload.WorkspaceId, payload.BearerToken, payload.BucketName, source.FileId))
-            .ReturnsAsync(true);
+            .Setup(c => c.ProbeFileAsync(source.Path, payload.WorkspaceId, payload.BearerToken, payload.BucketName, source.FileId))
+            .ReturnsAsync(FileProbeResult.Found(1024));
 
         var result = await _activity.Run(payload);
 
@@ -87,8 +88,8 @@ public class ValidateSourceFilesTests
         var payload = CreatePayload(source);
 
         _sourceClientMock
-            .Setup(c => c.FileExistsAsync(source.Path, payload.WorkspaceId, payload.BearerToken, payload.BucketName, source.FileId))
-            .ReturnsAsync(false);
+            .Setup(c => c.ProbeFileAsync(source.Path, payload.WorkspaceId, payload.BearerToken, payload.BucketName, source.FileId))
+            .ReturnsAsync(FileProbeResult.NotFound);
 
         var result = await _activity.Run(payload);
 
@@ -105,7 +106,7 @@ public class ValidateSourceFilesTests
         var payload = CreatePayload(source);
 
         _sourceClientMock
-            .Setup(c => c.FileExistsAsync(source.Path, payload.WorkspaceId, payload.BearerToken, payload.BucketName, source.FileId))
+            .Setup(c => c.ProbeFileAsync(source.Path, payload.WorkspaceId, payload.BearerToken, payload.BucketName, source.FileId))
             .ThrowsAsync(new HttpRequestException("not found", null, HttpStatusCode.NotFound));
 
         var result = await _activity.Run(payload);
@@ -122,7 +123,7 @@ public class ValidateSourceFilesTests
         var payload = CreatePayload(source);
 
         _sourceClientMock
-            .Setup(c => c.FileExistsAsync(source.Path, payload.WorkspaceId, payload.BearerToken, payload.BucketName, source.FileId))
+            .Setup(c => c.ProbeFileAsync(source.Path, payload.WorkspaceId, payload.BearerToken, payload.BucketName, source.FileId))
             .ThrowsAsync(new HttpRequestException("forbidden", null, HttpStatusCode.Forbidden));
 
         var result = await _activity.Run(payload);
@@ -141,7 +142,7 @@ public class ValidateSourceFilesTests
         var payload = CreatePayload(source);
 
         _sourceClientMock
-            .Setup(c => c.FileExistsAsync(source.Path, payload.WorkspaceId, payload.BearerToken, payload.BucketName, source.FileId))
+            .Setup(c => c.ProbeFileAsync(source.Path, payload.WorkspaceId, payload.BearerToken, payload.BucketName, source.FileId))
             .ThrowsAsync(new HttpRequestException("boom", null, HttpStatusCode.InternalServerError));
 
         await Assert.ThrowsAsync<HttpRequestException>(() => _activity.Run(payload));
@@ -156,13 +157,13 @@ public class ValidateSourceFilesTests
         var payload = CreatePayload(available, missing, denied);
 
         _sourceClientMock
-            .Setup(c => c.FileExistsAsync(available.Path, payload.WorkspaceId, payload.BearerToken, payload.BucketName, available.FileId))
-            .ReturnsAsync(true);
+            .Setup(c => c.ProbeFileAsync(available.Path, payload.WorkspaceId, payload.BearerToken, payload.BucketName, available.FileId))
+            .ReturnsAsync(FileProbeResult.Found(1024));
         _sourceClientMock
-            .Setup(c => c.FileExistsAsync(missing.Path, payload.WorkspaceId, payload.BearerToken, payload.BucketName, missing.FileId))
-            .ReturnsAsync(false);
+            .Setup(c => c.ProbeFileAsync(missing.Path, payload.WorkspaceId, payload.BearerToken, payload.BucketName, missing.FileId))
+            .ReturnsAsync(FileProbeResult.NotFound);
         _sourceClientMock
-            .Setup(c => c.FileExistsAsync(denied.Path, payload.WorkspaceId, payload.BearerToken, payload.BucketName, denied.FileId))
+            .Setup(c => c.ProbeFileAsync(denied.Path, payload.WorkspaceId, payload.BearerToken, payload.BucketName, denied.FileId))
             .ThrowsAsync(new HttpRequestException("forbidden", null, HttpStatusCode.Forbidden));
 
         var result = await _activity.Run(payload);
@@ -177,8 +178,8 @@ public class ValidateSourceFilesTests
     {
         var payload = CreatePayload(new TransferSourcePath { Path = "/root/a.txt" });
         _sourceClientMock
-            .Setup(c => c.FileExistsAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<string?>()))
-            .ReturnsAsync(true);
+            .Setup(c => c.ProbeFileAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<string?>()))
+            .ReturnsAsync(FileProbeResult.Found(1024));
 
         await _activity.Run(payload);
 
@@ -186,20 +187,50 @@ public class ValidateSourceFilesTests
     }
 
     [Fact]
-    public async Task Run_NetAppToEgress_PassesPathAndFileIdToExistsCheck()
+    public async Task Run_NetAppToEgress_PassesPathAndFileIdToProbe()
     {
         var source = new TransferSourcePath { Path = "/netapp/file.bin", FileId = null };
         var payload = CreatePayload(source);
 
         _sourceClientMock
-            .Setup(c => c.FileExistsAsync(source.Path, payload.WorkspaceId, payload.BearerToken, payload.BucketName, null))
-            .ReturnsAsync(true);
+            .Setup(c => c.ProbeFileAsync(source.Path, payload.WorkspaceId, payload.BearerToken, payload.BucketName, null))
+            .ReturnsAsync(FileProbeResult.Found(1024));
 
         await _activity.Run(payload);
 
         _sourceClientMock.Verify(
-            c => c.FileExistsAsync(source.Path, payload.WorkspaceId, payload.BearerToken, payload.BucketName, null),
+            c => c.ProbeFileAsync(source.Path, payload.WorkspaceId, payload.BearerToken, payload.BucketName, null),
             Times.Once);
+    }
+
+    [Fact]
+    public async Task Run_WhenProbeReportsSize_StampsSizeOnAvailableFile()
+    {
+        var source = new TransferSourcePath { Path = "/root/big.bin" };
+        var payload = CreatePayload(source);
+
+        _sourceClientMock
+            .Setup(c => c.ProbeFileAsync(source.Path, payload.WorkspaceId, payload.BearerToken, payload.BucketName, source.FileId))
+            .ReturnsAsync(FileProbeResult.Found(20 * 1024 * 1024));
+
+        var result = await _activity.Run(payload);
+
+        Assert.Equal(20 * 1024 * 1024, Assert.Single(result.Available).FileSizeBytes);
+    }
+
+    [Fact]
+    public async Task Run_WhenProbeReportsNoSize_LeavesSizeUnknownOnAvailableFile()
+    {
+        var source = new TransferSourcePath { Path = "/root/unknown.bin" };
+        var payload = CreatePayload(source);
+
+        _sourceClientMock
+            .Setup(c => c.ProbeFileAsync(source.Path, payload.WorkspaceId, payload.BearerToken, payload.BucketName, source.FileId))
+            .ReturnsAsync(FileProbeResult.Found(null));
+
+        var result = await _activity.Run(payload);
+
+        Assert.Null(Assert.Single(result.Available).FileSizeBytes);
     }
 
     [Theory]

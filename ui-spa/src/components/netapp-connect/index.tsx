@@ -18,12 +18,21 @@ const NetAppPage = () => {
   const [searchParams] = useSearchParams();
   const location = useLocation();
 
-  const { searchQueryString, netappRootFolderPath } =
-    state.appData.connectSharedDrivePage;
+  const {
+    searchQueryString,
+    netappRootFolderPath,
+    accessibleRoots: persistedAccessibleRoots,
+  } = state.appData.connectSharedDrivePage;
 
   const [operationName, setOperationName] = useState<string>("");
   const [rootFolderPath, setRootFolderPath] = useState(
     netappRootFolderPath ?? "",
+  );
+
+  // Only the root listing reports the restriction, so when we return from the confirmation page
+  // mid-tree there is nothing to re-derive it from and we have to reuse the persisted value.
+  const [accessibleRoots, setAccessibleRoots] = useState<string[] | null>(
+    persistedAccessibleRoots ?? null,
   );
 
   const { data: netAppFolderResults, isLoading: isNetAppFolderResultsLoading } =
@@ -36,6 +45,17 @@ const NetAppPage = () => {
       staleTime: 0,
       gcTime: 0,
     });
+
+  useEffect(() => {
+    if (!netAppFolderResults || rootFolderPath !== "") {
+      return;
+    }
+    setAccessibleRoots(
+      netAppFolderResults.isRestrictedRoot
+        ? (netAppFolderResults.accessibleRoots ?? [])
+        : null,
+    );
+  }, [netAppFolderResults, rootFolderPath]);
 
   useEffect(() => {
     if (location.pathname.endsWith("/netapp-connect")) {
@@ -67,6 +87,7 @@ const NetAppPage = () => {
       type: "SET_SHARED_DRIVE_CONNECT_PAGE",
       payload: {
         netappRootFolderPath: rootFolderPath,
+        accessibleRoots,
       },
     });
     navigate(`/case/${caseId}/netapp-connect/confirmation`);
@@ -78,6 +99,7 @@ const NetAppPage = () => {
       rootFolderPath={rootFolderPath}
       netAppFolderResults={netAppFolderResults ?? { rootPath: "", folders: [] }}
       isNetAppFolderResultsLoading={isNetAppFolderResultsLoading}
+      accessibleRoots={accessibleRoots}
       handleConnectFolder={handleConnectFolder}
       handleGetFolderContent={handleGetFolderContent}
     />

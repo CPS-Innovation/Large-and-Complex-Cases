@@ -3,11 +3,10 @@ import { Page, Response, expect } from "@playwright/test";
 const TRANSFER_CLEAR_ROUTE = /\/v1\/filetransfer\/[^/]+\/clear$/;
 
 /**
- * Shared Egress-side and common helpers for both Transfer Materials page
- * objects. The Egress table, folder navigation, file-indexing wait and the
- * NetApp date-sort are identical across the old and new screens (bar the NetApp
- * table's test id), so they live here; screen-specific behaviour stays in the
- * `TransferMaterialsTab` / `TransferMaterialsTabV1` subclasses.
+ * Shared Egress-side and common helpers for the Transfer Materials page
+ * object. The Egress table, folder navigation, file-indexing wait and the
+ * NetApp date-sort live here; screen-specific behaviour stays in the
+ * `TransferMaterialsTabV1` subclass.
  */
 export abstract class BaseTransferMaterialsTab {
   protected readonly page: Page;
