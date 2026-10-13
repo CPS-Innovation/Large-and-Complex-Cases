@@ -66,7 +66,7 @@ public class TransferOrchestratorTests
     public async Task RunOrchestrator_WithValidInput_ExecutesAllActivitiesInCorrectOrder()
     {
         // Arrange
-        var expectedActivityCount = 6;
+        var expectedActivityCount = 7;
         var transferPayload = CreateValidTransferPayload();
         var activityCallOrder = new List<string>();
 
@@ -103,6 +103,7 @@ public class TransferOrchestratorTests
         Assert.Equal("TransferFile", activityCallOrder[3]);
         Assert.Equal("FinalizeTransfer", activityCallOrder[4]);
         Assert.Equal("UpdateActivityLog", activityCallOrder[5]);
+        Assert.Equal("SendTransferNotification", activityCallOrder[6]);
     }
 
     [Fact]
@@ -595,6 +596,107 @@ public class TransferOrchestratorTests
                 It.IsAny<object>(),
                 It.IsAny<TaskOptions>()),
             Times.Once);
+    }
+
+    [Fact]
+    public async Task RunOrchestrator_WithValidInput_SendsCompletionNotificationWithoutRetryPolicy()
+    {
+        var transferPayload = CreateValidTransferPayload();
+        transferPayload.Urn = "45AA2098221";
+        SendTransferNotificationPayload? notificationPayload = null;
+        TaskOptions? notificationOptions = null;
+
+        _contextMock.Setup(c => c.GetInput<TransferPayload>()).Returns(transferPayload);
+        _contextMock.Setup(c => c.CallActivityAsync(It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
+            .Returns(Task.CompletedTask)
+            .Callback<TaskName, object, TaskOptions>((taskName, payload, options) =>
+            {
+                if (taskName.Name == "SendTransferNotification")
+                {
+                    notificationPayload = payload as SendTransferNotificationPayload;
+                    notificationOptions = options;
+                }
+            });
+        _contextMock.Setup(c => c.CallActivityAsync<TransferResult>(It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
+            .ReturnsAsync(new TransferResult { IsSuccess = true, SuccessfulItem = _fixture.Create<TransferItem>() });
+        _contextMock.Setup(c => c.Entities.CallEntityAsync(It.IsAny<EntityInstanceId>(), It.IsAny<string>(), It.IsAny<object>(), It.IsAny<CallEntityOptions>()))
+            .Returns(Task.CompletedTask);
+
+        await _orchestrator.RunOrchestrator(_contextMock.Object);
+
+        Assert.NotNull(notificationPayload);
+        Assert.False(notificationPayload!.IsFailure);
+        Assert.Equal(transferPayload.TransferId, notificationPayload.TransferId);
+        Assert.Equal(transferPayload.CaseId, notificationPayload.CaseId);
+        Assert.Equal("45AA2098221", notificationPayload.Urn);
+        Assert.Equal(transferPayload.UserName, notificationPayload.UserName);
+        Assert.Equal(transferPayload.TransferDirection, notificationPayload.TransferDirection);
+        Assert.Equal(transferPayload.TransferType, notificationPayload.TransferType);
+        Assert.Null(notificationOptions?.Retry);
+    }
+
+    [Fact]
+    public async Task RunOrchestrator_WhenSendTransferNotificationThrowsOnCompletion_DoesNotFailTransfer()
+    {
+        var transferPayload = CreateValidTransferPayload();
+
+        _contextMock.Setup(c => c.GetInput<TransferPayload>()).Returns(transferPayload);
+        _contextMock.Setup(c => c.CallActivityAsync(It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
+            .Returns<TaskName, object, TaskOptions>((taskName, _, _) =>
+                taskName.Name == "SendTransferNotification"
+                    ? throw new InvalidOperationException("Notify unavailable")
+                    : Task.CompletedTask);
+        _contextMock.Setup(c => c.CallActivityAsync<TransferResult>(It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
+            .ReturnsAsync(new TransferResult { IsSuccess = true, SuccessfulItem = _fixture.Create<TransferItem>() });
+        _contextMock.Setup(c => c.Entities.CallEntityAsync(It.IsAny<EntityInstanceId>(), It.IsAny<string>(), It.IsAny<object>(), It.IsAny<CallEntityOptions>()))
+            .Returns(Task.CompletedTask);
+
+        await _orchestrator.RunOrchestrator(_contextMock.Object);
+
+        _contextMock.Verify(c => c.CallActivityAsync(
+                It.Is<TaskName>(t => t.Name == "UpdateTransferStatus"),
+                It.Is<object>(o => ((UpdateTransferStatusPayload)o).Status == TransferStatus.Failed),
+                It.IsAny<TaskOptions>()),
+            Times.Never);
+        _contextMock.Verify(c => c.CallActivityAsync(
+                It.Is<TaskName>(t => t.Name == "SendTransferNotification"),
+                It.IsAny<object>(),
+                It.IsAny<TaskOptions>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task RunOrchestrator_WhenTransferFails_SendsFailureNotificationAndRethrowsOriginalException()
+    {
+        var transferPayload = CreateValidTransferPayload();
+        var exception = new InvalidOperationException("ValidateSourceFiles failed");
+        SendTransferNotificationPayload? notificationPayload = null;
+
+        _contextMock.Setup(c => c.GetInput<TransferPayload>()).Returns(transferPayload);
+        _contextMock.Setup(c => c.CallActivityAsync(It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
+            .Returns<TaskName, object, TaskOptions>((taskName, payload, _) =>
+            {
+                if (taskName.Name == "SendTransferNotification")
+                {
+                    notificationPayload = payload as SendTransferNotificationPayload;
+                    throw new InvalidOperationException("Notify unavailable");
+                }
+
+                return Task.CompletedTask;
+            });
+        _contextMock.Setup(c => c.CallActivityAsync<ValidateSourceFilesResult>(
+                It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
+            .ThrowsAsync(exception);
+        _contextMock.Setup(c => c.Entities.CallEntityAsync(It.IsAny<EntityInstanceId>(), It.IsAny<string>(), It.IsAny<object>(), It.IsAny<CallEntityOptions>()))
+            .Returns(Task.CompletedTask);
+
+        var thrown = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => _orchestrator.RunOrchestrator(_contextMock.Object));
+
+        Assert.Same(exception, thrown);
+        Assert.NotNull(notificationPayload);
+        Assert.True(notificationPayload!.IsFailure);
+        Assert.Equal(transferPayload.TransferId, notificationPayload.TransferId);
     }
 
     [Fact]

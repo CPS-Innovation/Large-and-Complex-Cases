@@ -19,6 +19,7 @@ public class TransferMetadata
     public required string WorkspaceId { get; set; }
     public required string BearerToken { get; set; }
     public required string BucketName { get; set; }
+    public string? Urn { get; set; }
 }
 
 public class TransferSourcePath

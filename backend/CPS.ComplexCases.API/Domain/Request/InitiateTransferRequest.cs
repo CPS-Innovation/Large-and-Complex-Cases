@@ -21,6 +21,8 @@ public class InitiateTransferRequest
     public required string WorkspaceId { get; set; }
     [JsonPropertyName("isRetry")]
     public bool? IsRetry { get; set; } = false;
+    [JsonPropertyName("urn")]
+    public string? Urn { get; set; }
 }
 
 public class SourcePath

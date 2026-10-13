@@ -679,6 +679,8 @@ public class TransferOrchestrator(IOptions<SizeConfig> sizeConfig, ITelemetryCli
                 UserName = input.UserName,
                 CorrelationId = input.CorrelationId
             });
+
+        await TryCallSendTransferNotificationAsync(context, logger, BuildNotificationPayload(input, isFailure: false));
     }
 
     private static async Task HandleOrchestratorFailureAsync(
@@ -714,7 +716,42 @@ public class TransferOrchestrator(IOptions<SizeConfig> sizeConfig, ITelemetryCli
                 CorrelationId = input.CorrelationId,
                 ExceptionMessage = errorMessage
             });
+
+        await TryCallSendTransferNotificationAsync(context, logger, BuildNotificationPayload(input, isFailure: true));
     }
+
+    // A notification is best-effort: no retry policy, and any failure is logged without affecting the transfer.
+    private static async Task TryCallSendTransferNotificationAsync(
+        TaskOrchestrationContext context,
+        ILogger logger,
+        SendTransferNotificationPayload payload)
+    {
+        try
+        {
+            await context.CallActivityAsync(nameof(SendTransferNotification), payload);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(
+                ex,
+                "SendTransferNotification failed for TransferId {TransferId} (IsFailure: {IsFailure}); continuing transfer.",
+                payload.TransferId,
+                payload.IsFailure);
+        }
+    }
+
+    private static SendTransferNotificationPayload BuildNotificationPayload(TransferPayload input, bool isFailure) =>
+        new()
+        {
+            TransferId = input.TransferId,
+            CaseId = input.CaseId,
+            Urn = input.Urn,
+            UserName = input.UserName,
+            CorrelationId = input.CorrelationId,
+            IsFailure = isFailure,
+            TransferDirection = input.TransferDirection,
+            TransferType = input.TransferType
+        };
 
     private static async Task TryCallUpdateActivityLogAsync(
         TaskOrchestrationContext context,

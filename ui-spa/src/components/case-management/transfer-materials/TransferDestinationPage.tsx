@@ -242,6 +242,7 @@ const TransferDestinationPage: React.FC = () => {
           ? ("Copy" as const)
           : ("Move" as const),
       transferDirection: transferDirection,
+      urn: state.apiData.caseMetaData?.urn || undefined,
     } as InitiateFileTransferPayload;
 
     return payload;

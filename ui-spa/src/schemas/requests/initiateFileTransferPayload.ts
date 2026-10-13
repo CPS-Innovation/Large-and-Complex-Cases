@@ -14,6 +14,7 @@ export const egreessToNetAppTransferPayloadSchema = z.object({
   sourcePaths: z.array(egressTransferPayloadSourcePathSchema),
   sourceRootFolderPath: z.string(),
   destinationPath: z.string(),
+  urn: z.string().optional(),
 });
 export const netAppTransferPayloadSourcePathSchema = z.object({
   path: z.string(),
@@ -27,6 +28,7 @@ export const netAppToEgressTransferPayloadSchema = z.object({
   sourcePaths: z.array(netAppTransferPayloadSourcePathSchema),
   sourceRootFolderPath: z.string(),
   destinationPath: z.string(),
+  urn: z.string().optional(),
 });
 export const initiateFileTransferPayloadSchema = z.union([
   netAppToEgressTransferPayloadSchema,

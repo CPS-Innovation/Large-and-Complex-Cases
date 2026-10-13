@@ -31,7 +31,11 @@
     "SizeConfig__SourceValidationRetryIntervalSeconds": "10",
     "SizeConfig__EgressVerificationSettleDelaySeconds": "5",
     "ManageMaterialsCleanupSchedule": "0 0 2 * * *",
-    "FileTransfer__ManageMaterialsCleanup__MaxAgeHours": "24"
+    "FileTransfer__ManageMaterialsCleanup__MaxAgeHours": "24",
+    "GovNotifyOptions__ApiKey": "",
+    "GovNotifyOptions__TransferCompletedTemplateId": "d0a988ee-2d1b-4e41-8ef4-444728fc4c44",
+    "GovNotifyOptions__TransferFailedTemplateId": "96e58eea-8484-4372-9426-c178aa505c74",
+    "GovNotifyOptions__UiBaseUrl": "http://localhost:5173"
   },
   "Host": {
     "LocalHttpPort": 7072

@@ -106,7 +106,8 @@ public class InitiateTransfer(ILogger<InitiateTransfer> logger, ICaseMetadataSer
                 TransferDirection = transferRequest.Value.TransferDirection,
                 SourceRootFolderPath = transferRequest.Value.SourceRootFolderPath,
                 BearerToken = transferRequest.Value.Metadata.BearerToken,
-                BucketName = transferRequest.Value.Metadata.BucketName
+                BucketName = transferRequest.Value.Metadata.BucketName,
+                Urn = transferRequest.Value.Metadata.Urn
             },
             new StartOrchestrationOptions
             {

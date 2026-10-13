@@ -207,5 +207,48 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions.Transfer
             _fileTransferClientMock.Verify(c => c.InitiateFileTransferAsync(
                 It.Is<TransferRequest>(r => r.Metadata.BucketName == persistedBucket), It.IsAny<Guid>()), Times.Once);
         }
+
+        [Theory]
+        [InlineData("45AA2098221")]
+        [InlineData(null)]
+        public async Task Run_PassesUrnThroughToTransferMetadata(string? requestUrn)
+        {
+            // Arrange
+            var initiateRequest = new InitiateTransferRequest
+            {
+                TransferType = TransferType.Copy,
+                TransferDirection = TransferDirection.EgressToNetApp,
+                DestinationPath = "/destination",
+                CaseId = 123,
+                WorkspaceId = "workspace-1",
+                SourcePaths = [new SourcePath { Path = "/source/file1.txt", FileId = "file1" }],
+                Urn = requestUrn
+            };
+
+            _requestValidatorMock
+                .Setup(v => v.GetJsonBody<InitiateTransferRequest, InitiateTransferRequestValidator>(It.IsAny<HttpRequest>()))
+                .ReturnsAsync(new ValidatableRequest<InitiateTransferRequest>
+                {
+                    IsValid = true,
+                    Value = initiateRequest
+                });
+
+            _fileTransferClientMock
+                .Setup(c => c.InitiateFileTransferAsync(It.IsAny<TransferRequest>(), It.IsAny<Guid>()))
+                .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent("Transfer initiated", Encoding.UTF8, "application/json")
+                });
+
+            var request = HttpRequestStubHelper.CreateHttpRequestFor(initiateRequest);
+            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername, _testBearerToken);
+
+            // Act
+            await _function.Run(request, functionContext);
+
+            // Assert
+            _fileTransferClientMock.Verify(c => c.InitiateFileTransferAsync(
+                It.Is<TransferRequest>(r => r.Metadata.Urn == requestUrn), It.IsAny<Guid>()), Times.Once);
+        }
     }
 }

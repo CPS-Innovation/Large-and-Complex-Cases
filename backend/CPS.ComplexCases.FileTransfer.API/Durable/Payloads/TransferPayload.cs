@@ -18,4 +18,5 @@ public class TransferPayload
     public string? SourceRootFolderPath { get; set; } = null;
     public required string BearerToken { get; set; }
     public required string BucketName { get; set; }
+    public string? Urn { get; set; }
 }

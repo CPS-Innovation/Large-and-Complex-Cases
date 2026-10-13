@@ -21,6 +21,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.ApplicationInsights;
+using Notify.Client;
+using Notify.Interfaces;
 
 // Create a temporary logger for configuration phase
 using var loggerFactory = LoggerFactory.Create(configure => configure.AddConsole());
@@ -84,6 +86,20 @@ var host = new HostBuilder()
 
         services.Configure<ManageMaterialsCleanupConfig>(
             configuration.GetSection(ManageMaterialsCleanupConfig.SectionName));
+
+        services.Configure<GovNotifyOptions>(
+            configuration.GetSection(GovNotifyOptions.SectionName));
+
+        // SendTransferNotification skips dispatch when no client is registered.
+        var govNotifyApiKey = configuration.GetSection(GovNotifyOptions.SectionName)[nameof(GovNotifyOptions.ApiKey)];
+        if (!string.IsNullOrWhiteSpace(govNotifyApiKey))
+        {
+            services.AddSingleton<IAsyncNotificationClient>(_ => new NotificationClient(govNotifyApiKey));
+        }
+        else
+        {
+            logger.LogWarning("GovNotifyOptions:ApiKey is not set; transfer notification emails are disabled.");
+        }
 
         services.AddScoped<IStorageClientFactory, StorageClientFactory>();
         services.AddScoped<IRequestValidator, RequestValidator>();
