@@ -44,14 +44,16 @@ export const pollTransferStatus = async (
   let firstNotFoundAt: number | null = null;
   let adaptiveBase = pollingInterval;
   let lastEtag: string | null = null;
+  let lastCorrelationId: string = "";
 
   while (!shouldStopPolling()) {
     try {
-      const { data, etag } = await getTransferStatus(
+      const { data, etag, correlationId } = await getTransferStatus(
         transferId,
         lastEtag ?? undefined,
       );
       lastEtag = etag;
+      lastCorrelationId = correlationId;
 
       // A non-throwing response (200 or 304) means the entity exists, so the
       // create race is over: reset the 404 grace window.
@@ -83,8 +85,11 @@ export const pollTransferStatus = async (
             "Transfer not found",
             `${transferId}/status`,
             { status: 404, statusText: "Not Found" },
-            undefined,
-            "The transfer could not be found. It may have failed to start or the transfer ID is no longer valid.",
+            {
+              customMessage:
+                "The transfer could not be found. It may have failed to start or the transfer ID is no longer valid.",
+              correlationId: lastCorrelationId,
+            },
           ),
         );
         break;

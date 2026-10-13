@@ -139,6 +139,22 @@ public class EgressRequestFactory : IEgressRequestFactory
         return request;
     }
 
+    public HttpRequestMessage UploadFileContentRequest(UploadFileContentArg arg, string token)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Patch, $"/api/v1/workspaces/{arg.WorkspaceId}/uploads/{arg.UploadId}/");
+
+        var content = new MultipartFormDataContent();
+        var fileContent = new ByteArrayContent(arg.FileContent);
+        // Form key "file" uploads the whole object and adds it to the workspace immediately.
+        // Chunk uploads use "file_content" plus a Content-Range header instead.
+        content.Add(fileContent, "file");
+        request.Content = content;
+
+        AppendToken(request, token);
+
+        return request;
+    }
+
     public HttpRequestMessage CompleteUploadRequest(CompleteUploadArg arg, string token)
     {
         var completeData = new

@@ -64,8 +64,9 @@ export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
       const url = new URL(req.request.url);
 
       const path = url.searchParams.get("path");
+      const operationName = url.searchParams.get("operation-name");
       const netAppRootFolderResults = isDevMock()
-        ? getConnectNetAppFolderResultsDev(path as string)
+        ? getConnectNetAppFolderResultsDev(path as string, operationName)
         : getConnectNetAppFolderResultsPlaywright(path as string);
       await delay(500);
 
@@ -198,6 +199,10 @@ export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
       });
     }),
     http.delete(`${baseUrl}/api/v1/netapp/connections`, async () => {
+      await delay(1500);
+      return new HttpResponse(null, { status: 200 });
+    }),
+    http.delete(`${baseUrl}/api/v1/egress/connections`, async () => {
       await delay(1500);
       return new HttpResponse(null, { status: 200 });
     }),

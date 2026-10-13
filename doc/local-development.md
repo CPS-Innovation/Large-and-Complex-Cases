@@ -48,7 +48,8 @@ This document provides detailed instructions for setting up your local developme
 
 Environment variables for backend services are managed via `local.settings.json` files. Use the provided `local.settings.example.json` as a template for each function app (e.g., `backend/CPS.ComplexCases.API/local.settings.example.json`).
 
-**To use:**  
+**To use:**
+
 - Copy `local.settings.example.json` to `local.settings.json` in the same directory for both `CPS.ComplexCases.API` and `CPS.ComplexCases.FileTransfer.API`.
 - Fill in the required secrets and connection strings.
 - **Note:** Some secrets (e.g., Azure AD client IDs, access keys) may only be available from a team member or the Azure portal. If you do not have these, please contact your team lead or DevOps engineer.
@@ -58,6 +59,7 @@ Environment variables for backend services are managed via `local.settings.json`
 The UI uses Vite and expects environment variables prefixed with `VITE_`. These are typically set in a `.env.local` file in the `ui-spa/` directory (Vite automatically loads `.env.local`).
 
 **Common variables (see `src/config.ts`):**
+
 ```
 VITE_GATEWAY_BASE_URL=<API base URL>
 VITE_GATEWAY_SCOPE=<API scope>
@@ -69,12 +71,13 @@ VITE_FEATURE_FLAG_TRANSFER_MOVE=<true|false>
 VITE_FEATURE_FLAG_GLOBAL_NAV=<true|false>
 VITE_GLOBAL_NAV_SCRIPT_URL=<GLOBAL NAV URL>
 VITE_FEATURE_FLAG_DISCONNECT_SHARED_DRIVE=<true|false>
-VITE_FEATURE_FLAG_TRANSFER_MATERIALS_V1: <true|false>
 VITE_FEATURE_FLAG_MAINTENANCE_MODE:<true|false>
 VITE_MAINTENANCE_MODE_MESSAGE1: <string message>
 VITE_MAINTENANCE_MODE_MESSAGE2: <string message>
 ```
+
 **Sample `.env.local` file:**
+
 ```
 VITE_GATEWAY_BASE_URL=http://localhost:7071/api/
 VITE_GATEWAY_SCOPE=user_impersonation
@@ -86,9 +89,10 @@ VITE_FEATURE_FLAG_TRANSFER_MOVE=true
 VITE_FEATURE_FLAG_GLOBAL_NAV=false
 VITE_GLOBAL_NAV_SCRIPT_URL=
 VITE_FEATURE_FLAG_DISCONNECT_SHARED_DRIVE=true
-VITE_FEATURE_FLAG_TRANSFER_MATERIALS_V1=true
 ```
-**To use:**  
+
+**To use:**
+
 - Create a `.env.local` file in `ui-spa/` and set the above variables as needed.
 
 ## Install Dependencies
@@ -96,7 +100,7 @@ VITE_FEATURE_FLAG_TRANSFER_MATERIALS_V1=true
 ### Backend
 
 - **.NET 8 SDK**: [Download and install](https://dotnet.microsoft.com/download)
-- **PostgreSQL**:  
+- **PostgreSQL**:
   - Install [PostgreSQL](https://www.postgresql.org/download/) (version 13+ recommended).
   - Use [PGAdmin](https://www.pgadmin.org/) for easy local database management.
   - Ensure the PostgreSQL service is running.
@@ -126,9 +130,11 @@ VITE_FEATURE_FLAG_TRANSFER_MATERIALS_V1=true
 > **Note:** Both `CPS.ComplexCases.API` (Main API) and `CPS.ComplexCases.FileTransfer.API` (FileTransfer API) must be running together for the application to function end-to-end. The UI only talks to the Main API, which acts as a gateway and calls the FileTransfer API for file operations. If the FileTransfer API is not running, file transfer features will not work.
 
 1. **Restore, build, test, and (optionally) apply migrations:**
+
    ```powershell
    ./scripts/build-and-test-backend-local.ps1 -RunMigration -ConnectionString "Host=localhost;Port=5432;Database=lacc;Username=postgres;Password=yourpassword"
    ```
+
    - Only use `-RunMigration` and `-ConnectionString` if you want to apply or update database migrations. For normal build/test, these are not required.
 
    - The `-ConnectionString` parameter is required with `-RunMigration` to apply migrations to your local database.
@@ -145,28 +151,33 @@ VITE_FEATURE_FLAG_TRANSFER_MATERIALS_V1=true
        cd backend/CPS.ComplexCases.FileTransfer.API
        func start
        ```
-     (Requires Azure Functions Core Tools installed.)
+       (Requires Azure Functions Core Tools installed.)
 
    - The default ports are set in `local.settings.json` (e.g., 7071 for Main API, 7072 for FileTransfer API).
 
 ### UI (React SPA)
 
 1. **Install dependencies:**
+
    ```bash
    cd ui-spa
    npm ci
    ```
 
 2. **Start the development server:**
+
    ```bash
    npm run dev
    ```
+
    - The app will be available at [http://localhost:5173](http://localhost:5173) by default.
 
 3. **Build for production:**
+
    ```bash
    npm run build
    ```
+
    - This creates a production build in the `dist/` folder, but does **not** start a server.
 
 4. **Preview the production build:**
@@ -188,8 +199,10 @@ VITE_FEATURE_FLAG_TRANSFER_MATERIALS_V1=true
    ```powershell
    ./scripts/build-and-test-backend-local.ps1 -RunMigration -ConnectionString "Host=localhost;Port=5432;Database=lacc;Username=postgres;Password=yourpassword"
    ```
+
    - The `-ConnectionString` parameter is required with `-RunMigration` to apply migrations to your local database.
 4. In two terminals, start both backend function apps:
+
    ```powershell
    # Terminal 1
    cd backend/CPS.ComplexCases.API
@@ -199,6 +212,7 @@ VITE_FEATURE_FLAG_TRANSFER_MATERIALS_V1=true
    cd backend/CPS.ComplexCases.FileTransfer.API
    func start
    ```
+
 5. In another terminal, start the UI:
    ```bash
    cd ui-spa
@@ -210,18 +224,22 @@ VITE_FEATURE_FLAG_TRANSFER_MATERIALS_V1=true
 ## Running Tests Only
 
 ### Backend
+
 - To run all backend tests with coverage, use the script:
   ```powershell
   ./scripts/build-and-test-backend-local.ps1
   ```
+
   - This script will restore, build, and test all backend projects, and generate coverage reports (unless skipped with flags).
   - You do **not** need to run any dotnet commands manually for backend tests or coverage if you use this script.
 
 ### UI
+
 - To run all UI tests (unit, coverage, and E2E), use the script:
   ```powershell
   ./scripts/build-and-test-ui-local.ps1
   ```
+
   - This script will install dependencies, lint, build, run unit tests with coverage, and run E2E tests (unless skipped with flags).
   - You do **not** need to run any npm commands manually for UI tests or E2E if you use this script.
 
@@ -252,11 +270,13 @@ All scripts are located in the `scripts/` directory. Each script provides help a
 Builds, tests, and packages the backend solution.
 
 **Usage:**
+
 ```powershell
 ./scripts/build-and-test-backend-local.ps1 [-Configuration Release|Debug] [-BackendPath backend] [-OutputPath build-output] [-SkipTests] [-RunMigration] [-ConnectionString <string>] [-VerboseOutput] [-PublishApps]
 ```
 
 **Key Options:**
+
 - `-Configuration`: Build configuration (default: Release)
 - `-BackendPath`: Path to backend folder (default: backend)
 - `-OutputPath`: Output directory (default: build-output)
@@ -267,6 +287,7 @@ Builds, tests, and packages the backend solution.
 - `-PublishApps`: Publish and package Azure Function Apps (MainAPI, FileTransferAPI)
 
 **What it does:**
+
 - Cleans previous build and coverage artifacts
 - Restores, builds, and (optionally) tests all backend projects
 - Generates code coverage reports (HTML, Cobertura, badges)
@@ -279,11 +300,13 @@ Builds, tests, and packages the backend solution.
 Builds, tests, and packages the UI SPA.
 
 **Usage:**
+
 ```powershell
 ./scripts/build-and-test-ui-local.ps1 [-OutputPath <path>] [-SkipTests] [-SkipE2E] [-VerboseOutput] [-PublishApps]
 ```
 
 **Key Options:**
+
 - `-OutputPath`: Output directory (default: build-output)
 - `-SkipTests`: Skip running UI unit tests
 - `-SkipE2E`: Skip running UI E2E (Playwright) tests
@@ -291,6 +314,7 @@ Builds, tests, and packages the UI SPA.
 - `-PublishApps`: Create a deployment zip for the UI
 
 **What it does:**
+
 - Cleans previous build and coverage artifacts
 - Installs npm dependencies
 - Lints, builds, and tests the UI
@@ -305,11 +329,13 @@ Builds, tests, and packages the UI SPA.
 All-in-one script: builds, tests, and packages both backend and UI.
 
 **Usage:**
+
 ```powershell
 ./scripts/build-and-test-local.ps1 [-Configuration Release|Debug] [-OutputPath <path>] [-SkipTests] [-SkipUI] [-RunMigration] [-ConnectionString <string>] [-VerboseOutput] [-PublishApps] [-PublishUI]
 ```
 
 **Key Options:**
+
 - `-Configuration`: Build configuration (default: Release)
 - `-OutputPath`: Output directory (default: build-output)
 - `-SkipTests`: Skip all tests (backend and UI)
@@ -321,8 +347,9 @@ All-in-one script: builds, tests, and packages both backend and UI.
 - `-PublishUI`: Package UI for deployment
 
 **What it does:**
+
 - Cleans previous build and coverage artifacts
 - Builds and tests backend and UI (unless skipped)
 - Generates code coverage reports for both backend and UI
 - Publishes backend Function Apps and UI deployment package (if requested)
-- Handles database migration scripts and (optionally) applies migrations 
+- Handles database migration scripts and (optionally) applies migrations

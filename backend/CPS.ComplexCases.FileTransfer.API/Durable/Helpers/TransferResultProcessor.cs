@@ -19,6 +19,7 @@ public static class TransferResultProcessor
         bool isRetry = false)
     {
         var logger = context.CreateReplaySafeLogger(nameof(TransferResultProcessor));
+        var batch = new TransferResultBatch { IsRetry = isRetry };
 
         foreach (var result in results)
         {
@@ -29,29 +30,18 @@ public static class TransferResultProcessor
 
             if (result.IsSkipped && result.SkippedItem != null)
             {
-                await context.Entities.CallEntityAsync(
-                    entityId,
-                    nameof(TransferEntityState.AddSkippedItem),
-                    result.SkippedItem);
+                batch.SkippedItems.Add(result.SkippedItem);
             }
             else if (result.IsSuccess && result.SuccessfulItem != null)
             {
-                await context.Entities.CallEntityAsync(
-                    entityId,
-                    isRetry ? nameof(TransferEntityState.AddSuccessfulRetryItem)
-                            : nameof(TransferEntityState.AddSuccessfulItem),
-                    result.SuccessfulItem);
+                batch.SuccessfulItems.Add(result.SuccessfulItem);
 
                 telemetryEvent.TotalFilesTransferred++;
                 telemetryEvent.TotalBytesTransferred += result.SuccessfulItem.Size;
             }
             else if (!result.IsSuccess && result.FailedItem != null)
             {
-                await context.Entities.CallEntityAsync(
-                    entityId,
-                    isRetry ? nameof(TransferEntityState.AddFailedRetryItem)
-                            : nameof(TransferEntityState.AddFailedItem),
-                    result.FailedItem);
+                batch.FailedItems.Add(result.FailedItem);
 
                 telemetryEvent.TotalFilesFailed++;
             }
@@ -75,14 +65,20 @@ public static class TransferResultProcessor
                     ErrorMessage = "Unclassifiable transfer result"
                 };
 
-                await context.Entities.CallEntityAsync(
-                    entityId,
-                    isRetry ? nameof(TransferEntityState.AddFailedRetryItem)
-                            : nameof(TransferEntityState.AddFailedItem),
-                    failedItem);
+                batch.FailedItems.Add(failedItem);
 
                 telemetryEvent.TotalFilesFailed++;
             }
         }
+
+        if (!batch.HasItems)
+        {
+            return;
+        }
+
+        await context.Entities.CallEntityAsync(
+            entityId,
+            nameof(TransferEntityState.ApplyResultBatch),
+            batch);
     }
 }

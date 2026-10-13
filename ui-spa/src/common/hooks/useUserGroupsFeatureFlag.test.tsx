@@ -31,7 +31,6 @@ const mockConfig = configModule as {
   FEATURE_FLAG_DISCONNECT_SHARED_DRIVE: boolean;
   PRIVATE_BETA_FEATURE_USER_GROUP2: string;
   FEATURE_FLAG_MAINTENANCE_MODE: boolean;
-  FEATURE_FLAG_TRANSFER_MATERIALS_V1: boolean;
 };
 
 describe("useUserGroupsFeatureFlag", () => {
@@ -444,104 +443,6 @@ describe("useUserGroupsFeatureFlag", () => {
       mockConfig.FEATURE_FLAG_DISCONNECT_SHARED_DRIVE = true;
       const { result } = renderHook(() => useUserGroupsFeatureFlag());
       expect(result?.current?.disconnectSharedDrive).toStrictEqual(false);
-    });
-  });
-
-  describe("transferMaterialsV1 flag", () => {
-    test("Should return transferMaterialsV1 feature false, if FEATURE_FLAG_TRANSFER_MATERIALS_V1 is false for normal user, and there is no token group restriction", () => {
-      (msalInstanceModule.msalInstance.getAllAccounts as Mock).mockReturnValue([
-        {
-          username: "test_username",
-          name: "test_name",
-          idTokenClaims: {
-            groups: [],
-          },
-        },
-      ]);
-      mockConfig.FEATURE_FLAG_TRANSFER_MATERIALS_V1 = false;
-
-      const { result } = renderHook(() => useUserGroupsFeatureFlag());
-      expect(result?.current?.transferMaterialsV1).toStrictEqual(false);
-    });
-    test("Should return transferMaterialsV1 feature false, if FEATURE_FLAG_TRANSFER_MATERIALS_V1 is false for automation test user ", () => {
-      (auth.useUserDetails as Mock).mockReturnValue({
-        username: "dev_user@example.org",
-      });
-      (msalInstanceModule.msalInstance.getAllAccounts as Mock).mockReturnValue([
-        {
-          username: "dev_user@example.org",
-          name: "dev_user",
-          idTokenClaims: {
-            groups: [],
-          },
-        },
-      ]);
-      mockConfig.FEATURE_FLAG_TRANSFER_MATERIALS_V1 = false;
-
-      const { result } = renderHook(() => useUserGroupsFeatureFlag());
-      expect(result?.current?.transferMaterialsV1).toStrictEqual(false);
-    });
-    test("Should return transferMaterialsV1 feature true, if FEATURE_FLAG_TRANSFER_MATERIALS_V1 is true for automation user", () => {
-      (auth.useUserDetails as Mock).mockReturnValue({
-        username: "dev_user@example.org",
-      });
-      (msalInstanceModule.msalInstance.getAllAccounts as Mock).mockReturnValue([
-        {
-          username: "test_username",
-          name: "test_name",
-          idTokenClaims: {
-            groups: ["private_beta_feature_group1"],
-          },
-        },
-      ]);
-      mockConfig.FEATURE_FLAG_TRANSFER_MATERIALS_V1 = true;
-      const { result } = renderHook(() => useUserGroupsFeatureFlag());
-      expect(result?.current?.transferMaterialsV1).toStrictEqual(true);
-    });
-    test("Should return transferMaterialsV1 feature true, if it is an automation user with search param transfer-materials-v1=true, search param take priority for automation user", () => {
-      (auth.useUserDetails as Mock).mockReturnValue({
-        username: "dev_user@example.org",
-      });
-      (router.useSearchParams as Mock).mockReturnValue([
-        new URLSearchParams("transfer-materials-v1=true"),
-        vi.fn(),
-      ]);
-
-      (msalInstanceModule.msalInstance.getAllAccounts as Mock).mockReturnValue([
-        {
-          username: "test_username",
-          name: "test_name",
-          idTokenClaims: {
-            groups: [],
-          },
-        },
-      ]);
-      mockConfig.FEATURE_FLAG_TRANSFER_MATERIALS_V1 = false;
-
-      const { result } = renderHook(() => useUserGroupsFeatureFlag());
-      expect(result?.current?.transferMaterialsV1).toStrictEqual(true);
-    });
-    test("Should return transferMaterialsV1 feature false, if it is an automation user with search param transfer-materials-v1=false,search param take priority for automation user", () => {
-      (auth.useUserDetails as Mock).mockReturnValue({
-        username: "dev_user@example.org",
-      });
-      (router.useSearchParams as Mock).mockReturnValue([
-        new URLSearchParams("transfer-materials-v1=false"),
-        vi.fn(),
-      ]);
-
-      (msalInstanceModule.msalInstance.getAllAccounts as Mock).mockReturnValue([
-        {
-          username: "test_username",
-          name: "test_name",
-          idTokenClaims: {
-            groups: [],
-          },
-        },
-      ]);
-      mockConfig.FEATURE_FLAG_TRANSFER_MATERIALS_V1 = true;
-      const { result } = renderHook(() => useUserGroupsFeatureFlag());
-      expect(result?.current?.transferMaterialsV1).toStrictEqual(false);
     });
   });
 

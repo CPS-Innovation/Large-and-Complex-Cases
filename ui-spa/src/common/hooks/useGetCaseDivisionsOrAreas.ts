@@ -21,8 +21,8 @@ export const useGetCaseDivisionsOrAreas = () => {
   });
 
   useEffect(() => {
-    if (isError && error instanceof ApiError) {
-      if (error.code === 401) {
+    if (isError) {
+      if (error instanceof ApiError && error.code === 401) {
         navigate("/unauthorised", { replace: true });
         return;
       }

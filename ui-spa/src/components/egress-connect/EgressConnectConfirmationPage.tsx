@@ -39,6 +39,7 @@ const EgressConnectConfirmationPage: React.FC = () => {
             payload: {
               searchQueryString,
               netappRootFolderPath: "",
+              accessibleRoots: null,
             },
           });
           navigate(

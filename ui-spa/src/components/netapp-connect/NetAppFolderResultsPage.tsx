@@ -13,6 +13,7 @@ type NetAppFolderResultsPageProps = {
   rootFolderPath: string;
   netAppFolderResults: ConnectNetAppFolderData;
   isNetAppFolderResultsLoading: boolean;
+  accessibleRoots?: string[] | null;
   handleGetFolderContent: (folderId: string) => void;
   handleConnectFolder: (id: string) => void;
 };
@@ -22,6 +23,7 @@ const NetAppFolderResultsPage: React.FC<NetAppFolderResultsPageProps> = ({
   rootFolderPath,
   netAppFolderResults,
   isNetAppFolderResultsLoading,
+  accessibleRoots,
   handleConnectFolder,
   handleGetFolderContent,
 }) => {
@@ -45,13 +47,28 @@ const NetAppFolderResultsPage: React.FC<NetAppFolderResultsPageProps> = ({
   const folders = useMemo(() => {
     const parts = rootFolderPath.split("/").filter(Boolean);
 
-    const result = parts.map((folderName, index) => ({
-      folderName,
-      folderPath: `${parts.slice(0, index + 1).join("/")}/`,
-    }));
+    // When the user's access is scoped to an entry prefix, the segments inside that prefix are
+    // shown for context but are not listable, so only the accessible root onwards is clickable.
+    // Home stays clickable because re-listing the root returns the entry prefixes again.
+    // NTFS and ONTAP paths are case-insensitive, so the casing of a configured prefix need not
+    // match the path we are browsing.
+    const lowerRootFolderPath = rootFolderPath.toLowerCase();
+    const accessibleRoot = accessibleRoots?.find((root) =>
+      lowerRootFolderPath.startsWith(root.toLowerCase()),
+    );
+
+    const result = parts.map((folderName, index) => {
+      const folderPath = `${parts.slice(0, index + 1).join("/")}/`;
+      return {
+        folderName,
+        folderPath,
+        isNavigable:
+          !accessibleRoot || folderPath.length >= accessibleRoot.length,
+      };
+    });
     const withHome = [{ folderName: "Home", folderPath: "" }, ...result];
     return withHome;
-  }, [rootFolderPath]);
+  }, [rootFolderPath, accessibleRoots]);
 
   const getTableRowData = () => {
     return netappFolderData.map((data) => {
@@ -128,10 +145,17 @@ const NetAppFolderResultsPage: React.FC<NetAppFolderResultsPageProps> = ({
           Link a Shared Drive folder to the case
         </h1>
         <InsetText>
-          <p>
-            If the folder you need is not listed, check that you have the
-            correct permissions or contact the product team for support.
-          </p>
+          {netAppFolderResults.isRestrictedRoot ? (
+            <p data-testid="restricted-root-text">
+              You have access to a restricted area of this bucket. Select one of
+              the available folders below to continue.
+            </p>
+          ) : (
+            <p>
+              If the folder you need is not listed, check that you have the
+              correct permissions or contact the product team for support.
+            </p>
+          )}
         </InsetText>
 
         <div className={styles.tableContainer}>

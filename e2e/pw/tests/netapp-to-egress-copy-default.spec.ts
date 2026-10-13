@@ -5,7 +5,6 @@ import { CaseManagementPage } from "../pages/CaseManagementPage";
 import { getTransferMaterialsTab } from "../pages/getTransferMaterialsTab";
 import { TransferDestinationPage } from "../pages/TransferDestinationPage";
 import { ActivityLogTab } from "../pages/ActivityLogTab";
-import { loadEnvConfig } from "../helpers/env-config";
 import { NETAPP_FIXTURE_FILENAME } from "../helpers/constants";
 import { isFileInEgress } from "../helpers/transfer-verify";
 import { expect } from "@playwright/test";
@@ -45,25 +44,13 @@ test.describe("NetApp to Egress Copy (Default Mode)", () => {
 
     // Egress destination — different parent folder than upload source,
     // per-run timestamped subfolder so repeat runs never collide.
-    if (loadEnvConfig().transferMaterialsV1) {
-      // New screen: no second panel — Copy selected navigates to the
-      // destination-tree page where the target folder is chosen.
-      await transferTab.selectAction("Copy", "netAppToEgress");
-      await new TransferDestinationPage(page).chooseFolder("Copy", [
-        "2. Counsel only",
-        uploadSubfolder!,
-      ]);
-    } else {
-      // Old screen: navigate the Egress panel to the destination, then confirm.
-      await transferTab.navigateToFolder("2. Counsel only");
-      await transferTab.waitForEgressFiles();
-      if (uploadSubfolder) {
-        await transferTab.navigateToFolder(uploadSubfolder);
-        await transferTab.waitForEgressFiles();
-      }
-      await transferTab.selectAction("Copy", "netAppToEgress");
-      await transferTab.confirmTransfer("Copy");
-    }
+    // No second panel — Copy selected navigates to the destination-tree
+    // page where the target folder is chosen.
+    await transferTab.selectAction("Copy");
+    await new TransferDestinationPage(page).chooseFolder("Copy", [
+      "2. Counsel only",
+      uploadSubfolder!,
+    ]);
     await transferTab.waitForTransferComplete();
 
     await caseMgmt.switchToTab("activity-log");

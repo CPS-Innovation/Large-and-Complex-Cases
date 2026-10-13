@@ -139,6 +139,61 @@ public class SecurityGroupMetadataServiceTests
     }
 
     [Fact]
+    public async Task GetUserSecurityGroupsAsync_ReadsEntryPrefixes_WhenConfigured()
+    {
+        // Arrange
+        var groupWithPrefixes = Guid.NewGuid();
+        var groupWithoutPrefixes = Guid.NewGuid();
+        var bearerToken = GenerateJwtToken([groupWithPrefixes.ToString(), groupWithoutPrefixes.ToString()]);
+
+        var json = $$"""
+        [
+            {
+                "id": "{{groupWithPrefixes}}",
+                "displayName": "Group1",
+                "bucketName": "Bucket1",
+                "volumeUuid": "{{Guid.NewGuid()}}",
+                "entryPrefixes": ["RCF/", "/RCB", " ", "RCW/Cardiff/"],
+                "description": "Test Group 1"
+            },
+            {
+                "id": "{{groupWithoutPrefixes}}",
+                "displayName": "Group2",
+                "bucketName": "Bucket2",
+                "volumeUuid": "{{Guid.NewGuid()}}",
+                "description": "Test Group 2"
+            }
+        ]
+        """;
+
+        var filePath = CreateTempJsonFile(json);
+
+        var service = new SecurityGroupMetadataService(
+            _loggerMock.Object,
+            filePath);
+
+        try
+        {
+            // Act
+            var result = await service.GetUserSecurityGroupsAsync(bearerToken);
+
+            // Assert - leading slashes are stripped, missing trailing slashes added and blanks dropped
+            var withPrefixes = result.Single(g => g.Id == groupWithPrefixes);
+            Assert.Equal(["RCF/", "RCB/", "RCW/Cardiff/"], withPrefixes.NormalisedEntryPrefixes);
+
+            var withoutPrefixes = result.Single(g => g.Id == groupWithoutPrefixes);
+            Assert.Null(withoutPrefixes.EntryPrefixes);
+            Assert.Empty(withoutPrefixes.NormalisedEntryPrefixes);
+        }
+        finally
+        {
+            // Cleanup
+            if (File.Exists(filePath))
+                File.Delete(filePath);
+        }
+    }
+
+    [Fact]
     public async Task GetUserSecurityGroupsAsync_ThrowsException_WhenNoGroupIdsInToken()
     {
         // Arrange

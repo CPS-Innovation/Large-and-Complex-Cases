@@ -156,14 +156,7 @@ test.describe("egress meta data issues", () => {
       "Sorry, there is a problem with the service",
     );
     await expect(
-      page.getByText(
-        "Please try this case again later. If the problem continues, contact the product team.",
-      ),
-    ).toBeVisible();
-    await expect(
-      page.getByText(
-        "API_ERROR: An error occurred contacting the server at https://mocked-out-api/api/v1/cases/12: Getting case metadata failed; status - Internal Server Error (500)",
-      ),
+      page.getByText("Contact the product team and give them the error code."),
     ).toBeVisible();
   });
   test("Should handle the get egress list api error", async ({
@@ -187,14 +180,7 @@ test.describe("egress meta data issues", () => {
       "Sorry, there is a problem with the service",
     );
     await expect(
-      page.getByText(
-        "Please try this case again later. If the problem continues, contact the product team.",
-      ),
-    ).toBeVisible();
-    await expect(
-      page.getByText(
-        "Getting egress folders failed; status - Internal Server Error (500)",
-      ),
+      page.getByText("Contact the product team and give them the error code."),
     ).toBeVisible();
   });
 });
@@ -325,14 +311,7 @@ test.describe("netapp meta data issues", () => {
       "Sorry, there is a problem with the service",
     );
     await expect(
-      page.getByText(
-        "Please try this case again later. If the problem continues, contact the product team.",
-      ),
-    ).toBeVisible();
-    await expect(
-      page.getByText(
-        "API_ERROR: An error occurred contacting the server at https://mocked-out-api/api/v1/netapp/files: getting netapp files/folders failed; status - Internal Server Error (500)",
-      ),
+      page.getByText("Contact the product team and give them the error code."),
     ).toBeVisible();
   });
 

@@ -1,3 +1,4 @@
+using System.Net;
 using CPS.ComplexCases.Common.Extensions;
 using CPS.ComplexCases.Common.Models.Domain;
 using CPS.ComplexCases.Common.Models.Domain.Dtos;
@@ -5,6 +6,7 @@ using CPS.ComplexCases.Common.Models.Domain.Enums;
 using CPS.ComplexCases.Common.Services;
 using CPS.ComplexCases.Common.Storage;
 using CPS.ComplexCases.NetApp.Factories;
+using CPS.ComplexCases.NetApp.Models.Args;
 using CPS.ComplexCases.NetApp.Streams;
 using Microsoft.Extensions.Logging;
 
@@ -259,13 +261,25 @@ public class NetAppStorageClient(
 
     public Task<bool> FileExistsAsync(string path, string? workspaceId = null, string? bearerToken = null, string? bucketName = null, string? fileId = null)
     {
-        var arg = _netAppArgFactory.CreateGetObjectArg(
-            bearerToken ?? throw new ArgumentNullException(nameof(bearerToken), "Bearer token cannot be null."),
-            bucketName ?? throw new ArgumentNullException(nameof(bucketName), "Bucket name cannot be null."),
-            path ?? throw new ArgumentNullException(nameof(path), "Path cannot be null."));
+        var arg = BuildGetObjectArg(path, bearerToken, bucketName);
 
         return _netAppClient.DoesObjectExistAsync(arg);
     }
+
+    public async Task<FileProbeResult> ProbeFileAsync(string path, string? workspaceId = null, string? bearerToken = null, string? bucketName = null, string? fileId = null)
+    {
+        var response = await _netAppClient.GetHeadObjectMetadataAsync(BuildGetObjectArg(path, bearerToken, bucketName));
+
+        return response.StatusCode == HttpStatusCode.OK
+            ? FileProbeResult.Found(response.ContentLength)
+            : FileProbeResult.NotFound;
+    }
+
+    private GetObjectArg BuildGetObjectArg(string path, string? bearerToken, string? bucketName) =>
+        _netAppArgFactory.CreateGetObjectArg(
+            bearerToken ?? throw new ArgumentNullException(nameof(bearerToken), "Bearer token cannot be null."),
+            bucketName ?? throw new ArgumentNullException(nameof(bucketName), "Bucket name cannot be null."),
+            path ?? throw new ArgumentNullException(nameof(path), "Path cannot be null."));
 
     public Task<List<FileTransferInfo>> GetAllFilesFromFolderAsync(string folderPath, string? workspaceId = null)
     {
