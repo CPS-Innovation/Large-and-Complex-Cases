@@ -159,7 +159,7 @@ public class SendTransferNotificationTests
         Assert.Equal(Urn, (string)_sentPersonalisation["urn"]);
         Assert.Equal("Shared Drive to Egress", (string)_sentPersonalisation["direction"]);
         Assert.Equal("Move", (string)_sentPersonalisation["operation_type"]);
-        Assert.Equal($"https://lcc.example/case/{payload.CaseId}/case-management", (string)_sentPersonalisation["case_activity_log_url"]);
+        Assert.Equal($"https://lcc.example/case/{payload.CaseId}/case-management?tab=activity-log", (string)_sentPersonalisation["case_activity_log_url"]);
     }
 
     [Fact]

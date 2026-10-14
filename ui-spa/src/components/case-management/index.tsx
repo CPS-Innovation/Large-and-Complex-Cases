@@ -6,7 +6,12 @@ import TransferMaterialsPage from "./transfer-materials";
 import TransferResolveFilePathPage from "./transfer-materials/TransferResolveFilePathPage";
 import ActivityLogPage from "./activity-log/index";
 import { getCaseMetaData } from "../../apis/gateway-api";
-import { useNavigate, useLocation, useParams } from "react-router";
+import {
+  useNavigate,
+  useLocation,
+  useParams,
+  useSearchParams,
+} from "react-router";
 import { MainStateContext } from "../../providers/MainStateProvider";
 import { PageContentWrapper } from "../govuk/PageContentWrapper";
 import { useQuery } from "@tanstack/react-query";
@@ -15,21 +20,38 @@ import { Spinner } from "../common/Spinner";
 
 import styles from "./index.module.scss";
 
+const TAB_QUERY_PARAM = "tab";
+
 const CaseManagementPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { caseId } = useParams() as { caseId: string };
   if (!caseId) throw new Error("missing caseId in the url");
-
-  const [activeTabId, setActiveTabId] = useState<TabId>("transfer-materials");
 
   const { state, dispatch } = useContext(MainStateContext);
   const {
     appData: { featureFlags, transferPage },
     apiData: { initiateFileTransferResponseData },
   } = state;
+
+  const [activeTabId, setActiveTabId] = useState<TabId>(() => {
+    const requestedTab = searchParams.get(TAB_QUERY_PARAM);
+    if (requestedTab === "activity-log") return "activity-log";
+    if (requestedTab === "case-details" && featureFlags?.caseDetails)
+      return "case-details";
+    return "transfer-materials";
+  });
+
   const handleTabSelection = (tabId: TabId) => {
     setActiveTabId(tabId);
+    setSearchParams(
+      (params) => {
+        params.set(TAB_QUERY_PARAM, tabId);
+        return params;
+      },
+      { replace: true },
+    );
   };
 
   const { data: caseMetaData, isLoading: isCaseMetaDataLoading } = useQuery({

@@ -165,7 +165,7 @@ public class SendTransferNotification(
             ["urn"] = GetDisplayUrn(payload),
             ["direction"] = ToDisplayDirection(payload.TransferDirection),
             ["operation_type"] = ToDisplayOperationType(payload.TransferType),
-            ["case_activity_log_url"] = BuildCaseUrl(uiBaseUrl, payload.CaseId)
+            ["case_activity_log_url"] = BuildActivityLogUrl(uiBaseUrl, payload.CaseId)
         };
 
     internal static string GetDisplayUrn(SendTransferNotificationPayload payload) =>
@@ -185,7 +185,9 @@ public class SendTransferNotification(
         _ => transferType.ToString()
     };
 
-    // The activity log tab is not URL-addressable, so this links to the case page. TODO: add a link to the activity log tab.
     internal static string BuildCaseUrl(string uiBaseUrl, int caseId) =>
         $"{uiBaseUrl.TrimEnd('/')}/case/{caseId}/case-management";
+
+    internal static string BuildActivityLogUrl(string uiBaseUrl, int caseId) =>
+        $"{BuildCaseUrl(uiBaseUrl, caseId)}?tab=activity-log";
 }
