@@ -25,6 +25,7 @@ if ($WorkspaceNamePrefix.Length -lt 3) {
 }
 
 $escapedPrefix = [regex]::Escape($WorkspaceNamePrefix)
+$encodedPrefix = [uri]::EscapeDataString($WorkspaceNamePrefix)
 
 # ============================================================
 # AUTHENTICATE
@@ -53,44 +54,44 @@ $workspacesToRemove = @()
 try {
   $response = Invoke-EgressApiRequest `
     -Method Get `
-    -Uri "$BaseUrl/api/v1/workspaces?name=$escapedPrefix" `
+    -Uri "$($BaseUrl.TrimEnd('/'))/api/v1/workspaces?name=$encodedPrefix" `
     -Headers $AuthHeader
+
+  while ($true) {
+    if ($response.data) {
+      $response.data | ForEach-Object {
+        if ($_.name -match "^$escapedPrefix[0-9A-Za-z-]*$") {
+          $workspacesToRemove += $_
+        }
+      }
+    }
+
+    if ([string]::IsNullOrWhiteSpace($response.pagination.next_url)) {
+      break
+    }
+
+    $nextUrl = $response.pagination.next_url -replace '^http://', 'https://'
+
+    $response = Invoke-EgressApiRequest `
+      -Method Get `
+      -Uri $nextUrl `
+      -Headers $AuthHeader
+  }
+
+  if (-not $workspacesToRemove) {
+    Write-Host "  No workspaces found with the specified name prefix - nothing to delete." -ForegroundColor Green
+    return
+  }
+
+  Write-Host "  [OK] $($workspacesToRemove.Count) matching workspace(s) found:" -ForegroundColor Green
+
+  $workspacesToRemove | ForEach-Object {
+    Write-Host " - $($_.name) [$($_.id)]" -ForegroundColor Cyan
+  }
 }
 catch {
   Write-Error "Failed to list workspaces: $($_.Exception.Message)"
   throw
-}
-
-while ($true) {
-  if ($response.data) {
-    $response.data | ForEach-Object {
-      if ($_.name -match "^$escapedPrefix[0-9A-Za-z-]*$") {
-        $workspacesToRemove += $_
-      }
-    }
-  }
-
-  if ([string]::IsNullOrWhiteSpace($response.pagination.next_url)) {
-    break
-  }
-
-  $nextUrl = $response.pagination.next_url -replace '^http://', 'https://'
-
-  $response = Invoke-EgressApiRequest `
-    -Method Get `
-    -Uri $nextUrl `
-    -Headers $AuthHeader
-}
-
-if (-not $workspacesToRemove) {
-  Write-Host "  No workspaces found with the specified name prefix - nothing to delete." -ForegroundColor Green
-  return
-}
-
-Write-Host "  [OK] $($workspacesToRemove.Count) matching workspace(s) found:" -ForegroundColor Green
-
-$workspacesToRemove | ForEach-Object {
-  Write-Host " - $($_.name) [$($_.id)]" -ForegroundColor Cyan
 }
 
 # ============================================================
@@ -114,7 +115,7 @@ else {
 # ============================================================
 # DELETE WORKSPACES
 # ============================================================
-Write-Host "[3/3] Deleting $($workspacesToRemove.Count) file(s)..." -ForegroundColor Yellow
+Write-Host "[3/3] Deleting $($workspacesToRemove.Count) workspace(s)..." -ForegroundColor Yellow
 
 
 $failed = @()
@@ -123,7 +124,7 @@ foreach ($ws in $workspacesToRemove) {
   try {
     $null = Invoke-EgressApiRequest `
       -Method Delete `
-      -Uri "$BaseUrl/api/v1/workspaces/$($ws.id)" `
+      -Uri "$($BaseUrl.TrimEnd('/'))/api/v1/workspaces/$($ws.id)" `
       -Headers $AuthHeader
   }
   catch {
