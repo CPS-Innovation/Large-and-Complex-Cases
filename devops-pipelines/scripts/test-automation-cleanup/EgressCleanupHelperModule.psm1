@@ -127,6 +127,48 @@ function Get-EgressRetryDelay {
   return [int][Math]::Max(0, $delay)
 }
 
+function Test-EgressRetryableError {
+  param(
+    [System.Management.Automation.ErrorRecord]$ErrorRecord
+  )
+
+  $response = $ErrorRecord.Exception.Response
+  $statusCode = Get-EgressHttpStatusCode -Response $response
+
+  if ($null -ne $statusCode) {
+    return $statusCode -in @(429, 502, 503, 504)
+  }
+
+  return Test-EgressTransientNetworkError `
+    -Exception $ErrorRecord.Exception
+}
+
+function Invoke-EgressApiRequestOnce {
+  param(
+    [string]$Method,
+    [string]$Uri,
+    [hashtable]$Headers,
+    [string]$Body,
+    [bool]$HasBody,
+    [int]$TimeoutSec
+  )
+
+  $params = @{
+    Method      = $Method
+    Uri         = $Uri
+    Headers     = $Headers
+    TimeoutSec  = $TimeoutSec
+    ErrorAction = 'Stop'
+  }
+
+  if ($HasBody) {
+    $params.Body = $Body
+    $params.ContentType = 'application/json'
+  }
+
+  Invoke-RestMethod @params
+}
+
 function Invoke-EgressApiRequest {
   param(
     [Parameter(Mandatory = $true)]
@@ -154,63 +196,67 @@ function Invoke-EgressApiRequest {
     throw "Uri must be a valid absolute URL."
   }
 
-  $retryableStatusCodes = @(429, 502, 503, 504)
   $hasBody = $PSBoundParameters.ContainsKey('Body') -and $null -ne $Body
 
   for ($attempt = 1; $attempt -le $MaxAttempts; $attempt++) {
     try {
-      $params = @{
-        Method      = $Method
-        Uri         = $Uri
-        Headers     = $Headers
-        TimeoutSec  = $TimeoutSec
-        ErrorAction = 'Stop'
-      }
-
-      if ($hasBody) {
-        $params.Body = $Body
-        $params.ContentType = 'application/json'
-      }
-
-      return Invoke-RestMethod @params
+      return Invoke-EgressApiRequestOnce `
+        -Method $Method `
+        -Uri $Uri `
+        -Headers $Headers `
+        -Body $Body `
+        -HasBody $hasBody `
+        -TimeoutSec $TimeoutSec
     }
     catch {
-      $response = $_.Exception.Response
-      $statusCode = Get-EgressHttpStatusCode -Response $response
-
-      $retryable = $statusCode -in $retryableStatusCodes
-
-      if ($null -eq $statusCode) {
-        $retryable = Test-EgressTransientNetworkError `
-          -Exception $_.Exception
-      }
-
-      if (-not $retryable -or $attempt -eq $MaxAttempts) {
+      if (-not (Test-EgressRetryableError -ErrorRecord $_)) {
         throw
       }
+
+      if ($attempt -eq $MaxAttempts) {
+        throw
+      }
+
+      $response = $_.Exception.Response
+      $statusCode = Get-EgressHttpStatusCode -Response $response
 
       $delay = Get-EgressRetryDelay `
         -Attempt $attempt `
         -Response $response
 
-      if ($null -ne $statusCode) {
-        Write-Warning (
-          "Egress returned HTTP {0}. Retrying in {1} seconds (attempt {2}/{3})..." -f
-          $statusCode, $delay, $attempt, $MaxAttempts
-        )
-      }
-      else {
-        Write-Warning (
-          "Egress request failed with a transient network error. Retrying in {0} seconds (attempt {1}/{2})..." -f
-          $delay, $attempt, $MaxAttempts
-        )
-      }
+      Write-EgressRetryWarning `
+        -StatusCode $statusCode `
+        -Delay $delay `
+        -Attempt $attempt `
+        -MaxAttempts $MaxAttempts
 
       if ($delay -gt 0) {
         Start-Sleep -Seconds $delay
       }
     }
   }
+}
+
+function Write-EgressRetryWarning {
+  param(
+    [Nullable[int]]$StatusCode,
+    [int]$Delay,
+    [int]$Attempt,
+    [int]$MaxAttempts
+  )
+
+  if ($null -ne $StatusCode) {
+    Write-Warning (
+      "Egress returned HTTP {0}. Retrying in {1} seconds (attempt {2}/{3})..." -f
+      $StatusCode, $Delay, $Attempt, $MaxAttempts
+    )
+    return
+  }
+
+  Write-Warning (
+    "Egress request failed with a transient network error. Retrying in {0} seconds (attempt {1}/{2})..." -f
+    $Delay, $Attempt, $MaxAttempts
+  )
 }
 
 function Connect-EgressServiceAccount {
