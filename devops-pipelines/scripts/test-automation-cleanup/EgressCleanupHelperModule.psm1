@@ -1,3 +1,132 @@
+function Get-EgressHttpStatusCode {
+  param([object]$Response)
+
+  if ($null -ne $Response -and $null -ne $Response.StatusCode) {
+    return [int]$Response.StatusCode
+  }
+
+  return $null
+}
+
+function Test-EgressTransientNetworkError {
+  param([System.Exception]$Exception)
+
+  $retryableWebStatuses = @(
+    [System.Net.WebExceptionStatus]::Timeout,
+    [System.Net.WebExceptionStatus]::ConnectFailure,
+    [System.Net.WebExceptionStatus]::ConnectionClosed,
+    [System.Net.WebExceptionStatus]::ReceiveFailure,
+    [System.Net.WebExceptionStatus]::SendFailure,
+    [System.Net.WebExceptionStatus]::NameResolutionFailure
+  )
+
+  while ($null -ne $Exception) {
+    if (
+      $Exception -is [System.Net.Sockets.SocketException] -or
+      $Exception -is [System.Net.Http.HttpRequestException] -or
+      $Exception -is [System.TimeoutException] -or
+      $Exception -is [System.Threading.Tasks.TaskCanceledException]
+    ) {
+      return $true
+    }
+
+    if (
+      $Exception -is [System.Net.WebException] -and
+      $Exception.Status -in $retryableWebStatuses
+    ) {
+      return $true
+    }
+
+    $Exception = $Exception.InnerException
+  }
+
+  return $false
+}
+
+function Get-EgressRetryAfterHeader {
+  param([object]$Response)
+
+  if ($Response -is [System.Net.Http.HttpResponseMessage]) {
+    $retryAfter = $Response.Headers.RetryAfter
+
+    if ($null -ne $retryAfter) {
+      return $retryAfter.ToString()
+    }
+  }
+  elseif ($Response -is [System.Net.HttpWebResponse]) {
+    return $Response.Headers['Retry-After']
+  }
+
+  return $null
+}
+
+function Get-EgressRetryAfterDelay {
+  param(
+    [string]$Header,
+    [int]$MaxDelaySec
+  )
+
+  if ([string]::IsNullOrWhiteSpace($Header)) {
+    return $null
+  }
+
+  $seconds = 0
+
+  if ([int]::TryParse($Header, [ref]$seconds)) {
+    if ($seconds -ge 0) {
+      return [int][Math]::Min($seconds, $MaxDelaySec)
+    }
+
+    return $null
+  }
+
+  $retryDate = [DateTimeOffset]::MinValue
+
+  if ([DateTimeOffset]::TryParse($Header, [ref]$retryDate)) {
+    $secondsUntilRetry = (
+      $retryDate - [DateTimeOffset]::UtcNow
+    ).TotalSeconds
+
+    if ($secondsUntilRetry -ge 0) {
+      return [int][Math]::Min(
+        [Math]::Ceiling($secondsUntilRetry),
+        $MaxDelaySec
+      )
+    }
+  }
+
+  return $null
+}
+
+function Get-EgressRetryDelay {
+  param(
+    [int]$Attempt,
+    [object]$Response,
+    [int]$MaxDelaySec = 60
+  )
+
+  $baseDelay = [Math]::Min(
+    2 * [Math]::Pow(2, $Attempt - 1),
+    30
+  )
+
+  $delay = [Math]::Min(
+    $baseDelay + (Get-Random -Minimum 0 -Maximum 3),
+    $MaxDelaySec
+  )
+
+  $retryAfter = Get-EgressRetryAfterHeader -Response $Response
+  $serverDelay = Get-EgressRetryAfterDelay `
+    -Header $retryAfter `
+    -MaxDelaySec $MaxDelaySec
+
+  if ($null -ne $serverDelay) {
+    $delay = $serverDelay
+  }
+
+  return [int][Math]::Max(0, $delay)
+}
+
 function Invoke-EgressApiRequest {
   param(
     [Parameter(Mandatory = $true)]
@@ -26,7 +155,7 @@ function Invoke-EgressApiRequest {
   }
 
   $retryableStatusCodes = @(429, 502, 503, 504)
-  $maxRetryDelaySec = 60
+  $hasBody = $PSBoundParameters.ContainsKey('Body') -and $null -ne $Body
 
   for ($attempt = 1; $attempt -le $MaxAttempts; $attempt++) {
     try {
@@ -38,7 +167,7 @@ function Invoke-EgressApiRequest {
         ErrorAction = 'Stop'
       }
 
-      if ($PSBoundParameters.ContainsKey('Body') -and $null -ne $Body) {
+      if ($hasBody) {
         $params.Body = $Body
         $params.ContentType = 'application/json'
       }
@@ -47,128 +176,34 @@ function Invoke-EgressApiRequest {
     }
     catch {
       $response = $_.Exception.Response
-      $statusCode = $null
-
-      if ($null -ne $response -and $null -ne $response.StatusCode) {
-        $statusCode = [int]$response.StatusCode
-      }
+      $statusCode = Get-EgressHttpStatusCode -Response $response
 
       $retryable = $statusCode -in $retryableStatusCodes
 
-      # Retry only known transient network failures when no HTTP status is available.
       if ($null -eq $statusCode) {
-        $exception = $_.Exception
-
-        while ($null -ne $exception) {
-          if ($exception -is [System.Net.Sockets.SocketException]) {
-            $retryable = $true
-            break
-          }
-
-          if ($exception -is [System.Net.Http.HttpRequestException]) {
-            $retryable = $true
-            break
-          }
-
-          if ($exception -is [System.TimeoutException]) {
-            $retryable = $true
-            break
-          }
-
-          if ($exception -is [System.Threading.Tasks.TaskCanceledException]) {
-            $retryable = $true
-            break
-          }
-
-          if ($exception -is [System.Net.WebException]) {
-            if ($exception.Status -in @(
-              [System.Net.WebExceptionStatus]::Timeout,
-              [System.Net.WebExceptionStatus]::ConnectFailure,
-              [System.Net.WebExceptionStatus]::ConnectionClosed,
-              [System.Net.WebExceptionStatus]::ReceiveFailure,
-              [System.Net.WebExceptionStatus]::SendFailure,
-              [System.Net.WebExceptionStatus]::NameResolutionFailure
-            )) {
-              $retryable = $true
-              break
-            }
-          }
-
-          $exception = $exception.InnerException
-        }
+        $retryable = Test-EgressTransientNetworkError `
+          -Exception $_.Exception
       }
 
       if (-not $retryable -or $attempt -eq $MaxAttempts) {
         throw
       }
 
-      # Exponential backoff with jitter.
-      $baseDelay = [Math]::Min(
-        2 * [Math]::Pow(2, $attempt - 1),
-        30
-      )
-
-      $delay = [Math]::Min(
-        $baseDelay + (Get-Random -Minimum 0 -Maximum 3),
-        $maxRetryDelaySec
-      )
-
-      # Respect Retry-After when the server supplies a valid value.
-      $retryAfterHeader = $null
-
-      if ($null -ne $response) {
-        if ($response -is [System.Net.Http.HttpResponseMessage]) {
-          $retryAfterHeader = $response.Headers.RetryAfter.ToString()
-        }
-        elseif ($response -is [System.Net.HttpWebResponse]) {
-          $retryAfterHeader = $response.Headers['Retry-After']
-        }
-      }
-
-      if (-not [string]::IsNullOrWhiteSpace([string]$retryAfterHeader)) {
-        $retryAfterSeconds = 0
-
-        if ([int]::TryParse(
-          [string]$retryAfterHeader,
-          [ref]$retryAfterSeconds
-        )) {
-          if ($retryAfterSeconds -ge 0) {
-            $delay = [Math]::Min(
-              $retryAfterSeconds,
-              $maxRetryDelaySec
-            )
-          }
-        }
-        else {
-          $retryAfterDate = [DateTimeOffset]::MinValue
-
-          if ([DateTimeOffset]::TryParse(
-            [string]$retryAfterHeader,
-            [ref]$retryAfterDate
-          )) {
-            $secondsUntilRetry = (
-              $retryAfterDate - [DateTimeOffset]::UtcNow
-            ).TotalSeconds
-
-            if ($secondsUntilRetry -ge 0) {
-              $delay = [Math]::Min(
-                [Math]::Ceiling($secondsUntilRetry),
-                $maxRetryDelaySec
-              )
-            }
-          }
-        }
-      }
-
-      $delay = [int][Math]::Max(0, $delay)
+      $delay = Get-EgressRetryDelay `
+        -Attempt $attempt `
+        -Response $response
 
       if ($null -ne $statusCode) {
-        Write-Warning `
-          "Egress returned HTTP $statusCode. Retrying in $delay seconds (attempt $attempt/$MaxAttempts)..."
+        Write-Warning (
+          "Egress returned HTTP {0}. Retrying in {1} seconds (attempt {2}/{3})..." -f
+          $statusCode, $delay, $attempt, $MaxAttempts
+        )
       }
       else {
-        Write-Warning `
-          "Egress request failed with a transient network error. Retrying in $delay seconds (attempt $attempt/$MaxAttempts)..."
+        Write-Warning (
+          "Egress request failed with a transient network error. Retrying in {0} seconds (attempt {1}/{2})..." -f
+          $delay, $attempt, $MaxAttempts
+        )
       }
 
       if ($delay -gt 0) {
