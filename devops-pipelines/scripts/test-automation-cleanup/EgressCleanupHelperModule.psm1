@@ -313,6 +313,124 @@ function Connect-EgressServiceAccount {
   }
 }
 
+function Assert-EgressFileIds {
+  param(
+    [Parameter(Mandatory = $true)]
+    [AllowNull()]
+    [string[]]$FileIds
+  )
+
+  if ($null -eq $FileIds -or $FileIds.Count -eq 0) {
+    throw "FileIds must contain at least one file ID."
+  }
+
+  foreach ($fileId in $FileIds) {
+    if ([string]::IsNullOrWhiteSpace($fileId)) {
+      throw "FileIds must not contain null, empty or whitespace-only values."
+    }
+  }
+}
+
+function Assert-EgressDeletionResponse {
+  param([object]$Response)
+
+  if (
+    $null -eq $Response -or
+    $null -eq $Response.PSObject.Properties['all_successful'] -or
+    $Response.all_successful -isnot [bool]
+  ) {
+    throw "Egress returned an invalid deletion response: all_successful is missing or is not a boolean."
+  }
+
+  if ($Response.all_successful) {
+    return
+  }
+
+  if (
+    $null -eq $Response.PSObject.Properties['results'] -or
+    $null -eq $Response.results
+  ) {
+    throw "Egress reported deletion failure but returned no results."
+  }
+
+  $results = @($Response.results)
+
+  if ($results.Count -eq 0) {
+    throw "Egress reported deletion failure but returned an empty results collection."
+  }
+
+  $failedCount = Write-EgressDeletionWarnings -Results $results
+
+  if ($failedCount -eq 0) {
+    throw "Egress reported all_successful=false but returned no failed file results."
+  }
+
+  throw "One or more files failed to delete ($failedCount failed)."
+}
+
+function Write-EgressDeletionWarnings {
+  param([object[]]$Results)
+
+  $failedCount = 0
+
+  foreach ($result in $Results) {
+    $resultCode = Get-EgressDeletionResultCode -Result $result
+
+    if ($resultCode -eq 0) {
+      continue
+    }
+
+    $failedCount++
+
+    $fileId = $result.file_id
+    $reason = Get-EgressDeletionFailureReason `
+      -Result $result `
+      -ResultCode $resultCode
+
+    Write-Warning "Failed to delete FileId=$fileId : $reason"
+  }
+
+  return $failedCount
+}
+
+function Get-EgressDeletionResultCode {
+  param([object]$Result)
+
+  if (
+    $null -eq $Result -or
+    $null -eq $Result.PSObject.Properties['code'] -or
+    $null -eq $Result.code
+  ) {
+    throw "Egress returned a deletion result without a valid code."
+  }
+
+  $resultCode = 0
+
+  if (-not [int]::TryParse([string]$Result.code, [ref]$resultCode)) {
+    throw "Egress returned an invalid deletion result code."
+  }
+
+  return $resultCode
+}
+
+function Get-EgressDeletionFailureReason {
+  param(
+    [object]$Result,
+    [int]$ResultCode
+  )
+
+  if (-not [string]::IsNullOrWhiteSpace([string]$Result.reason)) {
+    return $Result.reason
+  }
+
+  if (-not [string]::IsNullOrWhiteSpace([string]$Result.status)) {
+    return $Result.status
+  }
+
+  return "Error code $ResultCode"
+}
+
+
 function Remove-EgressFiles {
   [CmdletBinding()]
   param(
@@ -333,105 +451,24 @@ function Remove-EgressFiles {
     [string[]]$FileIds
   )
 
+  Assert-EgressFileIds -FileIds $FileIds
+
   if (-not [uri]::IsWellFormedUriString($BaseUrl, [UriKind]::Absolute)) {
     throw "BaseUrl must be a valid absolute URL."
   }
 
-  if ($FileIds.Count -eq 0) {
-    throw "FileIds must contain at least one file ID."
-  }
-
-  if (@($FileIds | Where-Object {
-    [string]::IsNullOrWhiteSpace($_)
-  }).Count -gt 0) {
-    throw "FileIds must not contain null, empty or whitespace-only values."
-  }
-
-  # Avoid submitting the same file ID more than once.
   $FileIds = @($FileIds | Select-Object -Unique)
 
-  $headers = $AuthorizationHeader
-
-  $body = @{
-    file_ids = $FileIds
-  } | ConvertTo-Json
+  $body = @{ file_ids = $FileIds } | ConvertTo-Json
 
   $response = Invoke-EgressApiRequest `
     -Method Delete `
     -Uri "$($BaseUrl.TrimEnd('/'))/api/v1/workspaces/$WorkspaceId/files" `
-    -Headers $headers `
+    -Headers $AuthorizationHeader `
     -Body $body `
     -TimeoutSec 180
 
-  # A successful HTTP status alone does not confirm successful deletion.
-  if (
-    $null -eq $response -or
-    $null -eq $response.PSObject.Properties['all_successful'] -or
-    $response.all_successful -isnot [bool]
-  ) {
-    throw "Egress returned an invalid deletion response: all_successful is missing or is not a boolean."
-  }
-
-  if ($response.all_successful) {
-    return
-  }
-
-  if (
-    $null -eq $response.PSObject.Properties['results'] -or
-    $null -eq $response.results
-  ) {
-    throw "Egress reported deletion failure but returned no results."
-  }
-
-  $results = @($response.results)
-
-  if ($results.Count -eq 0) {
-    throw "Egress reported deletion failure but returned an empty results collection."
-  }
-
-  foreach ($result in $results) {
-    if (
-      $null -eq $result -or
-      $null -eq $result.PSObject.Properties['code'] -or
-      $null -eq $result.code
-    ) {
-      throw "Egress returned a deletion result without a valid code."
-    }
-
-    $resultCode = 0
-
-    if (-not [int]::TryParse(
-      [string]$result.code,
-      [ref]$resultCode
-    )) {
-      throw "Egress returned an invalid deletion result code."
-    }
-
-    if ($resultCode -ne 0) {
-      $fileId = $result.file_id
-      $reason = $result.reason
-
-      if ([string]::IsNullOrWhiteSpace([string]$reason)) {
-        $reason = $result.status
-      }
-
-      if ([string]::IsNullOrWhiteSpace([string]$reason)) {
-        $reason = "Error code $resultCode"
-      }
-
-      Write-Warning "Failed to delete FileId=$fileId : $reason"
-    }
-  }
-
-  $failed = @($results | Where-Object {
-    [int]$_.code -ne 0
-  })
-
-  if ($failed.Count -eq 0) {
-    throw "Egress reported all_successful=false but returned no failed file results."
-  }
-
-  throw "One or more files failed to delete ($($failed.Count) failed)."
+  Assert-EgressDeletionResponse -Response $response
 }
 
 Export-ModuleMember -Function `
