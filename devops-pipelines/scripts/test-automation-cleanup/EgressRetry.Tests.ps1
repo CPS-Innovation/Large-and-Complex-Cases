@@ -1,70 +1,107 @@
 Describe 'Invoke-EgressApiRequest retry logic' {
-    BeforeAll {
-        Import-Module (Join-Path $PSScriptRoot 'EgressCleanupHelperModule.psm1') -Force
-    }
+  BeforeAll {
+    Import-Module (Join-Path $PSScriptRoot 'EgressCleanupHelperModule.psm1') -Force
 
-    It 'retries a 429 response and returns the subsequent successful response' {
-        InModuleScope EgressCleanupHelperModule {
-            $script:attemptCount = 0
-
-            Mock Invoke-RestMethod {
-                $script:attemptCount++
-
-                if ($script:attemptCount -eq 1) {
-                    # Simulate an HTTP 429 response.
-                    $exception = [System.Exception]::new('Simulated HTTP 429')
-                    $exception | Add-Member -MemberType NoteProperty `
-                        -Name Response `
-                        -Value ([pscustomobject]@{
-                            StatusCode = 429
-                            Headers    = @{}
-                        })
-
-                    throw $exception
-                }
-
-                # Second attempt succeeds.
-                return [pscustomobject]@{
-                    success = $true
-                }
-            }
-
-            Mock Start-Sleep {}
-
-            $result = Invoke-EgressApiRequest `
-                -Method Get `
-                -Uri 'https://example.com/test' `
-                -Headers @{} `
-                -MaxAttempts 3
-
-            $result.success | Should Be $true
-            $script:attemptCount | Should Be 2
-
-            Assert-MockCalled Invoke-RestMethod -Times 2 -Exactly -Scope It
-            Assert-MockCalled Start-Sleep -Times 1 -Exactly -Scope It
-        }
-    }
-
-
-  It 'does not retry a non-retryable HTTP 400 response' {
     InModuleScope EgressCleanupHelperModule {
-      $script:attemptCount = 0
+      function script:New-TestHttpException {
+        param(
+          [Parameter(Mandatory)]
+          [int]$StatusCode
+        )
 
-      Mock Invoke-RestMethod {
-        $script:attemptCount++
+        $exception = [System.Exception]::new(
+          "Simulated HTTP $StatusCode"
+        )
 
-        $exception = [System.Exception]::new('Simulated HTTP 400')
         $exception | Add-Member -MemberType NoteProperty `
           -Name Response `
           -Value ([pscustomobject]@{
-            StatusCode = 400
+            StatusCode = $StatusCode
             Headers    = @{}
           })
 
-        throw $exception
+        return $exception
+      }
+
+      function script:Set-TestRequestOutcomes {
+        param(
+          [Parameter(Mandatory)]
+          [object[]]$Outcomes
+        )
+
+        $script:attemptCount = 0
+        $script:mockOutcomes = $Outcomes
+      }
+
+      function script:Assert-TestRequestCounts {
+        param(
+          [Parameter(Mandatory)]
+          [int]$Requests,
+
+          [Parameter(Mandatory)]
+          [int]$Sleeps
+        )
+
+        $script:attemptCount | Should Be $Requests
+
+        Assert-MockCalled Invoke-RestMethod `
+          -Times $Requests -Exactly -Scope It
+
+        Assert-MockCalled Start-Sleep `
+          -Times $Sleeps -Exactly -Scope It
+      }
+    }
+  }
+
+  BeforeEach {
+    InModuleScope EgressCleanupHelperModule {
+      Mock Invoke-RestMethod {
+        $script:attemptCount++
+
+        $outcome = $script:mockOutcomes[
+        $script:attemptCount - 1
+        ]
+
+        if ($outcome.ContainsKey('Exception')) {
+          throw $outcome.Exception
+        }
+
+        return $outcome.Response
       }
 
       Mock Start-Sleep {}
+    }
+  }
+
+  It 'retries a 429 response and returns the subsequent successful response' {
+    InModuleScope EgressCleanupHelperModule {
+      Set-TestRequestOutcomes -Outcomes @(
+        @{
+          Exception = New-TestHttpException -StatusCode 429
+        },
+        @{
+          Response = [pscustomobject]@{ success = $true }
+        }
+      )
+
+      $result = Invoke-EgressApiRequest `
+        -Method Get `
+        -Uri 'https://example.com/test' `
+        -Headers @{} `
+        -MaxAttempts 3
+
+      $result.success | Should Be $true
+      Assert-TestRequestCounts -Requests 2 -Sleeps 1
+    }
+  }
+
+  It 'does not retry a non-retryable HTTP 400 response' {
+    InModuleScope EgressCleanupHelperModule {
+      Set-TestRequestOutcomes -Outcomes @(
+        @{
+          Exception = New-TestHttpException -StatusCode 400
+        }
+      )
 
       {
         Invoke-EgressApiRequest `
@@ -74,31 +111,17 @@ Describe 'Invoke-EgressApiRequest retry logic' {
           -MaxAttempts 3
       } | Should Throw
 
-      $script:attemptCount | Should Be 1
-      Assert-MockCalled Invoke-RestMethod -Times 1 -Exactly -Scope It
-      Assert-MockCalled Start-Sleep -Times 0 -Exactly -Scope It
+      Assert-TestRequestCounts -Requests 1 -Sleeps 0
     }
   }
 
   It 'stops after MaxAttempts when every request returns HTTP 503' {
     InModuleScope EgressCleanupHelperModule {
-      $script:attemptCount = 0
-
-      Mock Invoke-RestMethod {
-        $script:attemptCount++
-
-        $exception = [System.Exception]::new('Simulated HTTP 503')
-        $exception | Add-Member -MemberType NoteProperty `
-          -Name Response `
-          -Value ([pscustomobject]@{
-            StatusCode = 503
-            Headers    = @{}
-          })
-
-        throw $exception
-      }
-
-      Mock Start-Sleep {}
+      Set-TestRequestOutcomes -Outcomes @(
+        @{ Exception = New-TestHttpException -StatusCode 503 },
+        @{ Exception = New-TestHttpException -StatusCode 503 },
+        @{ Exception = New-TestHttpException -StatusCode 503 }
+      )
 
       {
         Invoke-EgressApiRequest `
@@ -108,31 +131,17 @@ Describe 'Invoke-EgressApiRequest retry logic' {
           -MaxAttempts 3
       } | Should Throw
 
-      $script:attemptCount | Should Be 3
-      Assert-MockCalled Invoke-RestMethod -Times 3 -Exactly -Scope It
-      Assert-MockCalled Start-Sleep -Times 2 -Exactly -Scope It
+      Assert-TestRequestCounts -Requests 3 -Sleeps 2
     }
   }
 
   It 'makes only one request when MaxAttempts is 1' {
     InModuleScope EgressCleanupHelperModule {
-      $script:attemptCount = 0
-
-      Mock Invoke-RestMethod {
-        $script:attemptCount++
-
-        $exception = [System.Exception]::new('Simulated HTTP 503')
-        $exception | Add-Member -MemberType NoteProperty `
-          -Name Response `
-          -Value ([pscustomobject]@{
-            StatusCode = 503
-            Headers    = @{}
-          })
-
-        throw $exception
-      }
-
-      Mock Start-Sleep {}
+      Set-TestRequestOutcomes -Outcomes @(
+        @{
+          Exception = New-TestHttpException -StatusCode 503
+        }
+      )
 
       {
         Invoke-EgressApiRequest `
@@ -142,41 +151,23 @@ Describe 'Invoke-EgressApiRequest retry logic' {
           -MaxAttempts 1
       } | Should Throw
 
-      $script:attemptCount | Should Be 1
-      Assert-MockCalled Invoke-RestMethod -Times 1 -Exactly -Scope It
-      Assert-MockCalled Start-Sleep -Times 0 -Exactly -Scope It
+      Assert-TestRequestCounts -Requests 1 -Sleeps 0
     }
   }
 
   It 'can report failure when a DELETE succeeds but its response is lost' {
     InModuleScope EgressCleanupHelperModule {
-      $script:attemptCount = 0
-
-      Mock Invoke-RestMethod {
-        $script:attemptCount++
-
-        if ($script:attemptCount -eq 1) {
-          # Simulate the server processing the DELETE, but the connection
-          # closing before the client receives the response.
-          throw [System.Net.WebException]::new(
+      Set-TestRequestOutcomes -Outcomes @(
+        @{
+          Exception = [System.Net.WebException]::new(
             'Simulated lost response',
             [System.Net.WebExceptionStatus]::ConnectionClosed
           )
+        },
+        @{
+          Exception = New-TestHttpException -StatusCode 404
         }
-
-        # The retry finds the resource already deleted.
-        $exception = [System.Exception]::new('Simulated HTTP 404')
-        $exception | Add-Member -MemberType NoteProperty `
-          -Name Response `
-          -Value ([pscustomobject]@{
-            StatusCode = 404
-            Headers    = @{}
-          })
-
-        throw $exception
-      }
-
-      Mock Start-Sleep {}
+      )
 
       {
         Invoke-EgressApiRequest `
@@ -186,11 +177,7 @@ Describe 'Invoke-EgressApiRequest retry logic' {
           -MaxAttempts 3
       } | Should Throw
 
-      # First attempt: response lost.
-      # Second attempt: HTTP 404.
-      $script:attemptCount | Should Be 2
-      Assert-MockCalled Invoke-RestMethod -Times 2 -Exactly -Scope It
-      Assert-MockCalled Start-Sleep -Times 1 -Exactly -Scope It
+      Assert-TestRequestCounts -Requests 2 -Sleeps 1
     }
   }
 }
