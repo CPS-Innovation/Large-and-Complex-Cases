@@ -346,14 +346,38 @@ function Assert-EgressDeletionResponse {
     return
   }
 
+  $resultsProperty = $Response.PSObject.Properties['results']
+  $filesProperty = $Response.PSObject.Properties['files']
+
   if (
-    $null -eq $Response.PSObject.Properties['results'] -or
-    $null -eq $Response.results
+    $null -ne $resultsProperty -and
+    $null -ne $resultsProperty.Value
   ) {
-    throw "Egress reported deletion failure but returned no results."
+    $rawResults = $resultsProperty.Value
+  }
+  elseif (
+    $null -ne $filesProperty -and
+    $null -ne $filesProperty.Value
+  ) {
+    $rawResults = $filesProperty.Value
+  }
+  elseif (
+    (
+      $null -eq $resultsProperty -or
+      $null -eq $resultsProperty.Value
+    ) -and
+    (
+      $null -eq $filesProperty -or
+      $null -eq $filesProperty.Value
+    )
+  ) {
+    throw "Egress returned an invalid deletion response: results collection is missing."
+  }
+  else {
+    throw "Egress reported deletion failure but returned an empty results collection."
   }
 
-  $results = @($Response.results)
+  $results = @($rawResults)
 
   if ($results.Count -eq 0) {
     throw "Egress reported deletion failure but returned an empty results collection."

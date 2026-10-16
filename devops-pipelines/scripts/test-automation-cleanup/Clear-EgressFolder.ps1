@@ -68,7 +68,8 @@ try {
   }
 }
 catch {
-  throw "Failed to list folder contents: $($_.Exception.Message)"
+  Write-Error "  Failed to list folder contents: $($_.Exception.Message)"
+  throw
 }
 
 if (-not $filesToDelete) {
@@ -130,7 +131,7 @@ for ($i = 0; $i -lt $fileIds.Count; $i += $batchSize) {
 
   }
   catch {
-    Write-Host "Failed to delete files: $($_.Exception.Message)" -ForegroundColor Red
+    Write-Error "  Failed to delete files: $($_.Exception.Message)"
     throw
   }
 }
