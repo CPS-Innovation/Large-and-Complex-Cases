@@ -1,28 +1,306 @@
+function Get-EgressHttpStatusCode {
+  param([object]$Response)
+
+  if ($null -ne $Response -and $null -ne $Response.StatusCode) {
+    return [int]$Response.StatusCode
+  }
+
+  return $null
+}
+
+function Test-EgressTransientNetworkError {
+  param([System.Exception]$Exception)
+
+  $retryableWebStatuses = @(
+    [System.Net.WebExceptionStatus]::Timeout,
+    [System.Net.WebExceptionStatus]::ConnectFailure,
+    [System.Net.WebExceptionStatus]::ConnectionClosed,
+    [System.Net.WebExceptionStatus]::ReceiveFailure,
+    [System.Net.WebExceptionStatus]::SendFailure,
+    [System.Net.WebExceptionStatus]::NameResolutionFailure
+  )
+
+  while ($null -ne $Exception) {
+    if (
+      $Exception -is [System.Net.Sockets.SocketException] -or
+      $Exception -is [System.Net.Http.HttpRequestException] -or
+      $Exception -is [System.TimeoutException] -or
+      $Exception -is [System.Threading.Tasks.TaskCanceledException]
+    ) {
+      return $true
+    }
+
+    if (
+      $Exception -is [System.Net.WebException] -and
+      $Exception.Status -in $retryableWebStatuses
+    ) {
+      return $true
+    }
+
+    $Exception = $Exception.InnerException
+  }
+
+  return $false
+}
+
+function Get-EgressRetryAfterHeader {
+  param([object]$Response)
+
+  if ($Response -is [System.Net.Http.HttpResponseMessage]) {
+    $retryAfter = $Response.Headers.RetryAfter
+
+    if ($null -ne $retryAfter) {
+      return $retryAfter.ToString()
+    }
+  }
+  elseif ($Response -is [System.Net.HttpWebResponse]) {
+    return $Response.Headers['Retry-After']
+  }
+
+  return $null
+}
+
+function Get-EgressRetryAfterDelay {
+  param(
+    [string]$Header,
+    [int]$MaxDelaySec
+  )
+
+  if ([string]::IsNullOrWhiteSpace($Header)) {
+    return $null
+  }
+
+  $seconds = 0
+
+  if ([int]::TryParse($Header, [ref]$seconds)) {
+    if ($seconds -ge 0) {
+      return [int][Math]::Min($seconds, $MaxDelaySec)
+    }
+
+    return $null
+  }
+
+  $retryDate = [DateTimeOffset]::MinValue
+
+  if ([DateTimeOffset]::TryParse($Header, [ref]$retryDate)) {
+    $secondsUntilRetry = (
+      $retryDate - [DateTimeOffset]::UtcNow
+    ).TotalSeconds
+
+    if ($secondsUntilRetry -ge 0) {
+      return [int][Math]::Min(
+        [Math]::Ceiling($secondsUntilRetry),
+        $MaxDelaySec
+      )
+    }
+  }
+
+  return $null
+}
+
+function Get-EgressRetryDelay {
+  param(
+    [int]$Attempt,
+    [object]$Response,
+    [int]$MaxDelaySec = 60
+  )
+
+  $baseDelay = [Math]::Min(
+    2 * [Math]::Pow(2, $Attempt - 1),
+    30
+  )
+
+  $delay = [Math]::Min(
+    $baseDelay + (Get-Random -Minimum 0 -Maximum 3),
+    $MaxDelaySec
+  )
+
+  $retryAfter = Get-EgressRetryAfterHeader -Response $Response
+  $serverDelay = Get-EgressRetryAfterDelay `
+    -Header $retryAfter `
+    -MaxDelaySec $MaxDelaySec
+
+  if ($null -ne $serverDelay) {
+    $delay = $serverDelay
+  }
+
+  return [int][Math]::Max(0, $delay)
+}
+
+function Test-EgressRetryableError {
+  param(
+    [System.Management.Automation.ErrorRecord]$ErrorRecord
+  )
+
+  $response = $ErrorRecord.Exception.Response
+  $statusCode = Get-EgressHttpStatusCode -Response $response
+
+  if ($null -ne $statusCode) {
+    return $statusCode -in @(429, 502, 503, 504)
+  }
+
+  return Test-EgressTransientNetworkError `
+    -Exception $ErrorRecord.Exception
+}
+
+function Invoke-EgressApiRequestOnce {
+  param(
+    [string]$Method,
+    [string]$Uri,
+    [hashtable]$Headers,
+    [string]$Body,
+    [bool]$HasBody,
+    [int]$TimeoutSec
+  )
+
+  $params = @{
+    Method      = $Method
+    Uri         = $Uri
+    Headers     = $Headers
+    TimeoutSec  = $TimeoutSec
+    ErrorAction = 'Stop'
+  }
+
+  if ($HasBody) {
+    $params.Body = $Body
+    $params.ContentType = 'application/json'
+  }
+
+  Invoke-RestMethod @params
+}
+
+function Invoke-EgressApiRequest {
+  param(
+    [Parameter(Mandatory = $true)]
+    [ValidateNotNullOrEmpty()]
+    [string]$Method,
+
+    [Parameter(Mandatory = $true)]
+    [ValidateNotNullOrEmpty()]
+    [string]$Uri,
+
+    [Parameter(Mandatory = $true)]
+    [ValidateNotNull()]
+    [hashtable]$Headers,
+
+    [string]$Body,
+
+    [ValidateRange(1, 3600)]
+    [int]$TimeoutSec = 60,
+
+    [ValidateRange(1, 10)]
+    [int]$MaxAttempts = 3
+  )
+
+  if (-not [uri]::IsWellFormedUriString($Uri, [UriKind]::Absolute)) {
+    throw "Uri must be a valid absolute URL."
+  }
+
+  $hasBody = $PSBoundParameters.ContainsKey('Body') -and $null -ne $Body
+
+  for ($attempt = 1; $attempt -le $MaxAttempts; $attempt++) {
+    try {
+      return Invoke-EgressApiRequestOnce `
+        -Method $Method `
+        -Uri $Uri `
+        -Headers $Headers `
+        -Body $Body `
+        -HasBody $hasBody `
+        -TimeoutSec $TimeoutSec
+    }
+    catch {
+      if (-not (Test-EgressRetryableError -ErrorRecord $_)) {
+        throw
+      }
+
+      if ($attempt -eq $MaxAttempts) {
+        throw
+      }
+
+      $response = $_.Exception.Response
+      $statusCode = Get-EgressHttpStatusCode -Response $response
+
+      $delay = Get-EgressRetryDelay `
+        -Attempt $attempt `
+        -Response $response
+
+      Write-EgressRetryWarning `
+        -StatusCode $statusCode `
+        -Delay $delay `
+        -Attempt $attempt `
+        -MaxAttempts $MaxAttempts
+
+      if ($delay -gt 0) {
+        Start-Sleep -Seconds $delay
+      }
+    }
+  }
+}
+
+function Write-EgressRetryWarning {
+  param(
+    [Nullable[int]]$StatusCode,
+    [int]$Delay,
+    [int]$Attempt,
+    [int]$MaxAttempts
+  )
+
+  if ($null -ne $StatusCode) {
+    Write-Warning (
+      "Egress returned HTTP {0}. Retrying in {1} seconds (attempt {2}/{3})..." -f
+      $StatusCode, $Delay, $Attempt, $MaxAttempts
+    )
+    return
+  }
+
+  Write-Warning (
+    "Egress request failed with a transient network error. Retrying in {0} seconds (attempt {1}/{2})..." -f
+    $Delay, $Attempt, $MaxAttempts
+  )
+}
+
 function Connect-EgressServiceAccount {
   [CmdletBinding()]
   param(
     [Parameter(Mandatory = $true)]
+    [ValidateNotNullOrEmpty()]
     [string]$BaseUrl,
 
     [Parameter(Mandatory = $true)]
+    [ValidateNotNullOrEmpty()]
     [string]$AuthToken
   )
 
+  if (-not [uri]::IsWellFormedUriString($BaseUrl, [UriKind]::Absolute)) {
+    throw "BaseUrl must be a valid absolute URL."
+  }
+
   try {
-    $tokenObj = Invoke-RestMethod -Method Get `
-      -Uri "$BaseUrl/api/v1/user/auth/" `
+    $tokenObj = Invoke-EgressApiRequest `
+      -Method Get `
+      -Uri "$($BaseUrl.TrimEnd('/'))/api/v1/user/auth/" `
       -Headers @{
         Accept        = "application/json"
         Authorization = "Basic $AuthToken"
-      } `
-      -ContentType 'application/json' `
-      -ErrorAction Stop
+      }
   }
   catch {
-    throw "Authentication failed: $($_.Exception.Message)"
+    $exception = [System.Exception]::new(
+      "Authentication failed: $($_.Exception.Message)",
+      $_.Exception
+    )
+
+    $errorRecord = [System.Management.Automation.ErrorRecord]::new(
+      $exception,
+      'EgressAuthenticationFailed',
+      [System.Management.Automation.ErrorCategory]::AuthenticationError,
+      $BaseUrl
+    )
+
+    $PSCmdlet.ThrowTerminatingError($errorRecord)
   }
 
-  if (-not $tokenObj.token) {
+  if ([string]::IsNullOrWhiteSpace([string]$tokenObj.token)) {
     throw "Authentication succeeded but no token was returned."
   }
 
@@ -35,44 +313,189 @@ function Connect-EgressServiceAccount {
   }
 }
 
+function Assert-EgressFileIds {
+  param(
+    [Parameter(Mandatory = $true)]
+    [AllowNull()]
+    [string[]]$FileIds
+  )
+
+  if ($null -eq $FileIds -or $FileIds.Count -eq 0) {
+    throw "FileIds must contain at least one file ID."
+  }
+
+  foreach ($fileId in $FileIds) {
+    if ([string]::IsNullOrWhiteSpace($fileId)) {
+      throw "FileIds must not contain null, empty or whitespace-only values."
+    }
+  }
+}
+
+function Assert-EgressDeletionResponse {
+  param([object]$Response)
+
+  if (
+    $null -eq $Response -or
+    $null -eq $Response.PSObject.Properties['all_successful'] -or
+    $Response.all_successful -isnot [bool]
+  ) {
+    throw "Egress returned an invalid deletion response: all_successful is missing or is not a boolean."
+  }
+
+  if ($Response.all_successful) {
+    return
+  }
+
+  $resultsProperty = $Response.PSObject.Properties['results']
+  $filesProperty = $Response.PSObject.Properties['files']
+
+  if (
+    $null -ne $resultsProperty -and
+    $null -ne $resultsProperty.Value
+  ) {
+    $rawResults = $resultsProperty.Value
+  }
+  elseif (
+    $null -ne $filesProperty -and
+    $null -ne $filesProperty.Value
+  ) {
+    $rawResults = $filesProperty.Value
+  }
+  elseif (
+    (
+      $null -eq $resultsProperty -or
+      $null -eq $resultsProperty.Value
+    ) -and
+    (
+      $null -eq $filesProperty -or
+      $null -eq $filesProperty.Value
+    )
+  ) {
+    throw "Egress returned an invalid deletion response: results collection is missing."
+  }
+  else {
+    throw "Egress reported deletion failure but returned an empty results collection."
+  }
+
+  $results = @($rawResults)
+
+  if ($results.Count -eq 0) {
+    throw "Egress reported deletion failure but returned an empty results collection."
+  }
+
+  $failedCount = Write-EgressDeletionWarnings -Results $results
+
+  if ($failedCount -eq 0) {
+    throw "Egress reported all_successful=false but returned no failed file results."
+  }
+
+  throw "One or more files failed to delete ($failedCount failed)."
+}
+
+function Write-EgressDeletionWarnings {
+  param([object[]]$Results)
+
+  $failedCount = 0
+
+  foreach ($result in $Results) {
+    $resultCode = Get-EgressDeletionResultCode -Result $result
+
+    if ($resultCode -eq 0) {
+      continue
+    }
+
+    $failedCount++
+
+    $fileId = $result.file_id
+    $reason = Get-EgressDeletionFailureReason `
+      -Result $result `
+      -ResultCode $resultCode
+
+    Write-Warning "Failed to delete FileId=$fileId : $reason"
+  }
+
+  return $failedCount
+}
+
+function Get-EgressDeletionResultCode {
+  param([object]$Result)
+
+  if (
+    $null -eq $Result -or
+    $null -eq $Result.PSObject.Properties['code'] -or
+    $null -eq $Result.code
+  ) {
+    throw "Egress returned a deletion result without a valid code."
+  }
+
+  $resultCode = 0
+
+  if (-not [int]::TryParse([string]$Result.code, [ref]$resultCode)) {
+    throw "Egress returned an invalid deletion result code."
+  }
+
+  return $resultCode
+}
+
+function Get-EgressDeletionFailureReason {
+  param(
+    [object]$Result,
+    [int]$ResultCode
+  )
+
+  if (-not [string]::IsNullOrWhiteSpace([string]$Result.reason)) {
+    return $Result.reason
+  }
+
+  if (-not [string]::IsNullOrWhiteSpace([string]$Result.status)) {
+    return $Result.status
+  }
+
+  return "Error code $ResultCode"
+}
+
+
 function Remove-EgressFiles {
   [CmdletBinding()]
   param(
     [Parameter(Mandatory = $true)]
+    [ValidateNotNullOrEmpty()]
     [string]$BaseUrl,
 
     [Parameter(Mandatory = $true)]
+    [ValidateNotNull()]
     [hashtable]$AuthorizationHeader,
 
     [Parameter(Mandatory = $true)]
+    [ValidateNotNullOrEmpty()]
     [string]$WorkspaceId,
 
     [Parameter(Mandatory = $true)]
+    [ValidateNotNull()]
     [string[]]$FileIds
   )
 
-  $headers = $AuthorizationHeader
+  Assert-EgressFileIds -FileIds $FileIds
 
-  $body = @{
-    file_ids = $FileIds
-  } | ConvertTo-Json
-
-  $response = Invoke-RestMethod -Method Delete `
-    -Uri "$BaseUrl/api/v1/workspaces/$WorkspaceId/files" `
-    -Headers $headers `
-    -Body $body `
-    -ContentType 'application/json' `
-    -ErrorAction Stop
-  
-  $failed = $response.results | Where-Object { $_.code -ne 0 }
-
-  if ($failed) {
-    foreach ($r in $failed) {
-      Write-Warning "Failed to delete FileId=$($r.file_id): $($r.status)"
-    }
-
-    throw "One or more files failed to delete."
+  if (-not [uri]::IsWellFormedUriString($BaseUrl, [UriKind]::Absolute)) {
+    throw "BaseUrl must be a valid absolute URL."
   }
+
+  $FileIds = @($FileIds | Select-Object -Unique)
+
+  $body = @{ file_ids = $FileIds } | ConvertTo-Json
+
+  $response = Invoke-EgressApiRequest `
+    -Method Delete `
+    -Uri "$($BaseUrl.TrimEnd('/'))/api/v1/workspaces/$WorkspaceId/files" `
+    -Headers $AuthorizationHeader `
+    -Body $body `
+    -TimeoutSec 180
+
+  Assert-EgressDeletionResponse -Response $response
 }
 
-Export-ModuleMember -Function Connect-EgressServiceAccount, Remove-EgressFiles
+Export-ModuleMember -Function `
+  Invoke-EgressApiRequest, `
+  Connect-EgressServiceAccount, `
+  Remove-EgressFiles

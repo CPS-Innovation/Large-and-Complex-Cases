@@ -42,30 +42,34 @@ Write-Host "[2/3] Listing files..." -ForegroundColor Yellow
 
 $filesToDelete = @()
 
+$folderPath = [uri]::EscapeDataString($FolderName)
+
 try {
-  $response = Invoke-RestMethod -Method Get `
-    -Uri "$BaseUrl/api/v1/workspaces/$WorkspaceId/files?path=$folderName" `
+  $response = Invoke-EgressApiRequest `
+    -Method Get `
+    -Uri "$($BaseUrl.TrimEnd('/'))/api/v1/workspaces/$WorkspaceId/files?path=$folderPath" `
     -Headers $AuthHeader
+
+  while ($true) {
+    if ($response.data) {
+      $filesToDelete += $response.data
+    }
+
+    if ([string]::IsNullOrWhiteSpace($response.pagination.next_url)) {
+      break
+    }
+
+    $nextUrl = $response.pagination.next_url -replace '^http://', 'https://'
+
+    $response = Invoke-EgressApiRequest `
+      -Method Get `
+      -Uri $nextUrl `
+      -Headers $AuthHeader
+  }
 }
 catch {
-  Write-Error "Failed to list folder contents: $($_.Exception.Message)"
+  Write-Error "  Failed to list folder contents: $($_.Exception.Message)"
   throw
-}
-
-while ($true) {
-  if ($response.data) {
-    $filesToDelete += $response.data
-  }
-
-  if ([string]::IsNullOrWhiteSpace($response.pagination.next_url)) {
-    break
-  }
-
-  $nextUrl = $response.pagination.next_url -replace '^http://', 'https://'
-
-  $response = Invoke-RestMethod -Method Get `
-    -Uri $nextUrl `
-    -Headers $AuthHeader
 }
 
 if (-not $filesToDelete) {
@@ -127,7 +131,7 @@ for ($i = 0; $i -lt $fileIds.Count; $i += $batchSize) {
 
   }
   catch {
-    Write-Host "Failed to delete files: $($_.Exception.Message)" -ForegroundColor Red
+    Write-Error "  Failed to delete files: $($_.Exception.Message)"
     throw
   }
 }
