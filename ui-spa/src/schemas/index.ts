@@ -2,6 +2,7 @@ export * from "./requests/connectEgressPayload";
 export * from "./requests/connectNetAppPayload";
 export * from "./requests/indexingFileTransferPayload";
 export * from "./requests/initiateFileTransferPayload";
+export * from "./requests/createEgressCasePayload";
 export * from "./responses/activityLogResponse";
 export * from "./responses/caseDivisionsOrArea";
 export * from "./responses/caseMetaData";

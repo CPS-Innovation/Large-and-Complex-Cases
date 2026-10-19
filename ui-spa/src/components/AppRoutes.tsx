@@ -17,6 +17,8 @@ import DisconnectConfirmationPage from "./case-management/disconnect/DisconnectC
 import DisconnectSuccessPage from "./case-management/disconnect/DisconnectSuccessPage";
 import DisconnectFailurePage from "./case-management/disconnect/DisconnectFailurePage";
 import TransferDestinationPage from "./case-management/transfer-materials/TransferDestinationPage";
+import ManageEgressPage from "./case-management/register-a-case-v2/manage-egress";
+import EgressConfirmationPage from "./case-management/register-a-case-v2/egress-confirmation";
 import MaintenancePage from "./maintenance-page";
 import UnAuthorisedPage from "./unauthorised";
 import { MainStateContext } from "../providers/MainStateProvider";
@@ -126,6 +128,9 @@ const AppRoutes = () => {
           element={<TransferDestinationPage />}
         />
       </Route>
+      <Route path="/manage-set-up-egress" element={<ManageEgressPage />} />
+      <Route path="/egress-confirmation" element={<EgressConfirmationPage />} />
+
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
