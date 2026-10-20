@@ -4,7 +4,7 @@ import { useNavigate, useSearchParams, useParams } from "react-router";
 import { getUrlSearchParam } from "../../common/utils/getUrlSearchParam";
 import { useQuery } from "@tanstack/react-query";
 import { MainStateContext } from "../../providers/MainStateProvider";
-import EgressSearchPage from "./EgressSearchPage";
+import EgressSearchPageV2 from "./EgressSearchPageV2";
 
 const EgressPage = () => {
   const { state, dispatch } = useContext(MainStateContext);
@@ -78,7 +78,7 @@ const EgressPage = () => {
   };
 
   return (
-    <EgressSearchPage
+    <EgressSearchPageV2
       backLinkUrl={`/search-results?${searchQueryString}`}
       workspaceName={workspaceName}
       searchValue={formValue}

@@ -1,0 +1,35 @@
+.results {
+  max-width: 100%;
+  overflow-x: auto;
+  .statusTag {
+    text-transform: none;
+    font-weight: normal;
+    letter-spacing: normal;
+    font-size: 1.1875rem;
+  }
+  & :global(.govuk-button--secondary) {
+    margin-bottom: 0;
+    font-size: 1rem;
+  }
+  & :global(.govuk-table__cell) {
+    vertical-align: middle;
+  }
+}
+
+.noResultsContent {
+  margin-top: 1.5rem;
+  margin-bottom: 3rem;
+  & :global(.govuk-list) {
+    margin-top: 1rem;
+  }
+}
+
+.searchResultsCount {
+  padding-bottom: 1.5rem;
+  margin-bottom: 3rem;
+  border-bottom: 1px solid #b1b4b6;
+}
+.tableWrapper {
+  max-width: 100%;
+  overflow-x: auto;
+}
