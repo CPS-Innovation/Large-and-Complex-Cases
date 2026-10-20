@@ -37,6 +37,7 @@ export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
       const results = isDevMock() ? caseAreasDev : caseAreasPlaywright;
       await delay(RESPONSE_DELAY);
       return HttpResponse.json(results);
+      // return new HttpResponse(null, { status: 401 });
     }),
 
     http.get(`${baseUrl}/api/v1/case-search`, async () => {
@@ -44,6 +45,7 @@ export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
         ? casesSearchResultsDev
         : casesSearchResultsPlaywright;
       await delay(RESPONSE_DELAY);
+      // return new HttpResponse(null, { status: 401 });
       return HttpResponse.json(caseSearchResults);
     }),
 
@@ -54,6 +56,10 @@ export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
       await delay(RESPONSE_DELAY);
 
       return HttpResponse.json(egressSearchResults);
+    }),
+
+    http.post(`${baseUrl}/api/v1/egress/workspaces`, async () => {
+      return new HttpResponse(null, { status: 200 });
     }),
 
     http.post(`${baseUrl}/api/v1/egress/connections`, async () => {

@@ -32,7 +32,7 @@ const EgressConfirmationPage = () => {
           : "A new case has been created on Egress."}
       </p>
       <p className="govuk-body">Select Continue to manage the Shared Drive.</p>
-      <div className={styles.buttonWrapper}>
+      <div>
         <Button
           type="submit"
           disabled={disableButtons}

@@ -1,12 +1,23 @@
-import { useRef, useEffect, useState, useCallback, useMemo } from "react";
+import {
+  useRef,
+  useEffect,
+  useState,
+  useCallback,
+  useMemo,
+  useContext,
+} from "react";
 import { Radios, Button, ErrorSummary } from "../../../govuk";
 import { useNavigate, useLocation } from "react-router";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { ApiError } from "../../../../common/errors/ApiError";
 import { useGetCaseDivisionsOrAreas } from "../../../../common/hooks/useGetCaseDivisionsOrAreas";
-import { createEgressCase } from "../../../../apis/gateway-api";
+import {
+  createEgressCase,
+  getCaseSearchResults,
+} from "../../../../apis/gateway-api";
 import { Spinner } from "../../../common/Spinner";
 import { PageContentWrapper } from "../../../govuk/PageContentWrapper";
+import { MainStateContext } from "../../../../providers/MainStateProvider";
 import styles from "./index.module.scss";
 import commonStyles from "../../../case-management/index.module.scss";
 
@@ -19,27 +30,36 @@ type ManageEgressRadioValue =
 const ManageEgressPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { caseId, templateId, description } = useMemo(() => {
+  const { urn } = useMemo(() => {
     const params = new URLSearchParams(location.search);
     return {
-      caseId: params.get("caseId") ?? "",
-      templateId: params.get("templateId") ?? "",
-      description: params.get("description") ?? "",
+      urn: params.get("urn") ?? "",
     };
   }, [location.search]);
+  const { state } = useContext(MainStateContext);
 
   useEffect(() => {
-    if (!caseId || !templateId || !description) {
+    if (!urn) {
       void navigate(`/`);
     }
-  }, [caseId, templateId, description, navigate]);
+  }, [urn, navigate]);
   const createEgressCaseMutation = useMutation({
     mutationFn: createEgressCase,
     throwOnError: (error: ApiError) => {
       return error.code !== 403;
     },
   });
+
   const { isLoading: isDivisionsOrAreasLoading } = useGetCaseDivisionsOrAreas();
+  const { data: searchResults, isLoading: isSearchResultsLoading } = useQuery({
+    queryKey: [urn],
+    queryFn: () => getCaseSearchResults({ urn: urn }),
+    retry: false,
+    enabled: !!state.apiData?.caseDivisionsOrAreas,
+    throwOnError: true,
+    staleTime: 0,
+    gcTime: 0,
+  });
   type ErrorText = {
     errorSummaryText: string;
     inputErrorText?: string;
@@ -114,6 +134,10 @@ const ManageEgressPage = () => {
 
     if (!validateFormData()) return;
 
+    const description =
+      searchResults?.[0].operationName || searchResults?.[0].leadDefendantName;
+    const caseId = searchResults?.[0].caseId;
+
     setDisableButtons(true);
     if (formData.manageEgressRadio === "skip-egress") {
       void navigate(`/manage-set-up-shared-drive`);
@@ -128,18 +152,20 @@ const ManageEgressPage = () => {
       return;
     }
 
-    await createEgressCaseMutation.mutateAsync({
-      templateId: templateId,
-      caseId: Number.parseInt(caseId),
-      description,
-    });
+    if (caseId && description) {
+      await createEgressCaseMutation.mutateAsync({
+        templateId: "1223",
+        caseId,
+        description,
+      });
+    }
 
     void navigate("/egress-confirmation");
 
     setDisableButtons(false);
   };
 
-  if (isDivisionsOrAreasLoading) {
+  if (isDivisionsOrAreasLoading || isSearchResultsLoading) {
     return (
       <PageContentWrapper>
         <div className={commonStyles.pageLoadingSpinnerWrapper}>
@@ -188,18 +214,21 @@ const ManageEgressPage = () => {
                 children: "Create a new case on Egress",
                 value: "create-new",
                 "data-testid": "manage-egress-radio-create-new",
+                disabled: disableButtons,
               },
               {
                 id: "manage-egress-radio-connect-existing",
                 children: "Connect an existing Egress case",
                 value: "connect-existing",
                 "data-testid": "manage-egress-radio-connect-existing",
+                disabled: disableButtons,
               },
               {
                 id: "manage-egress-radio-skip",
                 children: "Egress is not needed now",
                 value: "skip",
                 "data-testid": "manage-egress-radio-skip",
+                disabled: disableButtons,
               },
             ]}
             value={formData.manageEgressRadio}
