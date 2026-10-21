@@ -5,6 +5,9 @@ namespace CPS.ComplexCases.API.Tests.Unit.Validators;
 
 public class ProvisionNetAppFoldersRequestValidatorTests
 {
+    private const string TemplateLocationMessage = "Template must be in the _templates/ folder directly under the selected parent folder.";
+    private const string TemplatesParentMessage = "Case folders cannot be created inside a _templates folder.";
+
     private readonly ProvisionNetAppFoldersRequestValidator _validator = new();
 
     private static ProvisionNetAppFoldersDto ValidDto() => new()
@@ -51,7 +54,7 @@ public class ProvisionNetAppFoldersRequestValidatorTests
     }
 
     [Fact]
-    public void Validate_WhenPathDoesNotStartWithTemplates_ReturnsValidationError()
+    public void Validate_WhenNoParentAndTemplateNotUnderRootTemplates_ReturnsValidationError()
     {
         var dto = ValidDto();
         dto.TemplateFolderPath = "other/charged/";
@@ -61,18 +64,18 @@ public class ProvisionNetAppFoldersRequestValidatorTests
         Assert.False(result.IsValid);
         Assert.Single(result.Errors, e =>
             e.PropertyName == nameof(dto.TemplateFolderPath) &&
-            e.ErrorMessage == "Path must be under _templates/.");
+            e.ErrorMessage == TemplateLocationMessage);
     }
 
     [Fact]
-    public void Validate_WhenPathStartsWithTemplatesCaseInsensitive_PassesStartsWithRule()
+    public void Validate_WhenPathStartsWithTemplatesCaseInsensitive_PassesValidation()
     {
         var dto = ValidDto();
         dto.TemplateFolderPath = "_TEMPLATES/charged/";
 
         var result = _validator.Validate(dto);
 
-        Assert.DoesNotContain(result.Errors, e => e.ErrorMessage == "Path must be under _templates/.");
+        Assert.True(result.IsValid);
     }
 
     [Fact]
@@ -104,19 +107,6 @@ public class ProvisionNetAppFoldersRequestValidatorTests
     }
 
     [Fact]
-    public void Validate_WhenPathContainsDotDotAtEnd_ReturnsValidationError()
-    {
-        var dto = ValidDto();
-        dto.TemplateFolderPath = "_templates/charged/../";
-
-        var result = _validator.Validate(dto);
-
-        Assert.False(result.IsValid);
-        Assert.Contains(result.Errors, e =>
-            e.ErrorMessage == "Path cannot contain '..' to navigate up directories.");
-    }
-
-    [Fact]
     public void Validate_WhenPathIsEmpty_OnlyReportsFirstError()
     {
         // NotEmpty fires first; with CascadeMode.Stop the subsequent rules must not run.
@@ -130,12 +120,96 @@ public class ProvisionNetAppFoldersRequestValidatorTests
     }
 
     [Fact]
-    public void Validate_WhenPathIsValid_PassesValidation()
+    public void Validate_WhenTemplateIsBareTemplatesFolder_ReturnsValidationError()
     {
-        var result = _validator.Validate(ValidDto());
+        var dto = ValidDto();
+        dto.TemplateFolderPath = "_templates/";
+
+        var result = _validator.Validate(dto);
+
+        Assert.Single(result.Errors, e => e.ErrorMessage == TemplateLocationMessage);
+    }
+
+    [Fact]
+    public void Validate_WhenParentAndTemplateMatch_PassesValidation()
+    {
+        var dto = new ProvisionNetAppFoldersDto
+        {
+            ParentFolderPath = "Area1/TeamA/",
+            TemplateFolderPath = "Area1/TeamA/_templates/Standard/"
+        };
+
+        var result = _validator.Validate(dto);
 
         Assert.True(result.IsValid);
-        Assert.Empty(result.Errors);
+    }
+
+    [Theory]
+    [InlineData("Area1/TeamB/", "Area1/TeamA/_templates/Standard/")]       // template from another folder
+    [InlineData("Area1/TeamA/", "_templates/Standard/")]                    // root template with a subfolder parent
+    [InlineData("Area1/", "Area1/TeamA/_templates/Standard/")]              // template from a child folder
+    [InlineData("", "Area1/TeamA/_templates/Standard/")]                    // subfolder template with no parent
+    public void Validate_WhenTemplateIsNotDirectlyUnderParent_ReturnsValidationError(string parent, string template)
+    {
+        var dto = new ProvisionNetAppFoldersDto { ParentFolderPath = parent, TemplateFolderPath = template };
+
+        var result = _validator.Validate(dto);
+
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, e => e.ErrorMessage == TemplateLocationMessage);
+    }
+
+    [Theory]
+    [InlineData("_templates/")]
+    [InlineData("_Templates/Standard/")]
+    [InlineData("Area1/_templates/")]
+    [InlineData("Area1/_templates/Standard/Sub/")]
+    public void Validate_WhenParentIsInsideTemplatesFolder_ReturnsValidationError(string parent)
+    {
+        var dto = new ProvisionNetAppFoldersDto
+        {
+            ParentFolderPath = parent,
+            TemplateFolderPath = $"{parent}_templates/Standard/"
+        };
+
+        var result = _validator.Validate(dto);
+
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, e =>
+            e.PropertyName == nameof(dto.ParentFolderPath) &&
+            e.ErrorMessage == TemplatesParentMessage);
+    }
+
+    [Fact]
+    public void Validate_WhenParentContainsDotDot_ReturnsValidationError()
+    {
+        var dto = new ProvisionNetAppFoldersDto
+        {
+            ParentFolderPath = "Area1/../",
+            TemplateFolderPath = "Area1/../_templates/Standard/"
+        };
+
+        var result = _validator.Validate(dto);
+
+        Assert.Contains(result.Errors, e =>
+            e.PropertyName == nameof(dto.ParentFolderPath) &&
+            e.ErrorMessage == "Parent folder path cannot contain '..' to navigate up directories.");
+    }
+
+    [Fact]
+    public void Validate_WhenParentDoesNotEndWithSlash_ReturnsValidationError()
+    {
+        var dto = new ProvisionNetAppFoldersDto
+        {
+            ParentFolderPath = "Area1/TeamA",
+            TemplateFolderPath = "Area1/TeamA/_templates/Standard/"
+        };
+
+        var result = _validator.Validate(dto);
+
+        Assert.Single(result.Errors, e =>
+            e.PropertyName == nameof(dto.ParentFolderPath) &&
+            e.ErrorMessage == "Parent folder path must end with '/'.");
     }
 
     [Theory]
@@ -143,7 +217,7 @@ public class ProvisionNetAppFoldersRequestValidatorTests
     [InlineData("_templates/appeal/")]
     [InlineData("_templates/charged/subfolder/")]
     [InlineData("_TEMPLATES/charged/")]
-    public void Validate_WithValidPaths_PassesValidation(string path)
+    public void Validate_WithValidRootPaths_PassesValidation(string path)
     {
         var dto = ValidDto();
         dto.TemplateFolderPath = path;
@@ -154,7 +228,7 @@ public class ProvisionNetAppFoldersRequestValidatorTests
     }
 
     [Theory]
-    [InlineData("other/charged/")]           // wrong prefix
+    [InlineData("other/charged/")]           // not under _templates/
     [InlineData("_templates/charged")]        // missing trailing slash
     [InlineData("_templates/../charged/")]    // directory traversal
     [InlineData("_templates/charged/../")]    // directory traversal at end
