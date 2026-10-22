@@ -646,6 +646,33 @@ public class CaseEnrichmentServiceTests
         _ddeiArgFactoryMock.Verify(f => f.CreateCaseArg(_cmsAuthValues, _correlationId, 202), Times.Once);
     }
 
+    [Theory]
+    [InlineData(null, null)]
+    [InlineData(" ", " ")]
+    [InlineData("", "   ")]
+    public async Task EnrichEgressWorkspacesWithMetadataAsync_WhenOperationAndDefendantNamesBlank_ReturnsNullCaseName(
+        string? operationName, string? leadDefendantName)
+    {
+        // Arrange
+        var workspaces = CreateSampleWorkspaces(1);
+        var workspaceId = workspaces.Data.Single().Id;
+
+        _caseMetadataServiceMock
+            .Setup(s => s.GetCaseMetadataForEgressWorkspaceIdsAsync(It.IsAny<IEnumerable<string>>()))
+            .ReturnsAsync(new List<CaseMetadata> { new CaseMetadata { CaseId = 303, EgressWorkspaceId = workspaceId } });
+
+        SetupDdeiCase(new CaseDto { CaseId = 303, Urn = "03TS0000003", OperationName = operationName, LeadDefendantName = leadDefendantName });
+
+        // Act
+        var result = await _service.EnrichEgressWorkspacesWithMetadataAsync(workspaces, _cmsAuthValues, _correlationId);
+
+        // Assert
+        var workspace = result.Data.Single();
+        Assert.Equal(303, workspace.CaseId);
+        Assert.Equal("03TS0000003", workspace.ConnectedCaseUrn);
+        Assert.Null(workspace.ConnectedCaseName);
+    }
+
     [Fact]
     public async Task EnrichEgressWorkspacesWithMetadataAsync_WhenWorkspaceNotConnected_ReturnsNullCaseDetailsAndSkipsDdei()
     {

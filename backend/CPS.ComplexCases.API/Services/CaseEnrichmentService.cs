@@ -195,7 +195,13 @@ public class CaseEnrichmentService : ICaseEnrichmentService
         string cmsAuthValues,
         Guid correlationId)
     {
-        var lookups = await Task.WhenAll(caseIds.Select(async caseId =>
+        var caseIdList = caseIds as ICollection<int> ?? caseIds.ToList();
+        if (caseIdList.Count == 0)
+        {
+            return new Dictionary<int, CaseDto>();
+        }
+
+        var lookups = await Task.WhenAll(caseIdList.Select(async caseId =>
             (CaseId: caseId, Case: await TryGetCaseAsync(caseId, cmsAuthValues, correlationId))));
 
         return lookups
@@ -226,7 +232,9 @@ public class CaseEnrichmentService : ICaseEnrichmentService
     }
 
     private static string? ResolveCaseName(CaseDto caseDto) =>
-        string.IsNullOrWhiteSpace(caseDto.OperationName) ? caseDto.LeadDefendantName : caseDto.OperationName;
+        !string.IsNullOrWhiteSpace(caseDto.OperationName)
+            ? caseDto.OperationName
+            : string.IsNullOrWhiteSpace(caseDto.LeadDefendantName) ? null : caseDto.LeadDefendantName;
 
     private static int? ResolveNetAppFolderCaseId(
         string folderPath,
