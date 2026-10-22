@@ -76,4 +76,16 @@ public class ProvisionNetAppFoldersRequestValidatorTests
 
         result.ShouldHaveValidationErrorFor(x => x.TemplateName);
     }
+
+    [Theory]
+    [InlineData("", "TemplateName is required.")]
+    [InlineData("_templates/Standard", "TemplateName must end with '/'.")]
+    [InlineData("_templates/../Standard/", "TemplateName cannot contain '..' to navigate up directories.")]
+    public void Validate_WhenDestinationIsEmpty_StillValidatesTemplateName(string template, string expectedMessage)
+    {
+        var result = _validator.TestValidate(CreateRequest("", template));
+
+        result.ShouldHaveValidationErrorFor(x => x.TemplateName)
+            .WithErrorMessage(expectedMessage);
+    }
 }

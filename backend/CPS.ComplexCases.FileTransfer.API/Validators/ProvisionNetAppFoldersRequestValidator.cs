@@ -38,7 +38,7 @@ public class ProvisionNetAppFoldersRequestValidator : AbstractValidator<Provisio
             .Must((request, path) => NetAppTemplatePathHelper.IsTemplateUnderParent(
                 path, NetAppTemplatePathHelper.GetParentFolderPath(request.DestinationFolderPath)))
             .WithMessage("Template must be in the _templates/ folder directly under the destination's parent folder.")
-            .When(x => !string.IsNullOrEmpty(x.DestinationFolderPath));
+            .When(x => !string.IsNullOrEmpty(x.DestinationFolderPath), ApplyConditionTo.CurrentValidator);
 
         RuleFor(x => x.BucketName)
             .NotEmpty()
