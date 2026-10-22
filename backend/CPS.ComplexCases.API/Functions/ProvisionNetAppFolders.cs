@@ -7,11 +7,11 @@ using CPS.ComplexCases.API.Context;
 using CPS.ComplexCases.API.Services;
 using CPS.ComplexCases.API.Validators.Requests;
 using CPS.ComplexCases.Common.Attributes;
-using CPS.ComplexCases.Common.Extensions;
 using CPS.ComplexCases.Common.Handlers;
 using CPS.ComplexCases.Common.Helpers;
 using CPS.ComplexCases.Common.Models.Requests;
 using CPS.ComplexCases.Common.Services;
+using CPS.ComplexCases.Common.Telemetry;
 using CPS.ComplexCases.DDEI.Client;
 using CPS.ComplexCases.DDEI.Factories;
 using CPS.ComplexCases.DDEI.Services;
@@ -34,7 +34,8 @@ public class ProvisionNetAppFolders(ILogger<ProvisionNetAppFolders> logger,
     IUserBucketAccessService userBucketAccessService,
     ICaseMetadataService caseMetadataService,
     IActivityLogService activityLogService,
-    IInitializationHandler initializationHandler)
+    IInitializationHandler initializationHandler,
+    ITelemetryClient telemetryClient)
 {
     private readonly ILogger<ProvisionNetAppFolders> _logger = logger;
     private readonly IDdeiClient _ddeiClient = ddeiClient;
@@ -46,6 +47,7 @@ public class ProvisionNetAppFolders(ILogger<ProvisionNetAppFolders> logger,
     private readonly ICaseMetadataService _caseMetadataService = caseMetadataService;
     private readonly IActivityLogService _activityLogService = activityLogService;
     private readonly IInitializationHandler _initializationHandler = initializationHandler;
+    private readonly ITelemetryClient _telemetryClient = telemetryClient;
 
     [Function(nameof(ProvisionNetAppFolders))]
     [OpenApiOperation(operationId: nameof(ProvisionNetAppFolders), tags: ["NetApp"], Description = "Create the NetApp folder structure from a template for a case.")]
@@ -97,16 +99,28 @@ public class ProvisionNetAppFolders(ILogger<ProvisionNetAppFolders> logger,
         }
 
         var caseNameDto = await _caseNamingService.GenerateCaseName(cmsResponse);
-        var folderPathName = caseNameDto.CaseName.EnsureTrailingSlash();
+        var templateFolderPath = provisionFoldersRequest.Value.TemplateFolderPath;
+        var folderPathName = NetAppTemplatePathHelper.BuildDestinationPath(
+            provisionFoldersRequest.Value.ParentFolderPath, caseNameDto.CaseName);
 
         var bucketName = (await _userBucketAccessService.ResolveBucketAsync(
             context.BearerToken, caseMetadata?.NetappBucketName, provisionFoldersRequest.Value.BucketName)).BucketName;
+
+        var telemetryEvent = new ProvisionNetAppFoldersEvent
+        {
+            CaseId = caseId,
+            CorrelationId = context.CorrelationId,
+            DestinationPath = folderPathName,
+            TemplatePath = templateFolderPath,
+            BucketName = bucketName,
+            StartTime = DateTime.UtcNow
+        };
 
         var provisionNetAppFoldersRequest = new ProvisionNetAppFoldersRequest
         {
             CaseId = caseId,
             Urn = cmsResponse.Urn,
-            TemplateName = provisionFoldersRequest.Value.TemplateFolderPath,
+            TemplateName = templateFolderPath,
             DestinationFolderPath = folderPathName,
             BucketName = bucketName,
             BearerToken = context.BearerToken,
@@ -119,14 +133,18 @@ public class ProvisionNetAppFolders(ILogger<ProvisionNetAppFolders> logger,
 
         if (!response.IsSuccessStatusCode)
         {
+            var errorBody = await response.Content.ReadAsStringAsync();
             _logger.LogError("Failed to provision NetApp folders for caseId: {CaseId}. StatusCode: {StatusCode}, Response: {Response}",
-                caseId, response.StatusCode, await response.Content.ReadAsStringAsync());
+                caseId, response.StatusCode, errorBody);
+
+            TrackProvisioningFailure(telemetryEvent, $"FileTransfer returned {(int)response.StatusCode}");
 
             return response.StatusCode switch
             {
                 HttpStatusCode.Unauthorized => new UnauthorizedObjectResult("Unauthorized to provision NetApp folders."),
-                HttpStatusCode.BadRequest => new BadRequestObjectResult("Invalid request to provision NetApp folders."),
-                HttpStatusCode.Conflict => new ConflictObjectResult(await response.Content.ReadAsStringAsync()),
+                HttpStatusCode.BadRequest => new BadRequestObjectResult(
+                    string.IsNullOrWhiteSpace(errorBody) ? "Invalid request to provision NetApp folders." : errorBody),
+                HttpStatusCode.Conflict => new ConflictObjectResult(errorBody),
                 HttpStatusCode.Forbidden => new ForbidResult("Forbidden from provisioning NetApp folders."),
                 HttpStatusCode.NotFound => new NotFoundObjectResult("Template folder not found for provisioning NetApp folders."),
                 HttpStatusCode.ServiceUnavailable => new ObjectResult("NetApp service is currently unavailable.") { StatusCode = (int)HttpStatusCode.ServiceUnavailable },
@@ -137,6 +155,7 @@ public class ProvisionNetAppFolders(ILogger<ProvisionNetAppFolders> logger,
         var responseBody = await response.Content.ReadAsStringAsync();
         var parsedResponse = JsonSerializer.Deserialize<JsonElement>(responseBody);
         var transferId = parsedResponse.GetProperty("id").GetString() ?? string.Empty;
+        telemetryEvent.TransferId = transferId;
 
         // Always poll for a terminal status. When File Transfer returns 200 the durable
         // orchestration has completed, but FinalizeTransfer signals the transfer entity
@@ -147,6 +166,7 @@ public class ProvisionNetAppFolders(ILogger<ProvisionNetAppFolders> logger,
         {
             _logger.LogError("NetApp folder provisioning did not complete for caseId: {CaseId}, TransferId: {TransferId}, Status: {Status}",
                 caseId, transferId, finalStatus ?? "timeout");
+            TrackProvisioningFailure(telemetryEvent, $"Transfer did not complete: {finalStatus ?? "timeout"}");
             return new ObjectResult("NetApp folder provisioning did not complete.") { StatusCode = (int)HttpStatusCode.BadRequest };
         }
 
@@ -154,6 +174,7 @@ public class ProvisionNetAppFolders(ILogger<ProvisionNetAppFolders> logger,
         {
             _logger.LogError("NetApp folder provisioning failed for caseId: {CaseId}, TransferId: {TransferId}, Status: {Status}",
                 caseId, transferId, finalStatus);
+            TrackProvisioningFailure(telemetryEvent, "Transfer failed");
             return new ObjectResult("NetApp folder provisioning failed.") { StatusCode = (int)HttpStatusCode.InternalServerError };
         }
 
@@ -180,9 +201,22 @@ public class ProvisionNetAppFolders(ILogger<ProvisionNetAppFolders> logger,
             _logger.LogError(ex, "Failed to write activity log for NetApp provisioning for case {CaseId}.", caseId);
         }
 
-        _logger.LogInformation("ProvisionNetAppFolders function completed for caseId: {CaseId}", caseId);
+        telemetryEvent.IsSuccessful = true;
+        telemetryEvent.EndTime = DateTime.UtcNow;
+        _telemetryClient.TrackEvent(telemetryEvent);
+
+        _logger.LogInformation("ProvisionNetAppFolders function completed for caseId: {CaseId}, Destination: {Destination}, Template: {Template}",
+            caseId, folderPathName, templateFolderPath);
 
         return new OkObjectResult(folderPathName);
+    }
+
+    private void TrackProvisioningFailure(ProvisionNetAppFoldersEvent telemetryEvent, string reason)
+    {
+        telemetryEvent.IsSuccessful = false;
+        telemetryEvent.FailureReason = reason;
+        telemetryEvent.EndTime = DateTime.UtcNow;
+        _telemetryClient.TrackEventFailure(telemetryEvent);
     }
 
     private async Task<string?> PollForTerminalStatusAsync(string transferId, Guid correlationId)

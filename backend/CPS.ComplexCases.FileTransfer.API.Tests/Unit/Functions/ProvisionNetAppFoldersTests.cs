@@ -85,6 +85,43 @@ public class ProvisionNetAppFoldersTests
         Assert.NotEmpty(errors);
     }
 
+    [Theory]
+    [InlineData("_templates/Case-42/", "_templates/appeal/")]
+    [InlineData("Area1/_templates/Standard/Case-42/", "Area1/_templates/Standard/_templates/appeal/")]
+    public async Task Run_WhenDestinationIsInsideTemplatesFolder_ReturnsBadRequestAndDoesNotSchedule(string destination, string template)
+    {
+        var function = new ProvisionNetAppFolders(
+            _loggerMock.Object,
+            new RequestValidator(),
+            _initializationHandlerMock.Object,
+            _netAppClientMock.Object,
+            _netAppArgFactoryMock.Object);
+
+        var body = System.Text.Json.JsonSerializer.Serialize(new ProvisionNetAppFoldersRequest
+        {
+            CaseId = CaseId,
+            Urn = "12AB3456",
+            TemplateName = template,
+            DestinationFolderPath = destination,
+            BucketName = BucketName,
+            BearerToken = BearerToken,
+            UserName = UserName,
+            CaseName = "Case-42",
+            OperationName = "Op",
+        });
+        var req = CreateHttpRequest();
+        req.Body = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(body));
+
+        var client = CreateSchedulingClient(out var calls);
+        var result = await function.Run(req, client.Object);
+
+        var bad = Assert.IsType<BadRequestObjectResult>(result);
+        var errors = Assert.IsAssignableFrom<IEnumerable<string>>(bad.Value);
+        Assert.Contains("Case folders cannot be created inside a _templates folder.", errors);
+        Assert.Empty(calls);
+        _netAppClientMock.Verify(c => c.ListObjectsInBucketAsync(It.IsAny<ListObjectsInBucketArg>()), Times.Never);
+    }
+
     [Fact]
     public async Task Run_WhenTemplateHasNoFiles_ReturnsBadRequest()
     {
