@@ -19,4 +19,8 @@ public class ListWorkspaceDataResponse
     public string? DateCreated { get; set; }
     [JsonPropertyName("caseId")]
     public int? CaseId { get; set; }
+    [JsonPropertyName("connectedCaseUrn")]
+    public string? ConnectedCaseUrn { get; set; }
+    [JsonPropertyName("connectedCaseName")]
+    public string? ConnectedCaseName { get; set; }
 }

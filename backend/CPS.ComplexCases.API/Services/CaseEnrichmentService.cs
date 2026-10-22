@@ -1,6 +1,8 @@
 using CPS.ComplexCases.API.Domain.Response;
 using CPS.ComplexCases.Common.Services;
 using CPS.ComplexCases.Data.Entities;
+using CPS.ComplexCases.DDEI.Client;
+using CPS.ComplexCases.DDEI.Factories;
 using CPS.ComplexCases.DDEI.Models.Dto;
 using CPS.ComplexCases.Egress.Models.Dto;
 using CPS.ComplexCases.NetApp.Models.Dto;
@@ -11,13 +13,19 @@ namespace CPS.ComplexCases.API.Services;
 public class CaseEnrichmentService : ICaseEnrichmentService
 {
     private readonly ICaseMetadataService _caseMetadataService;
+    private readonly IDdeiClient _ddeiClient;
+    private readonly IDdeiArgFactory _ddeiArgFactory;
     private readonly ILogger<CaseEnrichmentService> _logger;
 
     public CaseEnrichmentService(
         ICaseMetadataService caseMetadataService,
+        IDdeiClient ddeiClient,
+        IDdeiArgFactory ddeiArgFactory,
         ILogger<CaseEnrichmentService> logger)
     {
         _caseMetadataService = caseMetadataService;
+        _ddeiClient = ddeiClient;
+        _ddeiArgFactory = ddeiArgFactory;
         _logger = logger;
     }
 
@@ -57,7 +65,7 @@ public class CaseEnrichmentService : ICaseEnrichmentService
         }
     }
 
-    public async Task<ListWorkspacesResponse> EnrichEgressWorkspacesWithMetadataAsync(ListWorkspacesDto workspaces)
+    public async Task<ListWorkspacesResponse> EnrichEgressWorkspacesWithMetadataAsync(ListWorkspacesDto workspaces, string cmsAuthValues, Guid correlationId)
     {
         // Create base response without metadata first
         var response = CreateWorkspaceResponseBase(workspaces);
@@ -75,13 +83,24 @@ public class CaseEnrichmentService : ICaseEnrichmentService
             var metadata = await _caseMetadataService.GetCaseMetadataForEgressWorkspaceIdsAsync(workspaceIds);
             var metadataLookup = BuildMetadataLookup(metadata, m => m.EgressWorkspaceId, "Egress workspace");
 
+            var connectedCaseIds = metadataLookup.Values.Select(m => m.CaseId).Distinct();
+            var connectedCases = await GetConnectedCasesAsync(connectedCaseIds, cmsAuthValues, correlationId);
+
             // Enrich data with metadata
-            response.Data = workspaces.Data.Select(workspace => new ListWorkspaceDataResponse
+            response.Data = workspaces.Data.Select(workspace =>
             {
-                Id = workspace.Id,
-                Name = workspace.Name,
-                DateCreated = workspace.DateCreated,
-                CaseId = metadataLookup.TryGetValue(workspace.Id, out var caseMetadata) ? caseMetadata.CaseId : null
+                int? caseId = metadataLookup.TryGetValue(workspace.Id, out var caseMetadata) ? caseMetadata.CaseId : null;
+                var connectedCase = caseId.HasValue ? connectedCases.GetValueOrDefault(caseId.Value) : null;
+
+                return new ListWorkspaceDataResponse
+                {
+                    Id = workspace.Id,
+                    Name = workspace.Name,
+                    DateCreated = workspace.DateCreated,
+                    CaseId = caseId,
+                    ConnectedCaseUrn = connectedCase?.Urn,
+                    ConnectedCaseName = connectedCase == null ? null : ResolveCaseName(connectedCase)
+                };
             }).ToList();
 
             return response;
@@ -170,6 +189,44 @@ public class CaseEnrichmentService : ICaseEnrichmentService
 
         return lookup;
     }
+
+    private async Task<Dictionary<int, CaseDto>> GetConnectedCasesAsync(
+        IEnumerable<int> caseIds,
+        string cmsAuthValues,
+        Guid correlationId)
+    {
+        var lookups = await Task.WhenAll(caseIds.Select(async caseId =>
+            (CaseId: caseId, Case: await TryGetCaseAsync(caseId, cmsAuthValues, correlationId))));
+
+        return lookups
+            .Where(l => l.Case != null)
+            .ToDictionary(l => l.CaseId, l => l.Case!);
+    }
+
+    // A failed DDEI lookup for one case must not cost the caller the rest of the page.
+    private async Task<CaseDto?> TryGetCaseAsync(int caseId, string cmsAuthValues, Guid correlationId)
+    {
+        try
+        {
+            var arg = _ddeiArgFactory.CreateCaseArg(cmsAuthValues, correlationId, caseId);
+            var caseDto = await _ddeiClient.GetCaseAsync(arg);
+
+            if (caseDto == null)
+            {
+                _logger.LogWarning("DDEI returned no case details for connected case {CaseId}", caseId);
+            }
+
+            return caseDto;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to retrieve case details from DDEI for connected case {CaseId}", caseId);
+            return null;
+        }
+    }
+
+    private static string? ResolveCaseName(CaseDto caseDto) =>
+        string.IsNullOrWhiteSpace(caseDto.OperationName) ? caseDto.LeadDefendantName : caseDto.OperationName;
 
     private static int? ResolveNetAppFolderCaseId(
         string folderPath,

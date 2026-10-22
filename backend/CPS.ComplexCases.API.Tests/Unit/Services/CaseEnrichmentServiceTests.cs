@@ -3,6 +3,9 @@ using AutoFixture.AutoMoq;
 using CPS.ComplexCases.API.Services;
 using CPS.ComplexCases.Common.Services;
 using CPS.ComplexCases.Data.Entities;
+using CPS.ComplexCases.DDEI.Client;
+using CPS.ComplexCases.DDEI.Factories;
+using CPS.ComplexCases.DDEI.Models.Args;
 using CPS.ComplexCases.DDEI.Models.Dto;
 using CPS.ComplexCases.Egress.Models.Dto;
 using CPS.ComplexCases.NetApp.Models.Dto;
@@ -15,8 +18,12 @@ public class CaseEnrichmentServiceTests
 {
     private readonly Fixture _fixture;
     private readonly Mock<ICaseMetadataService> _caseMetadataServiceMock;
+    private readonly Mock<IDdeiClient> _ddeiClientMock;
+    private readonly Mock<IDdeiArgFactory> _ddeiArgFactoryMock;
     private readonly Mock<ILogger<CaseEnrichmentService>> _loggerMock;
     private readonly CaseEnrichmentService _service;
+    private readonly string _cmsAuthValues;
+    private readonly Guid _correlationId;
 
     public CaseEnrichmentServiceTests()
     {
@@ -24,10 +31,25 @@ public class CaseEnrichmentServiceTests
         _fixture.Customize(new AutoMoqCustomization());
 
         _caseMetadataServiceMock = _fixture.Freeze<Mock<ICaseMetadataService>>();
+        _ddeiClientMock = _fixture.Freeze<Mock<IDdeiClient>>();
+        _ddeiArgFactoryMock = _fixture.Freeze<Mock<IDdeiArgFactory>>();
         _loggerMock = _fixture.Freeze<Mock<ILogger<CaseEnrichmentService>>>();
+        _cmsAuthValues = _fixture.Create<string>();
+        _correlationId = _fixture.Create<Guid>();
+
+        _ddeiArgFactoryMock
+            .Setup(f => f.CreateCaseArg(_cmsAuthValues, _correlationId, It.IsAny<int>()))
+            .Returns((string cmsAuthValues, Guid correlationId, int caseId) => new DdeiCaseIdArgDto
+            {
+                CmsAuthValues = cmsAuthValues,
+                CorrelationId = correlationId,
+                CaseId = caseId
+            });
 
         _service = new CaseEnrichmentService(
             _caseMetadataServiceMock.Object,
+            _ddeiClientMock.Object,
+            _ddeiArgFactoryMock.Object,
             _loggerMock.Object
         );
     }
@@ -228,7 +250,7 @@ public class CaseEnrichmentServiceTests
             .ReturnsAsync(metadata);
 
         // Act
-        var result = await _service.EnrichEgressWorkspacesWithMetadataAsync(workspaces);
+        var result = await _service.EnrichEgressWorkspacesWithMetadataAsync(workspaces, _cmsAuthValues, _correlationId);
 
         // Assert
         Assert.Equal(workspaces.Data.Count(), result.Data.Count());
@@ -272,7 +294,7 @@ public class CaseEnrichmentServiceTests
             .ReturnsAsync(metadata);
 
         // Act
-        var result = await _service.EnrichEgressWorkspacesWithMetadataAsync(workspaces);
+        var result = await _service.EnrichEgressWorkspacesWithMetadataAsync(workspaces, _cmsAuthValues, _correlationId);
 
         // Assert
         Assert.Equal(workspaces.Data.Count(), result.Data.Count());
@@ -293,7 +315,7 @@ public class CaseEnrichmentServiceTests
         var workspaces = CreateEmptyWorkspaces();
 
         // Act
-        var result = await _service.EnrichEgressWorkspacesWithMetadataAsync(workspaces);
+        var result = await _service.EnrichEgressWorkspacesWithMetadataAsync(workspaces, _cmsAuthValues, _correlationId);
 
         // Assert
         Assert.Empty(result.Data);
@@ -315,7 +337,7 @@ public class CaseEnrichmentServiceTests
             .ThrowsAsync(expectedException);
 
         // Act
-        var result = await _service.EnrichEgressWorkspacesWithMetadataAsync(workspaces);
+        var result = await _service.EnrichEgressWorkspacesWithMetadataAsync(workspaces, _cmsAuthValues, _correlationId);
 
         // Assert
         Assert.Equal(workspaces.Data.Count(), result.Data.Count());
@@ -347,7 +369,7 @@ public class CaseEnrichmentServiceTests
             .ReturnsAsync(Enumerable.Empty<CaseMetadata>());
 
         // Act
-        var result = await _service.EnrichEgressWorkspacesWithMetadataAsync(workspaces);
+        var result = await _service.EnrichEgressWorkspacesWithMetadataAsync(workspaces, _cmsAuthValues, _correlationId);
 
         // Assert
         var workspaceResponse = result.Data.Single();
@@ -377,7 +399,7 @@ public class CaseEnrichmentServiceTests
             .ReturnsAsync(metadata);
 
         // Act
-        var result = await _service.EnrichEgressWorkspacesWithMetadataAsync(workspaces);
+        var result = await _service.EnrichEgressWorkspacesWithMetadataAsync(workspaces, _cmsAuthValues, _correlationId);
 
         // Assert
         var firstWorkspace = result.Data.First(w => w.Id == workspaceIds.First());
@@ -398,7 +420,7 @@ public class CaseEnrichmentServiceTests
             .ReturnsAsync(new List<CaseMetadata>());
 
         // Act
-        await _service.EnrichEgressWorkspacesWithMetadataAsync(workspaces);
+        await _service.EnrichEgressWorkspacesWithMetadataAsync(workspaces, _cmsAuthValues, _correlationId);
 
         // Assert
         _loggerMock.Verify(
@@ -579,10 +601,164 @@ public class CaseEnrichmentServiceTests
             .ReturnsAsync(metadata);
 
         // Act
-        var result = await _service.EnrichEgressWorkspacesWithMetadataAsync(workspaces);
+        var result = await _service.EnrichEgressWorkspacesWithMetadataAsync(workspaces, _cmsAuthValues, _correlationId);
 
         // Assert
         Assert.Equal(3, result.Data.Single().CaseId);
+    }
+
+    [Fact]
+    public async Task EnrichEgressWorkspacesWithMetadataAsync_WhenWorkspaceConnected_PopulatesConnectedCaseDetails()
+    {
+        // Arrange
+        var workspaces = CreateSampleWorkspaces(2);
+        var operationWorkspaceId = workspaces.Data.First().Id;
+        var defendantWorkspaceId = workspaces.Data.Last().Id;
+
+        var metadata = new List<CaseMetadata>
+        {
+            new CaseMetadata { CaseId = 101, EgressWorkspaceId = operationWorkspaceId },
+            new CaseMetadata { CaseId = 202, EgressWorkspaceId = defendantWorkspaceId }
+        };
+
+        _caseMetadataServiceMock
+            .Setup(s => s.GetCaseMetadataForEgressWorkspaceIdsAsync(It.IsAny<IEnumerable<string>>()))
+            .ReturnsAsync(metadata);
+
+        SetupDdeiCase(new CaseDto { CaseId = 101, Urn = "01TS0000001", OperationName = "Operation Thunder", LeadDefendantName = "Smith" });
+        SetupDdeiCase(new CaseDto { CaseId = 202, Urn = "02TS0000002", OperationName = " ", LeadDefendantName = "Jones" });
+
+        // Act
+        var result = await _service.EnrichEgressWorkspacesWithMetadataAsync(workspaces, _cmsAuthValues, _correlationId);
+
+        // Assert
+        var operationWorkspace = result.Data.Single(w => w.Id == operationWorkspaceId);
+        Assert.Equal(101, operationWorkspace.CaseId);
+        Assert.Equal("01TS0000001", operationWorkspace.ConnectedCaseUrn);
+        Assert.Equal("Operation Thunder", operationWorkspace.ConnectedCaseName);
+
+        var defendantWorkspace = result.Data.Single(w => w.Id == defendantWorkspaceId);
+        Assert.Equal(202, defendantWorkspace.CaseId);
+        Assert.Equal("02TS0000002", defendantWorkspace.ConnectedCaseUrn);
+        Assert.Equal("Jones", defendantWorkspace.ConnectedCaseName);
+
+        _ddeiArgFactoryMock.Verify(f => f.CreateCaseArg(_cmsAuthValues, _correlationId, 101), Times.Once);
+        _ddeiArgFactoryMock.Verify(f => f.CreateCaseArg(_cmsAuthValues, _correlationId, 202), Times.Once);
+    }
+
+    [Fact]
+    public async Task EnrichEgressWorkspacesWithMetadataAsync_WhenWorkspaceNotConnected_ReturnsNullCaseDetailsAndSkipsDdei()
+    {
+        // Arrange
+        var workspaces = CreateSampleWorkspaces(2);
+
+        _caseMetadataServiceMock
+            .Setup(s => s.GetCaseMetadataForEgressWorkspaceIdsAsync(It.IsAny<IEnumerable<string>>()))
+            .ReturnsAsync(Enumerable.Empty<CaseMetadata>());
+
+        // Act
+        var result = await _service.EnrichEgressWorkspacesWithMetadataAsync(workspaces, _cmsAuthValues, _correlationId);
+
+        // Assert
+        Assert.All(result.Data, workspace =>
+        {
+            Assert.Null(workspace.CaseId);
+            Assert.Null(workspace.ConnectedCaseUrn);
+            Assert.Null(workspace.ConnectedCaseName);
+        });
+
+        _ddeiClientMock.Verify(c => c.GetCaseAsync(It.IsAny<DdeiCaseIdArgDto>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task EnrichEgressWorkspacesWithMetadataAsync_WhenDdeiThrowsForOneCase_PreservesCaseIdAndEnrichesOthers()
+    {
+        // Arrange
+        var workspaces = CreateSampleWorkspaces(2);
+        var failingWorkspaceId = workspaces.Data.First().Id;
+        var healthyWorkspaceId = workspaces.Data.Last().Id;
+        var expectedException = new Exception("DDEI unavailable");
+
+        _caseMetadataServiceMock
+            .Setup(s => s.GetCaseMetadataForEgressWorkspaceIdsAsync(It.IsAny<IEnumerable<string>>()))
+            .ReturnsAsync(new List<CaseMetadata>
+            {
+                new CaseMetadata { CaseId = 1, EgressWorkspaceId = failingWorkspaceId },
+                new CaseMetadata { CaseId = 2, EgressWorkspaceId = healthyWorkspaceId }
+            });
+
+        _ddeiClientMock
+            .Setup(c => c.GetCaseAsync(It.Is<DdeiCaseIdArgDto>(a => a.CaseId == 1)))
+            .ThrowsAsync(expectedException);
+        SetupDdeiCase(new CaseDto { CaseId = 2, Urn = "02TS0000002", OperationName = "Operation Healthy" });
+
+        // Act
+        var result = await _service.EnrichEgressWorkspacesWithMetadataAsync(workspaces, _cmsAuthValues, _correlationId);
+
+        // Assert
+        var failingWorkspace = result.Data.Single(w => w.Id == failingWorkspaceId);
+        Assert.Equal(1, failingWorkspace.CaseId);
+        Assert.Null(failingWorkspace.ConnectedCaseUrn);
+        Assert.Null(failingWorkspace.ConnectedCaseName);
+
+        var healthyWorkspace = result.Data.Single(w => w.Id == healthyWorkspaceId);
+        Assert.Equal(2, healthyWorkspace.CaseId);
+        Assert.Equal("02TS0000002", healthyWorkspace.ConnectedCaseUrn);
+        Assert.Equal("Operation Healthy", healthyWorkspace.ConnectedCaseName);
+
+        _loggerMock.Verify(
+            x => x.Log(
+                LogLevel.Warning,
+                It.IsAny<EventId>(),
+                It.IsAny<It.IsAnyType>(),
+                It.Is<Exception>(ex => ex == expectedException),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task EnrichEgressWorkspacesWithMetadataAsync_WhenDdeiReturnsNull_PreservesCaseIdWithNullCaseDetails()
+    {
+        // Arrange
+        var workspaces = CreateSampleWorkspaces(1);
+        var workspaceId = workspaces.Data.Single().Id;
+
+        _caseMetadataServiceMock
+            .Setup(s => s.GetCaseMetadataForEgressWorkspaceIdsAsync(It.IsAny<IEnumerable<string>>()))
+            .ReturnsAsync(new List<CaseMetadata> { new CaseMetadata { CaseId = 5, EgressWorkspaceId = workspaceId } });
+
+        _ddeiClientMock
+            .Setup(c => c.GetCaseAsync(It.IsAny<DdeiCaseIdArgDto>()))
+            .ReturnsAsync((CaseDto)null!);
+
+        // Act
+        var result = await _service.EnrichEgressWorkspacesWithMetadataAsync(workspaces, _cmsAuthValues, _correlationId);
+
+        // Assert
+        var workspace = result.Data.Single();
+        Assert.Equal(5, workspace.CaseId);
+        Assert.Null(workspace.ConnectedCaseUrn);
+        Assert.Null(workspace.ConnectedCaseName);
+    }
+
+    [Fact]
+    public async Task EnrichEgressWorkspacesWithMetadataAsync_WhenWorkspacesShareCase_LooksUpCaseOnce()
+    {
+        // Arrange
+        var workspaces = CreateSampleWorkspaces(2);
+
+        _caseMetadataServiceMock
+            .Setup(s => s.GetCaseMetadataForEgressWorkspaceIdsAsync(It.IsAny<IEnumerable<string>>()))
+            .ReturnsAsync(workspaces.Data.Select(w => new CaseMetadata { CaseId = 9, EgressWorkspaceId = w.Id }).ToList());
+
+        SetupDdeiCase(new CaseDto { CaseId = 9, Urn = "09TS0000009", OperationName = "Operation Shared" });
+
+        // Act
+        var result = await _service.EnrichEgressWorkspacesWithMetadataAsync(workspaces, _cmsAuthValues, _correlationId);
+
+        // Assert
+        Assert.All(result.Data, workspace => Assert.Equal("09TS0000009", workspace.ConnectedCaseUrn));
+        _ddeiClientMock.Verify(c => c.GetCaseAsync(It.IsAny<DdeiCaseIdArgDto>()), Times.Once);
     }
 
     [Fact]
@@ -764,6 +940,16 @@ public class CaseEnrichmentServiceTests
         // Assert
         var folderResponse = result.Data.Folders.Single();
         Assert.Equal(expectedPath, folderResponse.FolderPath);
+    }
+
+    private void SetupDdeiCase(CaseDto caseDto)
+    {
+        _ddeiClientMock
+            .Setup(c => c.GetCaseAsync(It.Is<DdeiCaseIdArgDto>(a =>
+                a.CaseId == caseDto.CaseId &&
+                a.CmsAuthValues == _cmsAuthValues &&
+                a.CorrelationId == _correlationId)))
+            .ReturnsAsync(caseDto);
     }
 
     private ListWorkspacesDto CreateSampleWorkspaces(int count)
