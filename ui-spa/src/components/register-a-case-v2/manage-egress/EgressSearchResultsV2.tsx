@@ -1,10 +1,10 @@
 import { useMemo, useState } from "react";
-import { type EgressSearchResultData } from "../../schemas";
-import { Button, SortableTable, Tag } from "../govuk";
+import { type EgressSearchResultData } from "../../../schemas";
+import { Button, SortableTable, Tag } from "../../govuk";
 import {
   sortByStringProperty,
   sortByDateProperty,
-} from "../../common/utils/sortUtils";
+} from "../../../common/utils/sortUtils";
 import styles from "./EgressSearchResultsV2.module.scss";
 
 type EgressSearchResultsProps = {

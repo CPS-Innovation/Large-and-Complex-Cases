@@ -6,20 +6,20 @@ import {
   useMemo,
   useContext,
 } from "react";
-import { Radios, Button, ErrorSummary } from "../../../govuk";
+import { Radios, Button, ErrorSummary } from "../../govuk";
 import { useNavigate, useLocation } from "react-router";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { ApiError } from "../../../../common/errors/ApiError";
-import { useGetCaseDivisionsOrAreas } from "../../../../common/hooks/useGetCaseDivisionsOrAreas";
+import { ApiError } from "../../../common/errors/ApiError";
+import { useGetCaseDivisionsOrAreas } from "../../../common/hooks/useGetCaseDivisionsOrAreas";
 import {
   createEgressCase,
   getCaseSearchResults,
-} from "../../../../apis/gateway-api";
-import { Spinner } from "../../../common/Spinner";
-import { PageContentWrapper } from "../../../govuk/PageContentWrapper";
-import { MainStateContext } from "../../../../providers/MainStateProvider";
+} from "../../../apis/gateway-api";
+import { Spinner } from "../../common/Spinner";
+import { PageContentWrapper } from "../../govuk/PageContentWrapper";
+import { MainStateContext } from "../../../providers/MainStateProvider";
 import styles from "./index.module.scss";
-import commonStyles from "../../../case-management/index.module.scss";
+import commonStyles from "../../case-management/index.module.scss";
 
 type ManageEgressRadioValue =
   | "create-new"
@@ -147,7 +147,7 @@ const ManageEgressPage = () => {
     if (formData.manageEgressRadio === "connect-existing") {
       console.log("hiiiiii");
       void navigate(
-        `/case/${caseId}/egress-connect?workspace-name=${description}`,
+        `/case-registration/${caseId}/egress-connect-search-results?workspace-name=${description}`,
       );
       return;
     }
@@ -160,7 +160,7 @@ const ManageEgressPage = () => {
       });
     }
 
-    void navigate("/egress-confirmation");
+    void navigate(`/case-registration/${caseId}/egress-connect-confirmation`);
 
     setDisableButtons(false);
   };

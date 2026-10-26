@@ -59,7 +59,8 @@ export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
     }),
 
     http.post(`${baseUrl}/api/v1/egress/workspaces`, async () => {
-      return new HttpResponse(null, { status: 500 });
+      return HttpResponse.json({});
+      // return new HttpResponse(null, { status: 500 });
     }),
 
     http.post(`${baseUrl}/api/v1/egress/connections`, async () => {

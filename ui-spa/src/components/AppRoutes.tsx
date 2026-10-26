@@ -17,8 +17,10 @@ import DisconnectConfirmationPage from "./case-management/disconnect/DisconnectC
 import DisconnectSuccessPage from "./case-management/disconnect/DisconnectSuccessPage";
 import DisconnectFailurePage from "./case-management/disconnect/DisconnectFailurePage";
 import TransferDestinationPage from "./case-management/transfer-materials/TransferDestinationPage";
-import ManageEgressPage from "./case-management/register-a-case-v2/manage-egress";
-import EgressConfirmationPage from "./case-management/register-a-case-v2/egress-confirmation";
+import EgressConnectExistingCasePage from "./register-a-case-v2/manage-egress/EgressConnectExistingCasePage";
+import EgressConnectFailurePageV2 from "./register-a-case-v2/manage-egress/EgressConnectFailurePageV2";
+import ManageEgressPage from "./register-a-case-v2/manage-egress";
+import EgressConfirmationPage from "./register-a-case-v2/egress-confirmation";
 import MaintenancePage from "./maintenance-page";
 import UnAuthorisedPage from "./unauthorised";
 import { MainStateContext } from "../providers/MainStateProvider";
@@ -128,8 +130,22 @@ const AppRoutes = () => {
           element={<TransferDestinationPage />}
         />
       </Route>
-      <Route path="/manage-set-up-egress" element={<ManageEgressPage />} />
-      <Route path="/egress-confirmation" element={<EgressConfirmationPage />} />
+      <Route
+        path="/case-registration/manage-set-up-egress"
+        element={<ManageEgressPage />}
+      />
+      <Route
+        path="/case-registration/:caseId/egress-connect-search-results"
+        element={<EgressConnectExistingCasePage />}
+      />
+      <Route
+        path="/case-registration/egress-connect-error"
+        element={<EgressConnectFailurePageV2 />}
+      />
+      <Route
+        path="/case-registration/:caseId/egress-connect-confirmation"
+        element={<EgressConfirmationPage />}
+      />
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

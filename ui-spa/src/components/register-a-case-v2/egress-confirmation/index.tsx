@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Button } from "../../../govuk";
+import { Button } from "../../govuk";
 import { useNavigate, useLocation } from "react-router";
 import styles from "./index.module.scss";
 

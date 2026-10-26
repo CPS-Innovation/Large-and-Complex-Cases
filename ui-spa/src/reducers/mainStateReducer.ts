@@ -65,6 +65,9 @@ export type MainState = {
     connectSharedDriveFailurePage: {
       backLinkUrl: string;
     };
+    caseRegistrationConnectEgressFailurePage: {
+      backLinkUrl: string;
+    };
     transferDestinationPage: TransferDestinationPageData;
     transferResolveFilePathPage: {
       validationErrors: IndexingError[];
@@ -122,6 +125,9 @@ export const initialState: MainState = {
       backLinkUrl: "",
     },
     connectSharedDriveFailurePage: {
+      backLinkUrl: "",
+    },
+    caseRegistrationConnectEgressFailurePage: {
       backLinkUrl: "",
     },
     transferDestinationPage: {
@@ -225,6 +231,12 @@ export type MainStateActions =
     }
   | {
       type: "SET_EGRESS_CONNECT_FAILURE_PAGE";
+      payload: {
+        backLinkUrl: string;
+      };
+    }
+  | {
+      type: "SET_CASE_REGISTRATION_EGRESS_CONNECT_FAILURE_PAGE";
       payload: {
         backLinkUrl: string;
       };
@@ -433,6 +445,17 @@ export const mainStateReducer = (
           ...state.apiData,
           initiateFileTransferResponseData:
             action.payload.initiateFileTransferResponse,
+        },
+      };
+    }
+    case "SET_CASE_REGISTRATION_EGRESS_CONNECT_FAILURE_PAGE": {
+      return {
+        ...state,
+        appData: {
+          ...state.appData,
+          caseRegistrationConnectEgressFailurePage: {
+            ...action.payload,
+          },
         },
       };
     }

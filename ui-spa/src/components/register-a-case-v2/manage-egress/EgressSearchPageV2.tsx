@@ -1,9 +1,9 @@
 import { useRef, useEffect } from "react";
-import { Button, Input, ErrorSummary, BackLink } from "../govuk";
+import { Button, Input, ErrorSummary, BackLink } from "../../govuk";
 import EgressSearchResultsV2 from "./EgressSearchResultsV2";
-import { type EgressSearchResultData } from "../../schemas";
-import { PageContentWrapper } from "../govuk/PageContentWrapper";
-import styles from "./EgressSearchPage.module.scss";
+import { type EgressSearchResultData } from "../../../schemas";
+import { PageContentWrapper } from "../../govuk/PageContentWrapper";
+import styles from "./EgressSearchPageV2.module.scss";
 
 type EgressSearchPageV2Props = {
   backLinkUrl: string;
