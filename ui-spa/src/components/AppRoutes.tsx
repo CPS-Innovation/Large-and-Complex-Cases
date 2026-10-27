@@ -20,7 +20,7 @@ import TransferDestinationPage from "./case-management/transfer-materials/Transf
 import EgressConnectExistingCasePage from "./register-a-case-v2/manage-egress/EgressConnectExistingCasePage";
 import EgressConnectFailurePageV2 from "./register-a-case-v2/manage-egress/EgressConnectFailurePageV2";
 import ManageEgressPage from "./register-a-case-v2/manage-egress";
-import EgressConfirmationPage from "./register-a-case-v2/egress-confirmation";
+import EgressConnectedConfirmationPage from "./register-a-case-v2/manage-egress/EgressConnectedConfirmationPage";
 import MaintenancePage from "./maintenance-page";
 import UnAuthorisedPage from "./unauthorised";
 import { MainStateContext } from "../providers/MainStateProvider";
@@ -45,13 +45,13 @@ const AppRoutes = () => {
     }
 
     if (featureFlags?.maintenanceMode && location.pathname !== "/maintenance") {
-      navigate("/maintenance", { replace: true });
+      void navigate("/maintenance", { replace: true });
     }
     if (
       !featureFlags?.maintenanceMode &&
       location.pathname === "/maintenance"
     ) {
-      navigate("/", { replace: true });
+      void navigate("/", { replace: true });
     }
   }, [featureFlagsData, featureFlags, dispatch, navigate]);
 
@@ -133,9 +133,8 @@ const AppRoutes = () => {
           path="/case/:caseId/case-management/transfer-destination-page"
           element={<TransferDestinationPage />}
         />
-
         <Route
-          path="/case-registration/:caseId/egress-connect-search-results"
+          path="/case-registration/egress-connect-search-results"
           element={<EgressConnectExistingCasePage />}
         />
         <Route
@@ -143,8 +142,8 @@ const AppRoutes = () => {
           element={<EgressConnectFailurePageV2 />}
         />
         <Route
-          path="/case-registration/:caseId/egress-connect-confirmation"
-          element={<EgressConfirmationPage />}
+          path="/case-registration/egress-connect-confirmation"
+          element={<EgressConnectedConfirmationPage />}
         />
       </Route>
 

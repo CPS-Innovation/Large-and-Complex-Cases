@@ -1,9 +1,9 @@
 import { useMemo, useState } from "react";
 import { Button } from "../../govuk";
 import { useNavigate, useLocation } from "react-router";
-import styles from "./index.module.scss";
+import styles from "./EgressConnectedConfirmationPage.module.scss";
 
-const EgressConfirmationPage = () => {
+const EgressConnectedConfirmationPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { name } = useMemo(() => {
@@ -45,4 +45,4 @@ const EgressConfirmationPage = () => {
   );
 };
 
-export default EgressConfirmationPage;
+export default EgressConnectedConfirmationPage;

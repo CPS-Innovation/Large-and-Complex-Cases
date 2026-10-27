@@ -3,7 +3,7 @@ import {
   getEgressSearchResults,
   connectEgressWorkspace,
 } from "../../../apis/gateway-api";
-import { useNavigate, useSearchParams, useParams } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
 import { getUrlSearchParam } from "../../../common/utils/getUrlSearchParam";
 import { useQuery } from "@tanstack/react-query";
 import { MainStateContext } from "../../../providers/MainStateProvider";
@@ -12,10 +12,8 @@ import EgressSearchPage from "./EgressSearchPageV2";
 const EgressConnectExistingCasePage = () => {
   const { state, dispatch } = useContext(MainStateContext);
   const navigate = useNavigate();
-  const { caseId } = useParams();
   const [searchParams] = useSearchParams();
-  const { urn } = state.appData.caseRegistrationCaseDetails ?? {};
-
+  const { urn, caseId } = state.appData.caseRegistrationCaseDetails ?? {};
   const [workspaceName, setWorkspaceName] = useState("");
   const [formDataErrorText, setFormDataErrorText] = useState("");
   const [formValue, setFormValue] = useState("");
@@ -44,8 +42,8 @@ const EgressConnectExistingCasePage = () => {
 
   const backLinkUrl = useMemo(
     () =>
-      `/case-registration/${caseId}/egress-connect-search-results?${getUrlSearchParam("workspace-name", formValue)}`,
-    [caseId, formValue],
+      `/case-registration/egress-connect-search-results?${getUrlSearchParam("workspace-name", formValue)}`,
+    [formValue],
   );
 
   const handleSearch = () => {
@@ -56,7 +54,7 @@ const EgressConnectExistingCasePage = () => {
     setFormDataErrorText("");
 
     void navigate(
-      `/case-registration/${caseId}/egress-connect-search-results?${getUrlSearchParam("workspace-name", formValue)}`,
+      `/case-registration/egress-connect-search-results?${getUrlSearchParam("workspace-name", formValue)}`,
     );
   };
 
@@ -77,12 +75,10 @@ const EgressConnectExistingCasePage = () => {
         await connectEgressWorkspace({
           workspaceId: selectedWorkspace.id,
           workspaceName: selectedWorkspace.name,
-          caseId: caseId,
+          caseId: `${caseId}`,
         });
 
-        void navigate(
-          `/case-registration/${caseId}/egress-connect-confirmation`,
-        );
+        void navigate(`/case-registration/egress-connect-confirmation`);
       }
     } catch (error) {
       if (error) {

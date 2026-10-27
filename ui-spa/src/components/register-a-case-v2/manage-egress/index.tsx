@@ -160,9 +160,8 @@ const ManageEgressPage = () => {
     }
 
     if (formData.manageEgressRadio === "connect-existing") {
-      console.log("hiiiiii");
       void navigate(
-        `/case-registration/${caseId}/egress-connect-search-results?workspace-name=${description}`,
+        `/case-registration/egress-connect-search-results?workspace-name=${description}`,
       );
       return;
     }
@@ -174,7 +173,7 @@ const ManageEgressPage = () => {
         description,
       });
 
-      void navigate(`/case-registration/${caseId}/egress-connect-confirmation`);
+      void navigate(`/case-registration/egress-connect-confirmation`);
 
       setDisableButtons(false);
     }
