@@ -1,6 +1,6 @@
 import { useRef, useEffect } from "react";
 import { Button, Input, ErrorSummary, BackLink } from "../../govuk";
-import EgressSearchResultsV2 from "./EgressSearchResultsV2";
+import EgressSearchResults from "../../egress-connect/EgressSearchResults";
 import { type EgressSearchResultData } from "../../../schemas";
 import { PageContentWrapper } from "../../govuk/PageContentWrapper";
 import styles from "./EgressSearchPageV2.module.scss";
@@ -102,7 +102,7 @@ const EgressSearchPageV2: React.FC<EgressSearchPageV2Props> = ({
         </form>
 
         {!isEgressSearchResultLoading && egressSearchResults && (
-          <EgressSearchResultsV2
+          <EgressSearchResults
             workspaceName={workspaceName}
             egressSearchResults={egressSearchResults}
             disableBtns={disableBtns}

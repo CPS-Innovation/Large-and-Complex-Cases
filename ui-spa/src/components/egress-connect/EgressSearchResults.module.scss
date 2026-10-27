@@ -14,9 +14,6 @@
   & :global(.govuk-table__cell) {
     vertical-align: middle;
   }
-  & :global(.govuk-table__cell:last-child) {
-    text-align: right;
-  }
 }
 
 .noResultsContent {

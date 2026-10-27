@@ -64,6 +64,7 @@ export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
     }),
 
     http.post(`${baseUrl}/api/v1/egress/connections`, async () => {
+      await delay(5000);
       return new HttpResponse(null, { status: 200 });
     }),
 

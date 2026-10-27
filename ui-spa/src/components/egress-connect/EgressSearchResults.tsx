@@ -1,7 +1,6 @@
 import { useMemo, useState } from "react";
 import { type EgressSearchResultData } from "../../schemas";
 import { Button, SortableTable, Tag } from "../govuk";
-import { formatDate } from "../../common/utils/formatDate";
 import {
   sortByStringProperty,
   sortByDateProperty,
@@ -11,11 +10,13 @@ import styles from "./EgressSearchResults.module.scss";
 type EgressSearchResultsProps = {
   workspaceName: string;
   egressSearchResults: EgressSearchResultData;
+  disableBtns?: boolean;
   handleConnectFolder: (id: string) => void;
 };
 const EgressSearchResults: React.FC<EgressSearchResultsProps> = ({
   workspaceName,
   egressSearchResults,
+  disableBtns = false,
   handleConnectFolder,
 }) => {
   const [sortValues, setSortValues] = useState<{
@@ -57,36 +58,29 @@ const EgressSearchResults: React.FC<EgressSearchResultsProps> = ({
       return {
         cells: [
           {
-            children: (
-              <div>
-                <b>{data.name}</b>
-              </div>
-            ),
-          },
-          {
-            children: data.caseId ? (
-              <Tag gdsTagColour="green" className={styles.statusTag}>
-                Connected
-              </Tag>
-            ) : (
-              <Tag gdsTagColour="grey" className={styles.statusTag}>
-                Not connected
-              </Tag>
-            ),
-          },
-          {
-            children: formatDate(data.dateCreated),
-          },
-          {
-            children: (
+            children: !data.caseId && (
               <Button
                 className="govuk-button--secondary"
                 name="secondary"
                 onClick={() => handleConnect(data.id)}
-                disabled={!!data.caseId}
+                disabled={disableBtns}
               >
                 Connect
               </Button>
+            ),
+          },
+          {
+            children: <div>{data.name}</div>,
+          },
+          {
+            children: data.caseId ? (
+              <Tag gdsTagColour="grey" className={styles.statusTag}>
+                Connected to {data.connectedCaseName}
+              </Tag>
+            ) : (
+              <Tag gdsTagColour="green" className={styles.statusTag}>
+                Available to connect
+              </Tag>
             ),
           },
         ],
@@ -109,12 +103,9 @@ const EgressSearchResults: React.FC<EgressSearchResultsProps> = ({
             className={styles.searchResultsCount}
             data-testid="egress-results-count"
           >
-            There {egressSearchResultsData.length > 1 ? "are" : "is"}{" "}
-            <b>
-              {egressSearchResultsData.length}{" "}
-              {egressSearchResultsData.length > 1 ? "cases" : "case"}
-            </b>{" "}
-            matching <b>{workspaceName}</b>.
+            {egressSearchResultsData.length}{" "}
+            {egressSearchResultsData.length > 1 ? "cases" : "case"} found for{" "}
+            <b>{workspaceName}</b>
           </div>
           <div className={styles.tableWrapper}>
             <SortableTable
@@ -122,7 +113,11 @@ const EgressSearchResults: React.FC<EgressSearchResultsProps> = ({
               captionClassName="govuk-visually-hidden"
               head={[
                 {
-                  children: "Operation or defendant last name",
+                  children: "",
+                  sortable: false,
+                },
+                {
+                  children: "Name",
                   sortable: true,
                   sortName: "workspace-name",
                 },
@@ -130,16 +125,6 @@ const EgressSearchResults: React.FC<EgressSearchResultsProps> = ({
                   children: "Status",
                   sortable: true,
                   sortName: "status",
-                },
-
-                {
-                  children: "Date created",
-                  sortable: true,
-                  sortName: "date-created",
-                },
-                {
-                  children: "",
-                  sortable: false,
                 },
               ]}
               rows={getTableRowData()}
