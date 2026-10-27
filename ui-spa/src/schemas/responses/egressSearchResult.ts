@@ -5,6 +5,8 @@ export const egressSearchResultSchema = z.object({
   id: z.string(),
   name: z.string(),
   caseId: z.number().nullable(),
+  connectedCaseUrn: z.string().nullable(),
+  connectedCaseName: z.string().nullable(),
 });
 
 export const egressSearchResultDataSchema = z.array(egressSearchResultSchema);

@@ -10,10 +10,11 @@ import { MainStateContext } from "../../../providers/MainStateProvider";
 import EgressSearchPage from "./EgressSearchPageV2";
 
 const EgressConnectExistingCasePage = () => {
-  const { dispatch } = useContext(MainStateContext);
+  const { state, dispatch } = useContext(MainStateContext);
   const navigate = useNavigate();
   const { caseId } = useParams();
   const [searchParams] = useSearchParams();
+  const { urn } = state.appData.caseRegistrationCaseDetails ?? {};
 
   const [workspaceName, setWorkspaceName] = useState("");
   const [formDataErrorText, setFormDataErrorText] = useState("");
@@ -34,9 +35,7 @@ const EgressConnectExistingCasePage = () => {
     const name = searchParams.get("workspace-name");
 
     if (!name) {
-      setFormDataErrorText(
-        "egress folder name  and case Id should not be empty",
-      );
+      setFormDataErrorText("egress folder name should not be empty");
       return;
     }
     setWorkspaceName(name);
@@ -98,7 +97,7 @@ const EgressConnectExistingCasePage = () => {
 
   return (
     <EgressSearchPage
-      backLinkUrl={"/case-registration/manage-set-up-egress"}
+      backLinkUrl={`/case-registration/manage-set-up-egress?${getUrlSearchParam("urn", urn)}`}
       workspaceName={workspaceName}
       searchValue={formValue}
       formDataErrorText={formDataErrorText}

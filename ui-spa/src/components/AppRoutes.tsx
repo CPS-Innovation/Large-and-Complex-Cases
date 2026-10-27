@@ -65,6 +65,10 @@ const AppRoutes = () => {
       />
       <Route path="/maintenance" element={<MaintenancePage />} />
       <Route path="/unauthorised" element={<UnAuthorisedPage />} />
+      <Route
+        path="/case-registration/manage-set-up-egress"
+        element={<ManageEgressPage />}
+      />
 
       <Route element={<ProtectedRoutes />}>
         <Route
@@ -129,23 +133,20 @@ const AppRoutes = () => {
           path="/case/:caseId/case-management/transfer-destination-page"
           element={<TransferDestinationPage />}
         />
+
+        <Route
+          path="/case-registration/:caseId/egress-connect-search-results"
+          element={<EgressConnectExistingCasePage />}
+        />
+        <Route
+          path="/case-registration/egress-connect-error"
+          element={<EgressConnectFailurePageV2 />}
+        />
+        <Route
+          path="/case-registration/:caseId/egress-connect-confirmation"
+          element={<EgressConfirmationPage />}
+        />
       </Route>
-      <Route
-        path="/case-registration/manage-set-up-egress"
-        element={<ManageEgressPage />}
-      />
-      <Route
-        path="/case-registration/:caseId/egress-connect-search-results"
-        element={<EgressConnectExistingCasePage />}
-      />
-      <Route
-        path="/case-registration/egress-connect-error"
-        element={<EgressConnectFailurePageV2 />}
-      />
-      <Route
-        path="/case-registration/:caseId/egress-connect-confirmation"
-        element={<EgressConfirmationPage />}
-      />
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

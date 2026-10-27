@@ -36,7 +36,7 @@ const ManageEgressPage = () => {
       urn: params.get("urn") ?? "",
     };
   }, [location.search]);
-  const { state } = useContext(MainStateContext);
+  const { state, dispatch } = useContext(MainStateContext);
 
   useEffect(() => {
     if (!urn) {
@@ -59,6 +59,12 @@ const ManageEgressPage = () => {
     throwOnError: true,
     staleTime: 0,
     gcTime: 0,
+    select: (data) => {
+      if (!data || data.length === 0) {
+        throw new Error("No Case found for the provided URN");
+      }
+      return data;
+    },
   });
   type ErrorText = {
     errorSummaryText: string;
@@ -122,6 +128,15 @@ const ManageEgressPage = () => {
     if (errorList.length) errorSummaryRef.current?.focus();
   }, [errorList]);
 
+  useEffect(() => {
+    if (!state.appData.caseRegistrationCaseDetails && searchResults?.length) {
+      dispatch({
+        type: "SET_CASE_REGISTRATION_CASE_DETAILS",
+        payload: searchResults[0],
+      });
+    }
+  }, [searchResults, state.appData.caseRegistrationCaseDetails, dispatch]);
+
   const setFormValue = (value: string) => {
     setFormData({
       ...formData,
@@ -140,10 +155,10 @@ const ManageEgressPage = () => {
 
     setDisableButtons(true);
     if (formData.manageEgressRadio === "skip-egress") {
-      void navigate(`/manage-set-up-shared-drive`);
+      void navigate(`/case-registration/manage-set-up-shared-drive`);
       return;
     }
-    console.log("hiiiiii000>>>", formData.manageEgressRadio);
+
     if (formData.manageEgressRadio === "connect-existing") {
       console.log("hiiiiii");
       void navigate(
@@ -158,11 +173,11 @@ const ManageEgressPage = () => {
         caseId,
         description,
       });
+
+      void navigate(`/case-registration/${caseId}/egress-connect-confirmation`);
+
+      setDisableButtons(false);
     }
-
-    void navigate(`/case-registration/${caseId}/egress-connect-confirmation`);
-
-    setDisableButtons(false);
   };
 
   if (isDivisionsOrAreasLoading || isSearchResultsLoading) {
@@ -226,7 +241,7 @@ const ManageEgressPage = () => {
               {
                 id: "manage-egress-radio-skip",
                 children: "Egress is not needed now",
-                value: "skip",
+                value: "skip-egress",
                 "data-testid": "manage-egress-radio-skip",
                 disabled: disableButtons,
               },

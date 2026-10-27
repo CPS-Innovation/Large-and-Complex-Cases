@@ -56,12 +56,11 @@ const EgressSearchResultsV2: React.FC<EgressSearchResultsProps> = ({
       return {
         cells: [
           {
-            children: (
+            children: !data.caseId && (
               <Button
                 className="govuk-button--secondary"
                 name="secondary"
                 onClick={() => handleConnect(data.id)}
-                disabled={!!data.caseId}
               >
                 Connect
               </Button>
@@ -73,7 +72,7 @@ const EgressSearchResultsV2: React.FC<EgressSearchResultsProps> = ({
           {
             children: data.caseId ? (
               <Tag gdsTagColour="grey" className={styles.statusTag}>
-                Connected
+                Connected to {data.connectedCaseName}
               </Tag>
             ) : (
               <Tag gdsTagColour="green" className={styles.statusTag}>
