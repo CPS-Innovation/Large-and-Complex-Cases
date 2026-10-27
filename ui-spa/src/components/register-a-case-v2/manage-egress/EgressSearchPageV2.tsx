@@ -12,6 +12,7 @@ type EgressSearchPageV2Props = {
   workspaceName: string;
   egressSearchResults: EgressSearchResultData | undefined;
   isEgressSearchResultLoading: boolean;
+  disableBtns: boolean;
   handleFormChange: (value: string) => void;
   handleSearch: () => void;
   handleConnectFolder: (id: string) => void;
@@ -23,6 +24,7 @@ const EgressSearchPageV2: React.FC<EgressSearchPageV2Props> = ({
   egressSearchResults,
   isEgressSearchResultLoading,
   workspaceName,
+  disableBtns,
   handleFormChange,
   handleSearch,
   handleConnectFolder,
@@ -89,10 +91,12 @@ const EgressSearchPageV2: React.FC<EgressSearchPageV2Props> = ({
               onChange={(value: string) => {
                 handleFormChange(value);
               }}
-              disabled={false}
+              disabled={disableBtns}
             />
             <div className={styles.btnWrapper}>
-              <Button type="submit">Search</Button>
+              <Button type="submit" disabled={disableBtns}>
+                Search
+              </Button>
             </div>
           </div>
         </form>
@@ -101,6 +105,7 @@ const EgressSearchPageV2: React.FC<EgressSearchPageV2Props> = ({
           <EgressSearchResultsV2
             workspaceName={workspaceName}
             egressSearchResults={egressSearchResults}
+            disableBtns={disableBtns}
             handleConnectFolder={handleConnectFolder}
           />
         )}

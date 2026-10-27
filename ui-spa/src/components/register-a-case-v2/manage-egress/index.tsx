@@ -9,7 +9,7 @@ import {
 import { Radios, Button, ErrorSummary } from "../../govuk";
 import { useNavigate, useLocation } from "react-router";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { ApiError } from "../../../common/errors/ApiError";
+import { getUrlSearchParam } from "../../../common/utils/getUrlSearchParam";
 import { useGetCaseDivisionsOrAreas } from "../../../common/hooks/useGetCaseDivisionsOrAreas";
 import {
   createEgressCase,
@@ -45,9 +45,7 @@ const ManageEgressPage = () => {
   }, [urn, navigate]);
   const createEgressCaseMutation = useMutation({
     mutationFn: createEgressCase,
-    throwOnError: (error: ApiError) => {
-      return error.code !== 403;
-    },
+    throwOnError: true,
   });
 
   const { isLoading: isDivisionsOrAreasLoading } = useGetCaseDivisionsOrAreas();
@@ -129,10 +127,14 @@ const ManageEgressPage = () => {
   }, [errorList]);
 
   useEffect(() => {
-    if (!state.appData.caseRegistrationCaseDetails && searchResults?.length) {
+    const casDetailsData = searchResults?.[0];
+    if (
+      casDetailsData &&
+      state.appData.caseRegistrationCaseDetails !== casDetailsData
+    ) {
       dispatch({
         type: "SET_CASE_REGISTRATION_CASE_DETAILS",
-        payload: searchResults[0],
+        payload: casDetailsData,
       });
     }
   }, [searchResults, state.appData.caseRegistrationCaseDetails, dispatch]);
@@ -155,22 +157,20 @@ const ManageEgressPage = () => {
 
     setDisableButtons(true);
     if (formData.manageEgressRadio === "skip-egress") {
-      void navigate(`/case-registration/manage-set-up-shared-drive`);
+      // Navigate the user to the Shared Drive set up page
       return;
     }
 
     if (formData.manageEgressRadio === "connect-existing") {
       void navigate(
-        `/case-registration/egress-connect-search-results?workspace-name=${description}`,
+        `/case-registration/egress-connect-search-results?${getUrlSearchParam("workspace-name", description)}`,
       );
       return;
     }
 
-    if (caseId && description) {
+    if (caseId) {
       await createEgressCaseMutation.mutateAsync({
-        templateId: "1223",
         caseId,
-        description,
       });
 
       void navigate(`/case-registration/egress-connect-confirmation`);
@@ -191,73 +191,75 @@ const ManageEgressPage = () => {
   }
 
   return (
-    <div className={styles.contentWrapper}>
-      {!!errorList.length && (
-        <div
-          ref={errorSummaryRef}
-          tabIndex={-1}
-          className={styles.errorSummaryWrapper}
-        >
-          <ErrorSummary
-            data-testid={"manage-egress-error-summary"}
-            errorList={errorList}
-            titleChildren="There is a problem"
-          />
-        </div>
-      )}
-      <form onSubmit={handleSubmit}>
-        <div className={styles.inputWrapper}>
-          <Radios
-            name="manageEgressRadio"
-            fieldset={{
-              legend: {
-                children: <h1>How do you want to manage Egress?</h1>,
-              },
-            }}
-            errorMessage={
-              formDataErrors["manageEgressRadio"]
-                ? {
-                    children:
-                      formDataErrors["manageEgressRadio"].inputErrorText,
-                  }
-                : undefined
-            }
-            items={[
-              {
-                id: "manage-egress-radio-create-new",
-                children: "Create a new case on Egress",
-                value: "create-new",
-                "data-testid": "manage-egress-radio-create-new",
-                disabled: disableButtons,
-              },
-              {
-                id: "manage-egress-radio-connect-existing",
-                children: "Connect an existing Egress case",
-                value: "connect-existing",
-                "data-testid": "manage-egress-radio-connect-existing",
-                disabled: disableButtons,
-              },
-              {
-                id: "manage-egress-radio-skip",
-                children: "Egress is not needed now",
-                value: "skip-egress",
-                "data-testid": "manage-egress-radio-skip",
-                disabled: disableButtons,
-              },
-            ]}
-            value={formData.manageEgressRadio}
-            onChange={(value) => {
-              if (value) setFormValue(value);
-            }}
-          ></Radios>
-        </div>
-        <div className={styles.buttonWrapper}>
-          <Button type="submit" disabled={disableButtons}>
-            Continue
-          </Button>
-        </div>
-      </form>
-    </div>
+    <PageContentWrapper>
+      <div className={styles.contentWrapper}>
+        {!!errorList.length && (
+          <div
+            ref={errorSummaryRef}
+            tabIndex={-1}
+            className={styles.errorSummaryWrapper}
+          >
+            <ErrorSummary
+              data-testid={"manage-egress-error-summary"}
+              errorList={errorList}
+              titleChildren="There is a problem"
+            />
+          </div>
+        )}
+        <form onSubmit={handleSubmit}>
+          <div className={styles.inputWrapper}>
+            <Radios
+              name="manageEgressRadio"
+              fieldset={{
+                legend: {
+                  children: <h1>How do you want to manage Egress?</h1>,
+                },
+              }}
+              errorMessage={
+                formDataErrors["manageEgressRadio"]
+                  ? {
+                      children:
+                        formDataErrors["manageEgressRadio"].inputErrorText,
+                    }
+                  : undefined
+              }
+              items={[
+                {
+                  id: "manage-egress-radio-create-new",
+                  children: "Create a new case on Egress",
+                  value: "create-new",
+                  "data-testid": "manage-egress-radio-create-new",
+                  disabled: disableButtons,
+                },
+                {
+                  id: "manage-egress-radio-connect-existing",
+                  children: "Connect an existing Egress case",
+                  value: "connect-existing",
+                  "data-testid": "manage-egress-radio-connect-existing",
+                  disabled: disableButtons,
+                },
+                {
+                  id: "manage-egress-radio-skip",
+                  children: "Egress is not needed now",
+                  value: "skip-egress",
+                  "data-testid": "manage-egress-radio-skip",
+                  disabled: disableButtons,
+                },
+              ]}
+              value={formData.manageEgressRadio}
+              onChange={(value) => {
+                if (value) setFormValue(value);
+              }}
+            ></Radios>
+          </div>
+          <div className={styles.buttonWrapper}>
+            <Button type="submit" disabled={disableButtons}>
+              Continue
+            </Button>
+          </div>
+        </form>
+      </div>
+    </PageContentWrapper>
   );
 };
 

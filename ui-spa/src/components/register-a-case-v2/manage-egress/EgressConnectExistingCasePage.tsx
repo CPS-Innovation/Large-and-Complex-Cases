@@ -17,6 +17,7 @@ const EgressConnectExistingCasePage = () => {
   const [workspaceName, setWorkspaceName] = useState("");
   const [formDataErrorText, setFormDataErrorText] = useState("");
   const [formValue, setFormValue] = useState("");
+  const [disableBtns, setDisableBtns] = useState(false);
 
   const { data: egressSearchResults, isLoading: isEgressSearchResultLoading } =
     useQuery({
@@ -69,7 +70,7 @@ const EgressConnectExistingCasePage = () => {
 
     console.log("selectedWorkspace>>", selectedWorkspace);
     if (!selectedWorkspace) return;
-
+    setDisableBtns(true);
     try {
       if (selectedWorkspace.id && caseId) {
         await connectEgressWorkspace({
@@ -78,7 +79,9 @@ const EgressConnectExistingCasePage = () => {
           caseId: `${caseId}`,
         });
 
-        void navigate(`/case-registration/egress-connect-confirmation`);
+        void navigate(
+          `/case-registration/egress-connect-confirmation?${getUrlSearchParam("workspace-name", selectedWorkspace.name)}`,
+        );
       }
     } catch (error) {
       if (error) {
@@ -102,6 +105,7 @@ const EgressConnectExistingCasePage = () => {
       handleFormChange={handleFormChange}
       handleSearch={handleSearch}
       handleConnectFolder={handleConnectFolder}
+      disableBtns={disableBtns}
     />
   );
 };

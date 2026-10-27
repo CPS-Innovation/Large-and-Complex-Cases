@@ -10,11 +10,13 @@ import styles from "./EgressSearchResultsV2.module.scss";
 type EgressSearchResultsProps = {
   workspaceName: string;
   egressSearchResults: EgressSearchResultData;
+  disableBtns: boolean;
   handleConnectFolder: (id: string) => void;
 };
 const EgressSearchResultsV2: React.FC<EgressSearchResultsProps> = ({
   workspaceName,
   egressSearchResults,
+  disableBtns,
   handleConnectFolder,
 }) => {
   const [sortValues, setSortValues] = useState<{
@@ -61,6 +63,7 @@ const EgressSearchResultsV2: React.FC<EgressSearchResultsProps> = ({
                 className="govuk-button--secondary"
                 name="secondary"
                 onClick={() => handleConnect(data.id)}
+                disabled={disableBtns}
               >
                 Connect
               </Button>
