@@ -99,14 +99,14 @@ const EgressSearchResults: React.FC<EgressSearchResultsProps> = ({
     <div className={styles.results}>
       {!!egressSearchResultsData.length && (
         <>
-          <div
-            className={styles.searchResultsCount}
+          <p
+            className={`govuk-body ${styles.searchResultsCount}`}
             data-testid="egress-results-count"
           >
             {egressSearchResultsData.length}{" "}
             {egressSearchResultsData.length > 1 ? "cases" : "case"} found for{" "}
             <b>{workspaceName}</b>
-          </div>
+          </p>
           <div className={styles.tableWrapper}>
             <SortableTable
               caption="egress cases table, column headers with buttons are sortable"
@@ -135,9 +135,9 @@ const EgressSearchResults: React.FC<EgressSearchResultsProps> = ({
       )}
       {!egressSearchResultsData.length && (
         <>
-          <div className={styles.searchResultsCount}>
+          <p className={`govuk-body ${styles.searchResultsCount}`}>
             There are <b>no cases </b>matching <b>{workspaceName}</b>.
-          </div>
+          </p>
           <div className={styles.noResultsContent}>
             <div>
               <span>You can:</span>

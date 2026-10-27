@@ -7,7 +7,7 @@ import { useNavigate, useSearchParams } from "react-router";
 import { getUrlSearchParam } from "../../../common/utils/getUrlSearchParam";
 import { useQuery } from "@tanstack/react-query";
 import { MainStateContext } from "../../../providers/MainStateProvider";
-import EgressSearchPage from "./EgressSearchPageV2";
+import EgressSearchPage from "../../egress-connect/EgressSearchPage";
 
 const EgressConnectExistingCasePage = () => {
   const { state, dispatch } = useContext(MainStateContext);

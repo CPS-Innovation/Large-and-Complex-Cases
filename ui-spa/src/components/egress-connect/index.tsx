@@ -87,6 +87,7 @@ const EgressPage = () => {
       isEgressSearchResultLoading={isEgressSearchResultLoading}
       handleFormChange={handleFormChange}
       handleSearch={handleSearch}
+      disableBtns={isEgressSearchResultLoading}
       handleConnectFolder={handleConnectFolder}
     />
   );
