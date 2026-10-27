@@ -19,8 +19,7 @@ public class CreateEgressWorkspaceRequestValidatorTests
         var request = new CreateEgressWorkspaceRequest
         {
             CaseId = 0,
-            TemplateId = "TestTemplate",
-            Description = "Test Description"
+            TemplateId = "TestTemplate"
         };
 
         // Act
@@ -41,8 +40,7 @@ public class CreateEgressWorkspaceRequestValidatorTests
         var request = new CreateEgressWorkspaceRequest
         {
             CaseId = 1,
-            TemplateId = templateId,
-            Description = "Test Description"
+            TemplateId = templateId
         };
 
         // Act
@@ -59,8 +57,7 @@ public class CreateEgressWorkspaceRequestValidatorTests
         var request = new CreateEgressWorkspaceRequest
         {
             CaseId = 1,
-            TemplateId = "TestTemplate",
-            Description = "Test Description"
+            TemplateId = "TestTemplate"
         };
 
         // Act
@@ -76,8 +73,7 @@ public class CreateEgressWorkspaceRequestValidatorTests
         // Arrange
         var request = new CreateEgressWorkspaceRequest
         {
-            CaseId = 0,
-            Description = "Test Description"
+            CaseId = 0
         };
 
         // Act

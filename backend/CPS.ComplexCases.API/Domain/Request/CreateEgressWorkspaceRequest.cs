@@ -4,8 +4,6 @@ namespace CPS.ComplexCases.API.Domain.Request;
 
 public class CreateEgressWorkspaceRequest
 {
-    [JsonPropertyName("description")]
-    public string? Description { get; set; }
     [JsonPropertyName("templateId")]
     public string? TemplateId { get; set; }
     [JsonPropertyName("caseId")]

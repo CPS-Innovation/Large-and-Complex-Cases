@@ -90,7 +90,7 @@ public class CreateEgressWorkspace(
 
         var arg = _egressArgFactory.CreateEgressWorkspaceArg(
             workspaceName,
-            request.Value.Description,
+            workspaceName,
             template.TemplateId);
 
         var workspace = await _egressClient.CreateWorkspaceAsync(arg);
