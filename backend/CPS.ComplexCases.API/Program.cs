@@ -2,6 +2,7 @@ using System.IdentityModel.Tokens.Jwt;
 using Azure.Identity;
 using Azure.Storage.Blobs;
 using CPS.ComplexCases.ActivityLog.Extensions;
+using CPS.ComplexCases.API.Domain.Configuration;
 using CPS.ComplexCases.API.Extensions;
 using CPS.ComplexCases.API.Handlers;
 using CPS.ComplexCases.API.Middleware;
@@ -161,7 +162,6 @@ var host = new HostBuilder()
         webApp.UseMiddleware<ExceptionHandlingMiddleware>();
         webApp.UseMiddleware<RequestValidationMiddleware>();
     })
-    // ✅ Adds ASP.NET Core integration
     .ConfigureLogging(options => options.AddApplicationInsights())
     .ConfigureServices((context, services) =>
     {
@@ -217,6 +217,8 @@ var host = new HostBuilder()
 
         services.Configure<FeatureFlagConfig>(
             configuration.GetSection(FeatureFlagConfig.SectionName));
+        services.Configure<EgressTemplateOptions>(
+            configuration.GetSection(EgressTemplateOptions.SectionName));
 
         services.AddScoped<ICaseMetadataService, CaseMetadataService>();
         services.AddScoped<ICaseActiveManageMaterialsService, CaseActiveManageMaterialsService>();
@@ -229,6 +231,7 @@ var host = new HostBuilder()
         services.AddSingleton<IRequestValidator, RequestValidator>();
         services.AddSingleton<ISecurityGroupMetadataService, SecurityGroupMetadataService>();
         services.AddSingleton<IUserBucketAccessService, UserBucketAccessService>();
+        services.AddSingleton<IEgressTemplateResolver, EgressTemplateResolver>();
 
         services.AddSingleton<BlobServiceClient>(provider =>
         {

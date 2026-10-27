@@ -14,7 +14,9 @@ public class CaseDetailsMapper : ICaseDetailsMapper
             LeadDefendantName = $"{caseDetails.LeadDefendantFirstNames} {caseDetails.LeadDefendantSurname}",
             LeadDefendantSurname = caseDetails.LeadDefendantSurname,
             OperationName = caseDetails.Operation,
-            RegistrationDate = caseDetails.RegistrationDate
+            RegistrationDate = caseDetails.RegistrationDate,
+            AreaId = caseDetails.AreaId,
+            AreaName = caseDetails.AreaName
         };
     }
 }

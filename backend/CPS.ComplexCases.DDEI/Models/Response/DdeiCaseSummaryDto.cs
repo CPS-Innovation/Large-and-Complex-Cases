@@ -16,4 +16,8 @@ public class DdeiCaseSummaryDto
     public string? Operation { get; set; }
     [JsonPropertyName("registrationDate")]
     public string? RegistrationDate { get; set; }
+    [JsonPropertyName("areaId")]
+    public int? AreaId { get; set; }
+    [JsonPropertyName("areaName")]
+    public string? AreaName { get; set; }
 }

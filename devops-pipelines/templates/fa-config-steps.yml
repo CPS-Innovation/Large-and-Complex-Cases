@@ -275,6 +275,31 @@ steps:
             "slotSetting": false
           },
           {
+            "name": "EgressTemplateMappings__DefaultTemplateId",
+            "value": "$(EgressTemplateDefaultTemplateId)",
+            "slotSetting": false
+          },
+          {
+            "name": "EgressTemplateMappings__DefaultTemplateName",
+            "value": "CPS Areas",
+            "slotSetting": false
+          },
+          {
+            "name": "EgressTemplateMappings__CentralCaseworkDivisionsTemplateId",
+            "value": "$(EgressTemplateCentralCaseworkDivisionsTemplateId)",
+            "slotSetting": false
+          },
+          {
+            "name": "EgressTemplateMappings__CentralCaseworkDivisionsTemplateName",
+            "value": "Central Casework Divisions",
+            "slotSetting": false
+          },
+          {
+            "name": "EgressTemplateMappings__CentralCaseworkDivisionsAreaNames",
+            "value": "Counter Terrorism Division,SEOCID Int London and SE Div,SEOCID Regional and Wales Div,Organised Crime Division,Special Crime Division,Proceeds of Crime",
+            "slotSetting": false
+          },
+          {
             "name": "RateLimiting__PermitLimit",
             "value": "$(RateLimitingPermitLimit)",
             "slotSetting": false

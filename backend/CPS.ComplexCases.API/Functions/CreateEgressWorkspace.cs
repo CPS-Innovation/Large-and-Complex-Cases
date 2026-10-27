@@ -3,11 +3,13 @@ using CPS.ComplexCases.ActivityLog.Services;
 using CPS.ComplexCases.API.Constants;
 using CPS.ComplexCases.API.Context;
 using CPS.ComplexCases.API.Domain.Request;
+using CPS.ComplexCases.API.Services;
 using CPS.ComplexCases.API.Validators.Requests;
 using CPS.ComplexCases.Common.Attributes;
 using CPS.ComplexCases.Common.Handlers;
 using CPS.ComplexCases.Common.Helpers;
 using CPS.ComplexCases.Common.Services;
+using CPS.ComplexCases.Common.Telemetry;
 using CPS.ComplexCases.Data.Models.Requests;
 using CPS.ComplexCases.DDEI.Client;
 using CPS.ComplexCases.DDEI.Factories;
@@ -33,7 +35,9 @@ public class CreateEgressWorkspace(
     ILogger<CreateEgressWorkspace> logger,
     IActivityLogService activityLogService,
     IRequestValidator requestValidator,
-    IInitializationHandler initializationHandler)
+    IInitializationHandler initializationHandler,
+    IEgressTemplateResolver egressTemplateResolver,
+    ITelemetryClient telemetryClient)
 {
     private readonly ILogger<CreateEgressWorkspace> _logger = logger;
     private readonly IActivityLogService _activityLogService = activityLogService;
@@ -45,6 +49,10 @@ public class CreateEgressWorkspace(
     private readonly IDdeiClient _ddeiClient = ddeiClient;
     private readonly IDdeiArgFactory _ddeiArgFactory = ddeiArgFactory;
     private readonly ICaseNamingService _caseNamingService = caseNamingService;
+    private readonly IEgressTemplateResolver _egressTemplateResolver = egressTemplateResolver;
+    private readonly ITelemetryClient _telemetryClient = telemetryClient;
+
+    private const string ExplicitTemplateName = "Explicit";
 
     [Function(nameof(CreateEgressWorkspace))]
     [OpenApiOperation(operationId: nameof(CreateEgressWorkspace), tags: ["Egress"], Description = "Create an egress workspace")]
@@ -75,12 +83,31 @@ public class CreateEgressWorkspace(
         var caseNameDto = await _caseNamingService.GenerateCaseName(cmsResponse);
         string workspaceName = caseNameDto.CaseName;
 
+        var isExplicitTemplate = !string.IsNullOrWhiteSpace(request.Value.TemplateId);
+        var template = isExplicitTemplate
+            ? new EgressTemplateResolution(request.Value.TemplateId!, ExplicitTemplateName, false)
+            : _egressTemplateResolver.ResolveTemplate(cmsResponse.AreaName);
+
         var arg = _egressArgFactory.CreateEgressWorkspaceArg(
             workspaceName,
             request.Value.Description,
-            request.Value.TemplateId);
+            template.TemplateId);
 
         var workspace = await _egressClient.CreateWorkspaceAsync(arg);
+
+        _telemetryClient.TrackEvent(new EgressWorkspaceCreatedEvent
+        {
+            CaseId = request.Value.CaseId,
+            CorrelationId = context.CorrelationId,
+            EventTimestamp = DateTime.UtcNow,
+            WorkspaceId = workspace.Id,
+            TemplateId = template.TemplateId,
+            TemplateName = template.TemplateName,
+            AreaId = cmsResponse.AreaId,
+            AreaName = cmsResponse.AreaName,
+            IsDefaultFallback = template.IsDefaultFallback,
+            IsExplicitTemplate = isExplicitTemplate
+        });
 
         var rolesForWorkspace = await _egressClient.ListWorkspaceRolesAsync(workspace.Id);
         var administratorRole = rolesForWorkspace.FirstOrDefault(r => r.RoleName == "Administrator")?.RoleId;
