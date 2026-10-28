@@ -85,7 +85,7 @@ public class CreateEgressWorkspace(
 
         var isExplicitTemplate = !string.IsNullOrWhiteSpace(request.Value.TemplateId);
         var template = isExplicitTemplate
-            ? new EgressTemplateResolution(request.Value.TemplateId!, ExplicitTemplateName, false)
+            ? new EgressTemplateResolution(request.Value.TemplateId!.Trim(), ExplicitTemplateName, false)
             : _egressTemplateResolver.ResolveTemplate(cmsResponse.AreaName);
 
         var arg = _egressArgFactory.CreateEgressWorkspaceArg(workspaceName, template.TemplateId);

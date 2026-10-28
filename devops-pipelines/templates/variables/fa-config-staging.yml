@@ -75,3 +75,7 @@ variables:
     value: "59a6855307087630eb190282"
   - name: EgressTemplateCentralCaseworkDivisionsTemplateId
     value: "53e7de1005b6a674dd9a30a3"
+  - name: EgressTemplateDefaultTemplateName
+    value: "CPS Areas"
+  - name: EgressTemplateCentralCaseworkDivisionsTemplateName
+    value: "Central Casework Divisions"

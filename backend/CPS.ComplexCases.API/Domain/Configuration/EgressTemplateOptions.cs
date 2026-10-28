@@ -9,11 +9,21 @@ public class EgressTemplateOptions
     public string CentralCaseworkDivisionsTemplateId { get; set; } = string.Empty;
     public string CentralCaseworkDivisionsTemplateName { get; set; } = "Central Casework Divisions";
 
-    // Comma-separated so the list can be held in a single app setting.
-    public string CentralCaseworkDivisionsAreaNames { get; set; } = string.Empty;
+    private string _centralCaseworkDivisionsAreaNames = string.Empty;
+    private IReadOnlySet<string> _parsedAreaNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-    public IReadOnlySet<string> GetCentralCaseworkDivisionsAreaNames() =>
-        CentralCaseworkDivisionsAreaNames
-            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+    // Comma-separated so the list can be held in a single app setting.
+    public string CentralCaseworkDivisionsAreaNames
+    {
+        get => _centralCaseworkDivisionsAreaNames;
+        set
+        {
+            _centralCaseworkDivisionsAreaNames = value ?? string.Empty;
+            _parsedAreaNames = _centralCaseworkDivisionsAreaNames
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        }
+    }
+
+    public IReadOnlySet<string> GetCentralCaseworkDivisionsAreaNames() => _parsedAreaNames;
 }

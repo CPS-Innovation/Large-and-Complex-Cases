@@ -281,7 +281,7 @@ steps:
           },
           {
             "name": "EgressTemplateMappings__DefaultTemplateName",
-            "value": "CPS Areas",
+            "value": "$(EgressTemplateDefaultTemplateName)",
             "slotSetting": false
           },
           {
@@ -291,7 +291,7 @@ steps:
           },
           {
             "name": "EgressTemplateMappings__CentralCaseworkDivisionsTemplateName",
-            "value": "Central Casework Divisions",
+            "value": "$(EgressTemplateCentralCaseworkDivisionsTemplateName)",
             "slotSetting": false
           },
           {

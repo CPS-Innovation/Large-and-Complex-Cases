@@ -75,3 +75,7 @@ variables:
     value: "59a83138510c561c90bfba74"
   - name: EgressTemplateCentralCaseworkDivisionsTemplateId
     value: "582b3427510c5619dbe2f776"
+  - name: EgressTemplateDefaultTemplateName
+    value: "All Multimedia"
+  - name: EgressTemplateCentralCaseworkDivisionsTemplateName
+    value: "CCD"

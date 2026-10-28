@@ -233,6 +233,34 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
                 !e.IsDefaultFallback)), Times.Once);
         }
 
+        [Fact]
+        public async Task Run_TrimsExplicitTemplateId()
+        {
+            // Arrange
+            var createRequest = new CreateEgressWorkspaceRequest
+            {
+                CaseId = _caseId,
+                TemplateId = $"  {_templateId}  "
+            };
+
+            var caseResponse = new CaseDto { OperationName = _operationName, Urn = _urn };
+            var expectedWorkspaceName = $"{_operationName}-{_urn}";
+            var createWorkspaceArg = _fixture.Create<CreateEgressWorkspaceArg>();
+
+            SetupSuccessfulWorkspaceCreation(createRequest, caseResponse, expectedWorkspaceName, _templateId, createWorkspaceArg);
+
+            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_correlationId, _cmsAuthValues, _username, _bearerToken);
+            var httpRequest = HttpRequestStubHelper.CreateHttpRequestWithQueryParameters(new Dictionary<string, string>(), _correlationId);
+
+            // Act
+            var result = await _function.Run(httpRequest, functionContext);
+
+            // Assert
+            Assert.IsType<OkObjectResult>(result);
+            _egressArgFactoryMock.Verify(f => f.CreateEgressWorkspaceArg(expectedWorkspaceName, _templateId), Times.Once);
+            _egressTemplateResolverMock.Verify(r => r.ResolveTemplate(It.IsAny<string?>()), Times.Never);
+        }
+
         [Theory]
         [InlineData("Special Crime Division", "ccd-template", "Central Casework Divisions", false)]
         [InlineData("Wessex", "default-template", "CPS Areas", true)]
