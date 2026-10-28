@@ -3,7 +3,6 @@ import { useEffect, useContext } from "react";
 import CaseSearchPage from "./search-page";
 import CaseSearchResultPage from "./search-result-page";
 import EgressPage from "./egress-connect";
-import EgressConnectConfirmationPage from "./egress-connect/EgressConnectConfirmationPage";
 import EgressConnectFailurePage from "./egress-connect/EgressConnectFailurePage";
 import NetAppPage from "./netapp-connect";
 import NetAppConnectConfirmationPage from "./netapp-connect/NetAppConnectConfirmationPage";
@@ -17,10 +16,9 @@ import DisconnectConfirmationPage from "./case-management/disconnect/DisconnectC
 import DisconnectSuccessPage from "./case-management/disconnect/DisconnectSuccessPage";
 import DisconnectFailurePage from "./case-management/disconnect/DisconnectFailurePage";
 import TransferDestinationPage from "./case-management/transfer-materials/TransferDestinationPage";
-import EgressConnectExistingCasePage from "./register-a-case-v2/manage-egress/EgressConnectExistingCasePage";
-import EgressConnectFailurePageV2 from "./register-a-case-v2/manage-egress/EgressConnectFailurePageV2";
-import ManageEgressPage from "./register-a-case-v2/manage-egress";
-import EgressConnectedConfirmationPage from "./register-a-case-v2/manage-egress/EgressConnectedConfirmationPage";
+import CaseRegistrationEgressConnectFailurePage from "./case-registration/manage-egress/CaseRegistrationEgressConnectFailurePage";
+import ManageEgressPage from "./case-registration/manage-egress";
+import EgressConnectedConfirmationPage from "./case-registration/manage-egress/EgressConnectedConfirmationPage";
 import MaintenancePage from "./maintenance-page";
 import UnAuthorisedPage from "./unauthorised";
 import { MainStateContext } from "../providers/MainStateProvider";
@@ -92,10 +90,7 @@ const AppRoutes = () => {
           element={<DisconnectFailurePage />}
         />
         <Route path="/case/:caseId/egress-connect" element={<EgressPage />} />
-        <Route
-          path="/case/:caseId/egress-connect/confirmation"
-          element={<EgressConnectConfirmationPage />}
-        />
+
         <Route
           path="/case/:caseId/egress-connect/error"
           element={<EgressConnectFailurePage />}
@@ -135,11 +130,11 @@ const AppRoutes = () => {
         />
         <Route
           path="/case-registration/egress-connect-search-results"
-          element={<EgressConnectExistingCasePage />}
+          element={<EgressPage />}
         />
         <Route
           path="/case-registration/egress-connect-error"
-          element={<EgressConnectFailurePageV2 />}
+          element={<CaseRegistrationEgressConnectFailurePage />}
         />
         <Route
           path="/case-registration/egress-connect-confirmation"

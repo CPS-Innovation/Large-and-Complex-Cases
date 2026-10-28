@@ -3,12 +3,11 @@ import { BackLink, Button } from "../../govuk";
 import { useNavigate } from "react-router";
 import { PageContentWrapper } from "../../govuk/PageContentWrapper";
 import { MainStateContext } from "../../../providers/MainStateProvider";
-import styles from "./EgressConnectFailurePageV2.module.scss";
+import styles from "./CaseRegistrationEgressConnectFailurePage.module.scss";
 
-const EgressConnectFailurePageV2: React.FC = () => {
+const CaseRegistrationEgressConnectFailurePage: React.FC = () => {
   const { state } = useContext(MainStateContext);
-  const { backLinkUrl } =
-    state.appData.caseRegistrationConnectEgressFailurePage;
+  const { backLinkUrl } = state.appData.connectEgressFailurePage;
   const navigate = useNavigate();
 
   const handleTryAgain = () => {
@@ -37,4 +36,4 @@ const EgressConnectFailurePageV2: React.FC = () => {
   );
 };
 
-export default EgressConnectFailurePageV2;
+export default CaseRegistrationEgressConnectFailurePage;
