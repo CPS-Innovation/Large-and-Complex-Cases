@@ -67,18 +67,14 @@ describe("EgressSearchResults", () => {
     expect(table).toBeInTheDocument();
 
     const headers = screen.getAllByRole("columnheader");
-    expect(headers).toHaveLength(4);
-    expect(headers[0]).toHaveTextContent("Operation or defendant last name");
-    expect(headers[1]).toHaveTextContent("Status");
-    expect(headers[2]).toHaveTextContent("Date created");
-    expect(headers[3]).toHaveTextContent("");
-    expect(
-      screen.getByRole("button", { name: "Operation or defendant last name" }),
-    ).toBeInTheDocument();
+    expect(headers).toHaveLength(3);
+    expect(headers[0]).toHaveTextContent("");
+    expect(headers[1]).toHaveTextContent("Name");
+    expect(headers[2]).toHaveTextContent("Status");
+
+    expect(screen.getByRole("button", { name: "Name" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Status" })).toBeInTheDocument();
-    expect(
-      screen.queryByRole("button", { name: "Date created" }),
-    ).toBeInTheDocument();
+
     const rows = screen.getAllByRole("row");
     const dataRows = rows.slice(1);
     const rowValues = dataRows.map((row) =>
@@ -87,13 +83,13 @@ describe("EgressSearchResults", () => {
         .map((cell) => cell.textContent),
     );
     expect(rowValues).toEqual([
-      ["thunderstrike", "Not connected", "25/01/2000", "Connect"],
-      ["thunderstrikeab", "Connected", "26/01/2000", "Connect"],
-      ["thunderstrikeabc", "Not connected", "27/01/2000", "Connect"],
-      ["ahunderstrikeabcd", "Not connected", "28/01/2000", "Connect"],
+      ["Connect", "thunderstrike", "Available to connect"],
+      ["", "thunderstrikeab", "Connected to Thunderstrike1 Case"],
+      ["Connect", "thunderstrikeabc", "Available to connect"],
+      ["Connect", "ahunderstrikeabcd", "Available to connect"],
     ]);
     expect(screen.queryByTestId("egress-results-count")).toHaveTextContent(
-      "There are 4 cases matching thunder.",
+      "4 cases found for thunder",
     );
 
     const newResults = [egressSearchResults[0]];
@@ -106,7 +102,7 @@ describe("EgressSearchResults", () => {
       />,
     );
     expect(screen.queryByTestId("egress-results-count")).toHaveTextContent(
-      "There is 1 case matching thunder.",
+      "1 case found for thunder",
     );
     const newRows = screen.getAllByRole("row");
     const newDataRows = newRows.slice(1);
@@ -117,11 +113,11 @@ describe("EgressSearchResults", () => {
     );
 
     expect(newRowValues).toEqual([
-      ["thunderstrike", "Not connected", "25/01/2000", "Connect"],
+      ["Connect", "thunderstrike", "Available to connect"],
     ]);
   });
 
-  it("Should sort the egress search result content based column header Operation or defendant last name", async () => {
+  it("Should sort the egress search result content based column header Name", async () => {
     render(
       <EgressSearchResults
         workspaceName="thunder"
@@ -133,15 +129,18 @@ describe("EgressSearchResults", () => {
     expect(table).toBeInTheDocument();
 
     const headers = screen.getAllByRole("columnheader");
-    expect(headers).toHaveLength(4);
-    expect(headers[0]).toHaveTextContent("Operation or defendant last name");
-    expect(headers[1]).toHaveTextContent("Status");
-    expect(headers[2]).toHaveTextContent("Date created");
-    expect(headers[3]).toHaveTextContent("");
-    const btnOperationName = screen.getByRole("button", {
-      name: "Operation or defendant last name",
+    expect(headers).toHaveLength(3);
+    expect(headers[0]).toHaveTextContent("");
+    expect(headers[1]).toHaveTextContent("Name");
+    expect(headers[2]).toHaveTextContent("Status");
+
+    expect(screen.getByRole("button", { name: "Name" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Status" })).toBeInTheDocument();
+
+    const btnName = screen.getByRole("button", {
+      name: "Name",
     });
-    expect(btnOperationName).toBeInTheDocument();
+    expect(btnName).toBeInTheDocument();
 
     const rows = screen.getAllByRole("row");
     const dataRows = rows.slice(1);
@@ -153,13 +152,13 @@ describe("EgressSearchResults", () => {
     );
 
     expect(rowValues).toEqual([
-      ["thunderstrike", "Not connected", "25/01/2000", "Connect"],
-      ["thunderstrikeab", "Connected", "26/01/2000", "Connect"],
-      ["thunderstrikeabc", "Not connected", "27/01/2000", "Connect"],
-      ["ahunderstrikeabcd", "Not connected", "28/01/2000", "Connect"],
+      ["Connect", "thunderstrike", "Available to connect"],
+      ["", "thunderstrikeab", "Connected to Thunderstrike1 Case"],
+      ["Connect", "thunderstrikeabc", "Available to connect"],
+      ["Connect", "ahunderstrikeabcd", "Available to connect"],
     ]);
 
-    fireEvent.click(btnOperationName);
+    fireEvent.click(btnName);
 
     const newRowValuesAscending = dataRows.map((row) =>
       within(row)
@@ -168,13 +167,13 @@ describe("EgressSearchResults", () => {
     );
 
     expect(newRowValuesAscending).toEqual([
-      ["ahunderstrikeabcd", "Not connected", "28/01/2000", "Connect"],
-      ["thunderstrike", "Not connected", "25/01/2000", "Connect"],
-      ["thunderstrikeab", "Connected", "26/01/2000", "Connect"],
-      ["thunderstrikeabc", "Not connected", "27/01/2000", "Connect"],
+      ["Connect", "ahunderstrikeabcd", "Available to connect"],
+      ["Connect", "thunderstrike", "Available to connect"],
+      ["", "thunderstrikeab", "Connected to Thunderstrike1 Case"],
+      ["Connect", "thunderstrikeabc", "Available to connect"],
     ]);
 
-    fireEvent.click(btnOperationName);
+    fireEvent.click(btnName);
 
     const newRowValuesDescending = dataRows.map((row) =>
       within(row)
@@ -183,10 +182,10 @@ describe("EgressSearchResults", () => {
     );
 
     expect(newRowValuesDescending).toEqual([
-      ["thunderstrikeabc", "Not connected", "27/01/2000", "Connect"],
-      ["thunderstrikeab", "Connected", "26/01/2000", "Connect"],
-      ["thunderstrike", "Not connected", "25/01/2000", "Connect"],
-      ["ahunderstrikeabcd", "Not connected", "28/01/2000", "Connect"],
+      ["Connect", "thunderstrikeabc", "Available to connect"],
+      ["", "thunderstrikeab", "Connected to Thunderstrike1 Case"],
+      ["Connect", "thunderstrike", "Available to connect"],
+      ["Connect", "ahunderstrikeabcd", "Available to connect"],
     ]);
   });
 
@@ -202,11 +201,13 @@ describe("EgressSearchResults", () => {
     expect(table).toBeInTheDocument();
 
     const headers = screen.getAllByRole("columnheader");
-    expect(headers).toHaveLength(4);
-    expect(headers[0]).toHaveTextContent("Operation or defendant last name");
-    expect(headers[1]).toHaveTextContent("Status");
-    expect(headers[2]).toHaveTextContent("Date created");
-    expect(headers[3]).toHaveTextContent("");
+    expect(headers).toHaveLength(3);
+    expect(headers[0]).toHaveTextContent("");
+    expect(headers[1]).toHaveTextContent("Name");
+    expect(headers[2]).toHaveTextContent("Status");
+
+    expect(screen.getByRole("button", { name: "Name" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Status" })).toBeInTheDocument();
 
     const btnStatus = screen.getByRole("button", {
       name: "Status",
@@ -224,10 +225,10 @@ describe("EgressSearchResults", () => {
     );
 
     expect(rowValues).toEqual([
-      ["thunderstrike", "Not connected", "25/01/2000", "Connect"],
-      ["thunderstrikeab", "Connected", "26/01/2000", "Connect"],
-      ["thunderstrikeabc", "Not connected", "27/01/2000", "Connect"],
-      ["ahunderstrikeabcd", "Not connected", "28/01/2000", "Connect"],
+      ["Connect", "thunderstrike", "Available to connect"],
+      ["", "thunderstrikeab", "Connected to Thunderstrike1 Case"],
+      ["Connect", "thunderstrikeabc", "Available to connect"],
+      ["Connect", "ahunderstrikeabcd", "Available to connect"],
     ]);
 
     fireEvent.click(btnStatus);
@@ -239,10 +240,10 @@ describe("EgressSearchResults", () => {
     );
 
     expect(newRowValuesAscending).toEqual([
-      ["thunderstrikeab", "Connected", "26/01/2000", "Connect"],
-      ["thunderstrike", "Not connected", "25/01/2000", "Connect"],
-      ["thunderstrikeabc", "Not connected", "27/01/2000", "Connect"],
-      ["ahunderstrikeabcd", "Not connected", "28/01/2000", "Connect"],
+      ["", "thunderstrikeab", "Connected to Thunderstrike1 Case"],
+      ["Connect", "thunderstrike", "Available to connect"],
+      ["Connect", "thunderstrikeabc", "Available to connect"],
+      ["Connect", "ahunderstrikeabcd", "Available to connect"],
     ]);
 
     fireEvent.click(btnStatus);
@@ -254,85 +255,14 @@ describe("EgressSearchResults", () => {
     );
 
     expect(newRowValuesDescending).toEqual([
-      ["thunderstrike", "Not connected", "25/01/2000", "Connect"],
-      ["thunderstrikeabc", "Not connected", "27/01/2000", "Connect"],
-      ["ahunderstrikeabcd", "Not connected", "28/01/2000", "Connect"],
-      ["thunderstrikeab", "Connected", "26/01/2000", "Connect"],
+      ["Connect", "thunderstrike", "Available to connect"],
+      ["Connect", "thunderstrikeabc", "Available to connect"],
+      ["Connect", "ahunderstrikeabcd", "Available to connect"],
+      ["", "thunderstrikeab", "Connected to Thunderstrike1 Case"],
     ]);
   });
 
-  it("Should sort the egress search result content based column header Date created", async () => {
-    render(
-      <EgressSearchResults
-        workspaceName="thunder"
-        egressSearchResults={egressSearchResults}
-        handleConnectFolder={handleConnectFolderMock}
-      />,
-    );
-    const table = screen.getByRole("table");
-    expect(table).toBeInTheDocument();
-
-    const headers = screen.getAllByRole("columnheader");
-    expect(headers).toHaveLength(4);
-    expect(headers[0]).toHaveTextContent("Operation or defendant last name");
-    expect(headers[1]).toHaveTextContent("Status");
-    expect(headers[2]).toHaveTextContent("Date created");
-    expect(headers[3]).toHaveTextContent("");
-
-    const btnDateCreated = screen.getByRole("button", {
-      name: "Date created",
-    });
-
-    expect(btnDateCreated).toBeInTheDocument();
-
-    const rows = screen.getAllByRole("row");
-    const dataRows = rows.slice(1);
-
-    const rowValues = dataRows.map((row) =>
-      within(row)
-        .getAllByRole("cell")
-        .map((cell) => cell.textContent),
-    );
-
-    expect(rowValues).toEqual([
-      ["thunderstrike", "Not connected", "25/01/2000", "Connect"],
-      ["thunderstrikeab", "Connected", "26/01/2000", "Connect"],
-      ["thunderstrikeabc", "Not connected", "27/01/2000", "Connect"],
-      ["ahunderstrikeabcd", "Not connected", "28/01/2000", "Connect"],
-    ]);
-
-    fireEvent.click(btnDateCreated);
-
-    const newRowValuesAscending = dataRows.map((row) =>
-      within(row)
-        .getAllByRole("cell")
-        .map((cell) => cell.textContent),
-    );
-
-    expect(newRowValuesAscending).toEqual([
-      ["thunderstrike", "Not connected", "25/01/2000", "Connect"],
-      ["thunderstrikeab", "Connected", "26/01/2000", "Connect"],
-      ["thunderstrikeabc", "Not connected", "27/01/2000", "Connect"],
-      ["ahunderstrikeabcd", "Not connected", "28/01/2000", "Connect"],
-    ]);
-
-    fireEvent.click(btnDateCreated);
-
-    const newRowValuesDescending = dataRows.map((row) =>
-      within(row)
-        .getAllByRole("cell")
-        .map((cell) => cell.textContent),
-    );
-
-    expect(newRowValuesDescending).toEqual([
-      ["ahunderstrikeabcd", "Not connected", "28/01/2000", "Connect"],
-      ["thunderstrikeabc", "Not connected", "27/01/2000", "Connect"],
-      ["thunderstrikeab", "Connected", "26/01/2000", "Connect"],
-      ["thunderstrike", "Not connected", "25/01/2000", "Connect"],
-    ]);
-  });
-
-  it("Should disable the Connect button if the folder is already connected to a case", () => {
+  it("Should not show the Connect button if the folder is already connected to a case", () => {
     render(
       <EgressSearchResults
         workspaceName="thunder"
@@ -349,10 +279,10 @@ describe("EgressSearchResults", () => {
     ).not.toBeDisabled();
 
     expect(
-      within(rows[2]).getByRole("button", {
+      within(rows[2]).queryByRole("button", {
         name: /Connect/i,
       }),
-    ).toBeDisabled();
+    ).not.toBeInTheDocument();
 
     expect(
       within(rows[3]).getByRole("button", {
