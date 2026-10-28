@@ -26,38 +26,12 @@ test.describe("egress connect", () => {
     await expect(page).toHaveURL(
       "/case/13/egress-connect?workspace-name=Thunderstruck2_pl",
     );
-    await expect(page.locator("h1")).toHaveText(`Link Egress to the case`);
+    await expect(page.locator("h1")).toHaveText(`Connect Egress to this case`);
 
     await expect(page.getByTestId("search-folder-name")).toHaveValue(
       "Thunderstruck2_pl",
     );
     await page.getByRole("button", { name: "Connect" }).first().click();
-    await expect(page).toHaveURL("/case/13/egress-connect/confirmation");
-    await expect(page.locator("h1")).toHaveText(`Are you sure?`);
-    await expect(
-      page.getByText(
-        `Confirm you want to link "thunderstrike" on Egress to the case?`,
-      ),
-    ).toBeVisible();
-
-    await page.getByRole("link", { name: "Back" }).click();
-
-    await expect(page).toHaveURL(
-      "/case/13/egress-connect?workspace-name=Thunderstruck2_pl",
-    );
-    await expect(page.locator("h1")).toHaveText(`Link Egress to the case`);
-    await page.getByRole("button", { name: "Connect" }).first().click();
-    await page.getByTestId("radio-egress-connect-no").click();
-    await page.locator('button:text("Continue")').click();
-    await expect(page).toHaveURL(
-      "/case/13/egress-connect?workspace-name=Thunderstruck2_pl",
-    );
-    await expect(page.locator("h1")).toHaveText(`Link Egress to the case`);
-    await page.getByRole("button", { name: "Connect" }).first().click();
-    await expect(page).toHaveURL("/case/13/egress-connect/confirmation");
-    await expect(page.locator("h1")).toHaveText(`Are you sure?`);
-    page.getByTestId("radio-egress-connect-yes").click();
-    await page.locator('button:text("Continue")').click();
     await expect(page).toHaveURL(
       "http://localhost:5173/case/13/case-management",
     );
@@ -94,21 +68,8 @@ test.describe("egress connect", () => {
     await expect(page).toHaveURL(
       "/case/13/egress-connect?workspace-name=Thunderstruck2_pl",
     );
-    await expect(page.locator("h1")).toHaveText(`Link Egress to the case`);
+    await expect(page.locator("h1")).toHaveText(`Connect Egress to this case`);
     await page.getByRole("button", { name: "Connect" }).first().click();
-    await expect(page).toHaveURL("/case/13/egress-connect/confirmation");
-    await expect(page.locator("h1")).toHaveText(`Are you sure?`);
-    await page.locator('button:text("Continue")').click();
-    await expect(page).toHaveURL("/case/13/egress-connect/error");
-    await page.getByRole("link", { name: "Back" }).click();
-    await expect(page).toHaveURL(
-      "/case/13/egress-connect?workspace-name=Thunderstruck2_pl",
-    );
-    await expect(page.locator("h1")).toHaveText(`Link Egress to the case`);
-    await page.getByRole("button", { name: "Connect" }).first().click();
-    await expect(page).toHaveURL("/case/13/egress-connect/confirmation");
-    await expect(page.locator("h1")).toHaveText(`Are you sure?`);
-    await page.locator('button:text("Continue")').click();
     await expect(page).toHaveURL("/case/13/egress-connect/error");
     await expect(page.locator("h1")).toHaveText(
       "There is a problem connecting to Egress",
@@ -145,7 +106,7 @@ test.describe("egress connect", () => {
     await expect(page).toHaveURL(
       "/case/13/egress-connect?workspace-name=Thunderstruck2_pl",
     );
-    await expect(page.locator("h1")).toHaveText(`Link Egress to the case`);
+    await expect(page.locator("h1")).toHaveText(`Connect Egress to this case`);
     await expect(page.getByTestId("search-folder-name")).toHaveValue(
       "Thunderstruck2_pl",
     );
@@ -166,9 +127,7 @@ test.describe("egress connect", () => {
     page.getByTestId("search-folder-name").fill("abc");
     await page.getByRole("button", { name: "Search" }).click();
     await expect(page).toHaveURL("/case/13/egress-connect?workspace-name=abc");
-    await expect(
-      page.getByText("There are 2 cases matching abc."),
-    ).toBeVisible();
+    await expect(page.getByText("2 cases found for abc")).toBeVisible();
   });
 
   test("Should show no results page if the egress folder search return empty results", async ({
@@ -207,7 +166,7 @@ test.describe("egress connect", () => {
     await expect(page).toHaveURL(
       "/case/13/egress-connect?workspace-name=Thunderstruck2_pl",
     );
-    await expect(page.locator("h1")).toHaveText("Link Egress to the case");
+    await expect(page.locator("h1")).toHaveText("Connect Egress to this case");
     await expect(
       page.getByText("There are no cases matching Thunderstruck2_pl."),
     ).toBeVisible();
@@ -279,14 +238,9 @@ test.describe("egress connect", () => {
       "/case/13/egress-connect?workspace-name=Thunderstruck2_pl",
     );
 
-    await expect(page.locator("h1")).toHaveText(`Link Egress to the case`);
+    await expect(page.locator("h1")).toHaveText(`Connect Egress to this case`);
     await expect(
-      page.getByText(
-        "If the case you need is not listed, check you have the correct permissions in Egress or contact the product team for support.",
-      ),
-    ).toBeVisible();
-    await expect(
-      page.getByText("There are 2 cases matching Thunderstruck2_pl."),
+      page.getByText("2 cases found for Thunderstruck2_pl"),
     ).toBeVisible();
     await expect(page.getByTestId("search-folder-name")).toHaveValue(
       "Thunderstruck2_pl",
@@ -294,36 +248,26 @@ test.describe("egress connect", () => {
     const tableHeadValues = await page
       .locator("table thead tr:nth-child(1) th")
       .allTextContents();
-    expect(tableHeadValues).toEqual([
-      " Operation or defendant last name",
-      " Status",
-      " Date created",
-      "",
-    ]);
+    expect(tableHeadValues).toEqual(["", " Name", " Status"]);
     const row1Values = await page
       .locator("table tbody tr:nth-child(1) td")
       .allTextContents();
     expect(row1Values).toEqual([
-      "thunderstrike",
-      "Not connected",
-      "03/01/2000",
       "Connect",
+      "thunderstrike",
+      "Available to connect",
     ]);
     const row2Values = await page
       .locator("table tbody tr:nth-child(2) td")
       .allTextContents();
     expect(row2Values).toEqual([
+      "",
       "thunderstrike1",
-      "Connected",
-      "02/01/2000",
-      "Connect",
+      "Connected to Thunderstrike1 Case",
     ]);
     await expect(
       page.getByRole("button", { name: "Connect" }).nth(0),
     ).not.toBeDisabled();
-    await expect(
-      page.getByRole("button", { name: "Connect" }).nth(1),
-    ).toBeDisabled();
   });
 
   test("Should navigate user back the case search page if the user lands directly on any of the egress connect page", async ({
@@ -332,24 +276,10 @@ test.describe("egress connect", () => {
     await page.goto("/case/13/egress-connect?workspace-name=Thunderstruck2_pl");
     await expect(
       page.locator("h1", {
-        hasText: "Link Egress to the case",
+        hasText: "Connect Egress to this case",
       }),
     ).not.toBeVisible();
     await expect(page).toHaveURL("/");
-    await expect(page.locator("h1")).toHaveText(`Find a case`);
-  });
-
-  test("Should navigate user back the case search page if the user lands directly on any of the egress connect confirmation page", async ({
-    page,
-  }) => {
-    await page.goto("/case/13/egress-connect/confirmation");
-    await expect(
-      page.locator("h1", {
-        hasText: "Are you sure?",
-      }),
-    ).not.toBeVisible();
-    await expect(page).toHaveURL("/");
-    await expect(page.locator("h1")).toHaveText(`Find a case`);
     await expect(page.locator("h1")).toHaveText(`Find a case`);
   });
 
@@ -386,29 +316,15 @@ test.describe("egress connect", () => {
     await expect(page).toHaveURL(
       "/case/13/egress-connect?workspace-name=Thunderstruck2_pl",
     );
-    await expect(page.locator("h1")).toHaveText(`Link Egress to the case`);
+    await expect(page.locator("h1")).toHaveText(`Connect Egress to this case`);
 
     await expect(page.getByTestId("search-folder-name")).toHaveValue(
       "Thunderstruck2_pl",
     );
     await expect(
-      page.getByText("There are 2 cases matching Thunderstruck2_pl."),
+      page.getByText("2 cases found for Thunderstruck2_pl"),
     ).toBeVisible();
-    await page.getByRole("button", { name: "Connect" }).first().click();
-    await expect(page).toHaveURL("/case/13/egress-connect/confirmation");
-    await expect(page.locator("h1")).toHaveText(`Are you sure?`);
-    await page.getByRole("link", { name: "Back" }).click();
-    await expect(page).toHaveURL(
-      "/case/13/egress-connect?workspace-name=Thunderstruck2_pl",
-    );
-    await expect(page.locator("h1")).toHaveText(`Link Egress to the case`);
 
-    await expect(page.getByTestId("search-folder-name")).toHaveValue(
-      "Thunderstruck2_pl",
-    );
-    await expect(
-      page.getByText("There are 2 cases matching Thunderstruck2_pl."),
-    ).toBeVisible();
     await page.getByRole("link", { name: "Back" }).click();
     await expect(page).toHaveURL("search-results?urn=11AA2222233");
     await expect(page.locator("h1")).toHaveText("Search results");

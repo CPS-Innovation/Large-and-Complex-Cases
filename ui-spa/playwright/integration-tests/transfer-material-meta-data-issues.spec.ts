@@ -103,7 +103,7 @@ test.describe("egress meta data issues", () => {
     await expect(page).toHaveURL(
       "/case/12/egress-connect?workspace-name=Thunderstruck",
     );
-    await expect(page.locator("h1")).toHaveText("Link Egress to the case");
+    await expect(page.locator("h1")).toHaveText("Connect Egress to this case");
   });
   test("Should handle if the user lands on the transfer material but the egress folder is not accessible for the user, by navigating to connection error page", async ({
     page,
