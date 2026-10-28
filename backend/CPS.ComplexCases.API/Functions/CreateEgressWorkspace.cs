@@ -88,10 +88,7 @@ public class CreateEgressWorkspace(
             ? new EgressTemplateResolution(request.Value.TemplateId!, ExplicitTemplateName, false)
             : _egressTemplateResolver.ResolveTemplate(cmsResponse.AreaName);
 
-        var arg = _egressArgFactory.CreateEgressWorkspaceArg(
-            workspaceName,
-            workspaceName,
-            template.TemplateId);
+        var arg = _egressArgFactory.CreateEgressWorkspaceArg(workspaceName, template.TemplateId);
 
         var workspace = await _egressClient.CreateWorkspaceAsync(arg);
 

@@ -45,12 +45,11 @@ public class EgressArgFactory : IEgressArgFactory
         };
     }
 
-    public CreateEgressWorkspaceArg CreateEgressWorkspaceArg(string name, string? description, string templateId)
+    public CreateEgressWorkspaceArg CreateEgressWorkspaceArg(string name, string templateId)
     {
         return new CreateEgressWorkspaceArg
         {
             Name = name,
-            Description = description,
             TemplateId = templateId
         };
     }
