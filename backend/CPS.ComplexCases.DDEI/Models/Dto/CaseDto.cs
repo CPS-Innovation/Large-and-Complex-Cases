@@ -16,4 +16,8 @@ public class CaseDto
     public string? LeadDefendantSurname { get; set; }
     [JsonPropertyName("registrationDate")]
     public string? RegistrationDate { get; set; }
+    [JsonPropertyName("areaId")]
+    public int? AreaId { get; set; }
+    [JsonPropertyName("areaName")]
+    public string? AreaName { get; set; }
 }

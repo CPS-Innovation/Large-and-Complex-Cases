@@ -19,8 +19,7 @@ public class CreateEgressWorkspaceRequestValidatorTests
         var request = new CreateEgressWorkspaceRequest
         {
             CaseId = 0,
-            TemplateId = "TestTemplate",
-            Description = "Test Description"
+            TemplateId = "TestTemplate"
         };
 
         // Act
@@ -31,34 +30,17 @@ public class CreateEgressWorkspaceRequestValidatorTests
         Assert.Single(result.Errors, e => e.PropertyName == nameof(request.CaseId) && e.ErrorMessage == "CaseId is required.");
     }
 
-    [Fact]
-    public void Validate_WhenTemplateIdIsEmpty_ReturnsValidationError()
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void Validate_WhenTemplateIdIsOmitted_ReturnsNoValidationError(string? templateId)
     {
         // Arrange
         var request = new CreateEgressWorkspaceRequest
         {
             CaseId = 1,
-            TemplateId = string.Empty,
-            Description = "Test Description"
-        };
-
-        // Act
-        var result = _validator.Validate(request);
-
-        // Assert
-        Assert.False(result.IsValid);
-        Assert.Single(result.Errors, e => e.PropertyName == nameof(request.TemplateId) && e.ErrorMessage == "TemplateId is required.");
-    }
-
-    [Fact]
-    public void Validate_WhenAllFieldsAreValid_ReturnsNoValidationError()
-    {
-        // Arrange
-        var request = new CreateEgressWorkspaceRequest
-        {
-            CaseId = 1,
-            TemplateId = "TestTemplate",
-            Description = "Test Description"
+            TemplateId = templateId
         };
 
         // Act
@@ -69,14 +51,29 @@ public class CreateEgressWorkspaceRequestValidatorTests
     }
 
     [Fact]
-    public void Validate_WhenMultipleFieldsAreEmpty_ReturnsMultipleValidationErrors()
+    public void Validate_WhenAllFieldsAreValid_ReturnsNoValidationError()
     {
         // Arrange
         var request = new CreateEgressWorkspaceRequest
         {
-            CaseId = 0,
-            TemplateId = string.Empty,
-            Description = "Test Description"
+            CaseId = 1,
+            TemplateId = "TestTemplate"
+        };
+
+        // Act
+        var result = _validator.Validate(request);
+
+        // Assert
+        Assert.True(result.IsValid);
+    }
+
+    [Fact]
+    public void Validate_WhenCaseIdIsEmptyAndTemplateIdIsOmitted_ReturnsOnlyCaseIdError()
+    {
+        // Arrange
+        var request = new CreateEgressWorkspaceRequest
+        {
+            CaseId = 0
         };
 
         // Act
@@ -84,8 +81,6 @@ public class CreateEgressWorkspaceRequestValidatorTests
 
         // Assert
         Assert.False(result.IsValid);
-        Assert.Equal(2, result.Errors.Count);
-        Assert.Contains(result.Errors, e => e.PropertyName == nameof(request.CaseId) && e.ErrorMessage == "CaseId is required.");
-        Assert.Contains(result.Errors, e => e.PropertyName == nameof(request.TemplateId) && e.ErrorMessage == "TemplateId is required.");
+        Assert.Single(result.Errors, e => e.PropertyName == nameof(request.CaseId) && e.ErrorMessage == "CaseId is required.");
     }
 }

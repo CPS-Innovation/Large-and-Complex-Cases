@@ -26,7 +26,9 @@ public class CaseDetailsMapperTests
             LeadDefendantFirstNames = _fixture.Create<string>(),
             LeadDefendantSurname = _fixture.Create<string>(),
             Operation = _fixture.Create<string>(),
-            RegistrationDate = _fixture.Create<string>()
+            RegistrationDate = _fixture.Create<string>(),
+            AreaId = _fixture.Create<int>(),
+            AreaName = _fixture.Create<string>()
         };
 
 
@@ -39,5 +41,25 @@ public class CaseDetailsMapperTests
         Assert.Equal($"{summary.LeadDefendantFirstNames} {summary.LeadDefendantSurname}", result.LeadDefendantName);
         Assert.Equal(summary.Operation, result.OperationName);
         Assert.Equal(summary.RegistrationDate, result.RegistrationDate);
+        Assert.Equal(summary.AreaId, result.AreaId);
+        Assert.Equal(summary.AreaName, result.AreaName);
+    }
+
+    [Fact]
+    public void MapCaseDetails_NoAreaAssigned_ReturnsNullAreaFields()
+    {
+        // Arrange
+        var summary = new DdeiCaseSummaryDto
+        {
+            Id = _fixture.Create<int>(),
+            Urn = _fixture.Create<string>()
+        };
+
+        // Act
+        var result = _mapper.MapCaseDetails(summary);
+
+        // Assert
+        Assert.Null(result.AreaId);
+        Assert.Null(result.AreaName);
     }
 }
