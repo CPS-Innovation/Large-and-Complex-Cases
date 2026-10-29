@@ -20,7 +20,8 @@ const EgressPage = () => {
   const [workspaceName, setWorkspaceName] = useState("");
   const [formDataErrorText, setFormDataErrorText] = useState("");
   const [formValue, setFormValue] = useState("");
-  // Determine caseId from params or mainState (for case-registration flow)
+  const [disableBtns, setDisableBtns] = useState(false);
+
   const isRegistrationFlow = location.pathname.includes("/case-registration/");
   const caseId = isRegistrationFlow ? caseRegistrationCaseId : paramCaseId;
 
@@ -70,6 +71,7 @@ const EgressPage = () => {
       (data) => data.id === id,
     );
     if (!selectedWorkspace) return;
+    setDisableBtns(true);
     try {
       if (selectedWorkspace.id && caseId) {
         await connectEgressWorkspace({
@@ -79,7 +81,7 @@ const EgressPage = () => {
         });
         if (isRegistrationFlow) {
           void navigate(
-            `/case-registration/egress-connect-confirmation?${getUrlSearchParam("workspace-name", selectedWorkspace.name)}`,
+            `/case-registration/egress-connect-confirmation?${getUrlSearchParam("egress-workspace-name", selectedWorkspace.name)}`,
           );
           return;
         }
@@ -133,7 +135,7 @@ const EgressPage = () => {
       isEgressSearchResultLoading={isEgressSearchResultLoading}
       handleFormChange={handleFormChange}
       handleSearch={handleSearch}
-      disableBtns={isEgressSearchResultLoading}
+      disableBtns={isEgressSearchResultLoading || disableBtns}
       handleConnectFolder={handleConnectFolder}
     />
   );

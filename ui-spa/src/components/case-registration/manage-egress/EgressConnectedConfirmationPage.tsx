@@ -24,7 +24,11 @@ const EgressConnectedConfirmationPage = () => {
   return (
     <PageContentWrapper>
       <div className={styles.contentWrapper}>
-        <h1 className="govuk-heading-xl">Egress case created</h1>
+        <h1 className="govuk-heading-xl">
+          {egressWorkspaceName
+            ? "Egress case connected"
+            : "Egress case created"}
+        </h1>
         <p className="govuk-body">
           {egressWorkspaceName
             ? `The Egress case ${egressWorkspaceName} has been connected.`
