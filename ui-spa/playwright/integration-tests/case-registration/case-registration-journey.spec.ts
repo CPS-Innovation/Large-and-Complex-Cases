@@ -59,7 +59,7 @@ test("case registration connect existing egress case flow", async ({
     2,
   );
   await egressConnectExistingCasePage.verifyTableHeaders([
-    "",
+    "Action",
     "Name",
     "Status",
   ]);
@@ -112,7 +112,7 @@ test("case registration connect existing egress case error flow", async ({
     2,
   );
   await egressConnectExistingCasePage.verifyTableHeaders([
-    "",
+    "Action",
     "Name",
     "Status",
   ]);

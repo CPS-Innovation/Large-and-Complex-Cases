@@ -248,7 +248,7 @@ test.describe("egress connect", () => {
     const tableHeadValues = await page
       .locator("table thead tr:nth-child(1) th")
       .allTextContents();
-    expect(tableHeadValues).toEqual(["", " Name", " Status"]);
+    expect(tableHeadValues).toEqual(["Action", " Name", " Status"]);
     const row1Values = await page
       .locator("table tbody tr:nth-child(1) td")
       .allTextContents();
