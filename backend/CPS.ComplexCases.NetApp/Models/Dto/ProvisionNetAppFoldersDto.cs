@@ -8,5 +8,7 @@ namespace CPS.ComplexCases.NetApp.Models.Dto
         public string TemplateFolderPath { get; set; } = null!;
         [JsonPropertyName("bucketName")]
         public string? BucketName { get; set; }
+        [JsonPropertyName("parentFolderPath")]
+        public string? ParentFolderPath { get; set; }
     }
 }

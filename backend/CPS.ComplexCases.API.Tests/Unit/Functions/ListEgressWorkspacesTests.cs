@@ -1,3 +1,4 @@
+using System.Text.Json;
 using AutoFixture;
 using CPS.ComplexCases.API.Constants;
 using CPS.ComplexCases.API.Domain.Response;
@@ -47,6 +48,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
             // Arrange
             var correlationId = _fixture.Create<Guid>();
             var username = _fixture.Create<string>();
+            var cmsAuthValues = _fixture.Create<string>();
 
             var operationName = _fixture.Create<string>();
             var skip = _fixture.Create<int>();
@@ -72,10 +74,10 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
                 .ReturnsAsync(egressResponse);
 
             _caseEnrichmentServiceMock
-                .Setup(s => s.EnrichEgressWorkspacesWithMetadataAsync(egressResponse))
+                .Setup(s => s.EnrichEgressWorkspacesWithMetadataAsync(egressResponse, cmsAuthValues, correlationId))
                 .ReturnsAsync(enrichedResponse);
 
-            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(correlationId, _fixture.Create<string>(), username, _fixture.Create<string>());
+            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(correlationId, cmsAuthValues, username, _fixture.Create<string>());
             var httpRequest = HttpRequestStubHelper.CreateHttpRequestWithQueryParameters(queryParams, correlationId);
 
             // Act
@@ -87,7 +89,67 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
 
             _egressArgFactoryMock.Verify(f => f.CreateListEgressWorkspacesArg(operationName, skip, take), Times.Once);
             _egressClientMock.Verify(c => c.ListWorkspacesAsync(egressArg, username), Times.Once);
-            _caseEnrichmentServiceMock.Verify(s => s.EnrichEgressWorkspacesWithMetadataAsync(egressResponse), Times.Once);
+            _caseEnrichmentServiceMock.Verify(s => s.EnrichEgressWorkspacesWithMetadataAsync(egressResponse, cmsAuthValues, correlationId), Times.Once);
+        }
+
+        [Fact]
+        public async Task Run_SerializesConnectedCaseDetails_ForConnectedAndUnconnectedWorkspaces()
+        {
+            // Arrange
+            var correlationId = _fixture.Create<Guid>();
+            var username = _fixture.Create<string>();
+            var cmsAuthValues = _fixture.Create<string>();
+
+            var egressResponse = _fixture.Create<ListWorkspacesDto>();
+            var enrichedResponse = new ListWorkspacesResponse
+            {
+                Pagination = new PaginationResponse { Count = 2, Take = 2, Skip = 0, TotalResults = 2 },
+                Data =
+                [
+                    new ListWorkspaceDataResponse
+                    {
+                        Id = "connected-workspace",
+                        Name = "Connected",
+                        CaseId = 123,
+                        ConnectedCaseUrn = "01TS0000001",
+                        ConnectedCaseName = "Operation Thunder"
+                    },
+                    new ListWorkspaceDataResponse
+                    {
+                        Id = "unconnected-workspace",
+                        Name = "Unconnected"
+                    }
+                ]
+            };
+
+            _egressClientMock
+                .Setup(c => c.ListWorkspacesAsync(It.IsAny<ListEgressWorkspacesArg>(), username))
+                .ReturnsAsync(egressResponse);
+
+            _caseEnrichmentServiceMock
+                .Setup(s => s.EnrichEgressWorkspacesWithMetadataAsync(egressResponse, cmsAuthValues, correlationId))
+                .ReturnsAsync(enrichedResponse);
+
+            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(correlationId, cmsAuthValues, username, _fixture.Create<string>());
+            var httpRequest = HttpRequestStubHelper.CreateHttpRequestWithQueryParameters(new Dictionary<string, string>(), correlationId);
+
+            // Act
+            var result = await _function.Run(httpRequest, functionContext);
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            using var json = JsonDocument.Parse(JsonSerializer.Serialize(okResult.Value));
+            var data = json.RootElement.GetProperty("Data");
+
+            var connected = data[0];
+            Assert.Equal(123, connected.GetProperty("caseId").GetInt32());
+            Assert.Equal("01TS0000001", connected.GetProperty("connectedCaseUrn").GetString());
+            Assert.Equal("Operation Thunder", connected.GetProperty("connectedCaseName").GetString());
+
+            var unconnected = data[1];
+            Assert.Equal(JsonValueKind.Null, unconnected.GetProperty("caseId").ValueKind);
+            Assert.Equal(JsonValueKind.Null, unconnected.GetProperty("connectedCaseUrn").ValueKind);
+            Assert.Equal(JsonValueKind.Null, unconnected.GetProperty("connectedCaseName").ValueKind);
         }
     }
 }

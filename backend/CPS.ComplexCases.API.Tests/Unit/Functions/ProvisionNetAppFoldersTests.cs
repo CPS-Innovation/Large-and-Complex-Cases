@@ -15,6 +15,7 @@ using CPS.ComplexCases.Common.Helpers;
 using CPS.ComplexCases.Common.Models;
 using CPS.ComplexCases.Common.Models.Requests;
 using CPS.ComplexCases.Common.Services;
+using CPS.ComplexCases.Common.Telemetry;
 using CPS.ComplexCases.Data.Entities;
 using CPS.ComplexCases.Data.Models.Requests;
 using CPS.ComplexCases.DDEI.Client;
@@ -42,6 +43,7 @@ public class ProvisionNetAppFoldersTests
     private readonly Mock<ICaseMetadataService> _caseMetadataServiceMock;
     private readonly Mock<IActivityLogService> _activityLogServiceMock;
     private readonly Mock<IInitializationHandler> _initializationHandlerMock;
+    private readonly Mock<ITelemetryClient> _telemetryClientMock;
     private readonly ProvisionNetAppFolders _function;
     private readonly Fixture _fixture;
 
@@ -58,6 +60,8 @@ public class ProvisionNetAppFoldersTests
     public ProvisionNetAppFoldersTests()
     {
         _fixture = new Fixture();
+        _fixture.Customize<ProvisionNetAppFoldersDto>(c => c.With(d => d.ParentFolderPath, (string?)null));
+        _telemetryClientMock = new Mock<ITelemetryClient>();
         _loggerMock = new Mock<ILogger<ProvisionNetAppFolders>>();
         _ddeiClientMock = new Mock<IDdeiClient>();
         _ddeiArgFactoryMock = new Mock<IDdeiArgFactory>();
@@ -99,7 +103,8 @@ public class ProvisionNetAppFoldersTests
             _userBucketAccessServiceMock.Object,
             _caseMetadataServiceMock.Object,
             _activityLogServiceMock.Object,
-            _initializationHandlerMock.Object);
+            _initializationHandlerMock.Object,
+            _telemetryClientMock.Object);
     }
 
     [Fact]
@@ -611,6 +616,150 @@ public class ProvisionNetAppFoldersTests
         // Assert
         var objectResult = Assert.IsType<ObjectResult>(result);
         Assert.Equal(500, objectResult.StatusCode);
+        _caseMetadataServiceMock.Verify(s => s.CreateNetAppConnectionAsync(It.IsAny<CreateNetAppConnectionDto>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Run_WithParentFolderPath_CreatesCaseFolderInsideParentAndSavesFullPath()
+    {
+        // Arrange
+        var dto = new ProvisionNetAppFoldersDto
+        {
+            ParentFolderPath = "Area1/TeamA/",
+            TemplateFolderPath = "Area1/TeamA/_templates/Standard/"
+        };
+        var cmsArg = _fixture.Create<DdeiCaseIdArgDto>();
+        var caseResponse = _fixture.Create<CaseDto>();
+        var expectedFolderPath = $"Area1/TeamA/{_caseName}/";
+
+        SetupValidRequest(dto, cmsArg);
+        SetupSuccessfulTransfer(caseResponse, "Completed");
+
+        var request = HttpRequestStubHelper.CreateHttpRequestFor(dto);
+        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_correlationId, _cmsAuthValues, _username, _bearerToken);
+
+        // Act
+        var result = await _function.Run(request, functionContext, _caseId);
+
+        // Assert
+        var ok = Assert.IsType<OkObjectResult>(result);
+        Assert.Equal(expectedFolderPath, ok.Value);
+        _fileTransferClientMock.Verify(c => c.ProvisionNetAppFoldersAsync(
+            It.Is<ProvisionNetAppFoldersRequest>(r =>
+                r.DestinationFolderPath == expectedFolderPath &&
+                r.TemplateName == dto.TemplateFolderPath),
+            _correlationId), Times.Once);
+        _caseMetadataServiceMock.Verify(s => s.CreateNetAppConnectionAsync(
+            It.Is<CreateNetAppConnectionDto>(c => c.NetAppFolderPath == expectedFolderPath)), Times.Once);
+    }
+
+    [Fact]
+    public async Task Run_WithNoParentFolderPath_CreatesCaseFolderAtRoot()
+    {
+        // Arrange
+        var dto = new ProvisionNetAppFoldersDto { TemplateFolderPath = "_templates/Standard/" };
+        var cmsArg = _fixture.Create<DdeiCaseIdArgDto>();
+        var caseResponse = _fixture.Create<CaseDto>();
+
+        SetupValidRequest(dto, cmsArg);
+        SetupSuccessfulTransfer(caseResponse, "Completed");
+
+        var request = HttpRequestStubHelper.CreateHttpRequestFor(dto);
+        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_correlationId, _cmsAuthValues, _username, _bearerToken);
+
+        // Act
+        await _function.Run(request, functionContext, _caseId);
+
+        // Assert
+        _fileTransferClientMock.Verify(c => c.ProvisionNetAppFoldersAsync(
+            It.Is<ProvisionNetAppFoldersRequest>(r => r.DestinationFolderPath == $"{_caseName}/"),
+            _correlationId), Times.Once);
+    }
+
+    [Fact]
+    public async Task Run_WhenProvisioningSucceeds_TracksTelemetryWithCaseIdDestinationAndTemplate()
+    {
+        // Arrange
+        var dto = new ProvisionNetAppFoldersDto
+        {
+            ParentFolderPath = "Area1/TeamA/",
+            TemplateFolderPath = "Area1/TeamA/_templates/Standard/"
+        };
+        var cmsArg = _fixture.Create<DdeiCaseIdArgDto>();
+        var caseResponse = _fixture.Create<CaseDto>();
+
+        SetupValidRequest(dto, cmsArg);
+        SetupSuccessfulTransfer(caseResponse, "Completed");
+
+        var request = HttpRequestStubHelper.CreateHttpRequestFor(dto);
+        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_correlationId, _cmsAuthValues, _username, _bearerToken);
+
+        // Act
+        await _function.Run(request, functionContext, _caseId);
+
+        // Assert
+        _telemetryClientMock.Verify(t => t.TrackEvent(It.Is<ProvisionNetAppFoldersEvent>(e =>
+            e.CaseId == _caseId &&
+            e.DestinationPath == $"Area1/TeamA/{_caseName}/" &&
+            e.TemplatePath == dto.TemplateFolderPath &&
+            e.IsSuccessful)), Times.Once);
+        _telemetryClientMock.Verify(t => t.TrackEventFailure(It.IsAny<BaseTelemetryEvent>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Run_WhenOrchestrationFails_TracksTelemetryFailure()
+    {
+        // Arrange
+        var dto = _fixture.Create<ProvisionNetAppFoldersDto>();
+        var cmsArg = _fixture.Create<DdeiCaseIdArgDto>();
+        var caseResponse = _fixture.Create<CaseDto>();
+
+        SetupValidRequest(dto, cmsArg);
+        SetupSuccessfulTransfer(caseResponse, "Failed");
+
+        var request = HttpRequestStubHelper.CreateHttpRequestFor(dto);
+        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_correlationId, _cmsAuthValues, _username, _bearerToken);
+
+        // Act
+        await _function.Run(request, functionContext, _caseId);
+
+        // Assert
+        _telemetryClientMock.Verify(t => t.TrackEventFailure(It.Is<ProvisionNetAppFoldersEvent>(e =>
+            e.CaseId == _caseId && !e.IsSuccessful)), Times.Once);
+        _telemetryClientMock.Verify(t => t.TrackEvent(It.IsAny<BaseTelemetryEvent>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Run_WhenFileTransferReturnsBadRequest_PassesErrorMessageThrough()
+    {
+        // Arrange
+        var dto = _fixture.Create<ProvisionNetAppFoldersDto>();
+        var cmsArg = _fixture.Create<DdeiCaseIdArgDto>();
+        var caseResponse = _fixture.Create<CaseDto>();
+        var errorBody = "[\"Case folders cannot be created inside a _templates folder.\"]";
+
+        SetupValidRequest(dto, cmsArg);
+
+        _ddeiClientMock.Setup(c => c.GetCaseAsync(cmsArg)).ReturnsAsync(caseResponse);
+        _caseMetadataServiceMock.Setup(s => s.GetCaseMetadataForCaseIdAsync(_caseId)).ReturnsAsync((CaseMetadata?)null);
+        _caseNamingServiceMock.Setup(s => s.GenerateCaseName(caseResponse)).ReturnsAsync(_caseNameDto);
+
+        _fileTransferClientMock
+            .Setup(c => c.ProvisionNetAppFoldersAsync(It.IsAny<ProvisionNetAppFoldersRequest>(), _correlationId))
+            .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.BadRequest)
+            {
+                Content = new StringContent(errorBody, Encoding.UTF8, "application/json")
+            });
+
+        var request = HttpRequestStubHelper.CreateHttpRequestFor(dto);
+        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_correlationId, _cmsAuthValues, _username, _bearerToken);
+
+        // Act
+        var result = await _function.Run(request, functionContext, _caseId);
+
+        // Assert
+        var badRequest = Assert.IsType<BadRequestObjectResult>(result);
+        Assert.Equal(errorBody, badRequest.Value);
         _caseMetadataServiceMock.Verify(s => s.CreateNetAppConnectionAsync(It.IsAny<CreateNetAppConnectionDto>()), Times.Never);
     }
 

@@ -167,7 +167,6 @@ public class EgressClientTests
     {
         // Arrange
         var name = _fixture.Create<string>();
-        var description = _fixture.Create<string>();
         var templateId = _fixture.Create<string>();
         var workspaceId = _fixture.Create<string>();
         var token = _fixture.Create<string>();
@@ -175,7 +174,6 @@ public class EgressClientTests
         var arg = new CreateEgressWorkspaceArg
         {
             Name = name,
-            Description = description,
             TemplateId = templateId
         };
 
@@ -183,8 +181,7 @@ public class EgressClientTests
         var workspaceResponse = new CreateWorkspaceResponse
         {
             Id = workspaceId,
-            Name = name,
-            Description = description
+            Name = name
         };
 
         _requestFactoryMock
@@ -207,7 +204,6 @@ public class EgressClientTests
         Assert.NotNull(result);
         Assert.Equal(workspaceId, result.Id);
         Assert.Equal(name, result.Name);
-        Assert.Equal(description, result.Description);
 
         _requestFactoryMock.Verify(f => f.GetWorkspaceTokenRequest(It.IsAny<string>(), It.IsAny<string>()), Times.Once);
         _requestFactoryMock.Verify(f => f.CreateWorkspaceRequest(arg, token), Times.Once);

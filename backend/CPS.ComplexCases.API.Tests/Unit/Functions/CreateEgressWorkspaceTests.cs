@@ -3,12 +3,14 @@ using CPS.ComplexCases.ActivityLog.Enums;
 using CPS.ComplexCases.ActivityLog.Services;
 using CPS.ComplexCases.API.Domain.Request;
 using CPS.ComplexCases.API.Functions;
+using CPS.ComplexCases.API.Services;
 using CPS.ComplexCases.API.Tests.Unit.Helpers;
 using CPS.ComplexCases.API.Validators.Requests;
 using CPS.ComplexCases.Common.Handlers;
 using CPS.ComplexCases.Common.Helpers;
 using CPS.ComplexCases.Common.Models;
 using CPS.ComplexCases.Common.Services;
+using CPS.ComplexCases.Common.Telemetry;
 using CPS.ComplexCases.Data.Models.Requests;
 using CPS.ComplexCases.DDEI.Client;
 using CPS.ComplexCases.DDEI.Factories;
@@ -41,12 +43,13 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
         private readonly CreateEgressWorkspace _function;
         private readonly Mock<IDdeiClient> _ddeiClientMock;
         private readonly Mock<IDdeiArgFactory> _ddeiArgFactoryMock;
+        private readonly Mock<IEgressTemplateResolver> _egressTemplateResolverMock;
+        private readonly Mock<ITelemetryClient> _telemetryClientMock;
         private readonly Guid _correlationId;
         private readonly string _username;
         private readonly string _cmsAuthValues;
         private readonly string _bearerToken;
         private readonly int _caseId;
-        private readonly string _description;
         private readonly string _templateId;
         private readonly string _workspaceId;
         private readonly string _administratorRoleId;
@@ -66,6 +69,8 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
             _ddeiClientMock = new Mock<IDdeiClient>();
             _ddeiArgFactoryMock = new Mock<IDdeiArgFactory>();
             _initializationHandlerMock = new Mock<IInitializationHandler>();
+            _egressTemplateResolverMock = new Mock<IEgressTemplateResolver>();
+            _telemetryClientMock = new Mock<ITelemetryClient>();
 
             _fixture = new Fixture();
             _function = new CreateEgressWorkspace(
@@ -78,14 +83,15 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
                 _loggerMock.Object,
                 _activityLogServiceMock.Object,
                 _requestValidatorMock.Object,
-                _initializationHandlerMock.Object);
+                _initializationHandlerMock.Object,
+                _egressTemplateResolverMock.Object,
+                _telemetryClientMock.Object);
 
             _correlationId = _fixture.Create<Guid>();
             _cmsAuthValues = _fixture.Create<string>();
             _username = _fixture.Create<string>();
             _bearerToken = _fixture.Create<string>();
             _caseId = _fixture.Create<int>();
-            _description = _fixture.Create<string>();
             _templateId = _fixture.Create<string>();
             _workspaceId = _fixture.Create<string>();
             _administratorRoleId = _fixture.Create<string>();
@@ -101,7 +107,6 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
             var createRequest = new CreateEgressWorkspaceRequest
             {
                 CaseId = _caseId,
-                Description = _description,
                 TemplateId = _templateId
             };
 
@@ -123,8 +128,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
             var workspace = new CreateWorkspaceResponse
             {
                 Id = _workspaceId,
-                Name = expectedWorkspaceName,
-                Description = _description
+                Name = expectedWorkspaceName
             };
 
             var roles = new List<ListWorkspaceRoleDto>
@@ -149,7 +153,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
                 .ReturnsAsync(caseResponse);
 
             _egressArgFactoryMock
-                .Setup(f => f.CreateEgressWorkspaceArg(expectedWorkspaceName, _description, _templateId))
+                .Setup(f => f.CreateEgressWorkspaceArg(expectedWorkspaceName, _templateId))
                 .Returns(createWorkspaceArg);
 
             _egressClientMock
@@ -202,7 +206,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
             _requestValidatorMock.Verify(v => v.GetJsonBody<CreateEgressWorkspaceRequest, CreateEgressWorkspaceRequestValidator>(httpRequest), Times.Once);
             _ddeiArgFactoryMock.Verify(f => f.CreateCaseArg(It.IsAny<string>(), _correlationId, _caseId), Times.Once);
             _ddeiClientMock.Verify(c => c.GetCaseAsync(cmsArg), Times.Once);
-            _egressArgFactoryMock.Verify(f => f.CreateEgressWorkspaceArg(expectedWorkspaceName, _description, _templateId), Times.Once);
+            _egressArgFactoryMock.Verify(f => f.CreateEgressWorkspaceArg(expectedWorkspaceName, _templateId), Times.Once);
             _egressClientMock.Verify(c => c.CreateWorkspaceAsync(createWorkspaceArg), Times.Once);
             _egressClientMock.Verify(c => c.ListWorkspaceRolesAsync(_workspaceId), Times.Once);
             _egressArgFactoryMock.Verify(f => f.CreateGrantWorkspacePermissionArg(_workspaceId, _username, _administratorRoleId), Times.Once);
@@ -219,6 +223,186 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
                 expectedWorkspaceName,
                 _username,
                 null), Times.Once);
+            _egressTemplateResolverMock.Verify(r => r.ResolveTemplate(It.IsAny<string?>()), Times.Never);
+            _telemetryClientMock.Verify(t => t.TrackEvent(It.Is<EgressWorkspaceCreatedEvent>(e =>
+                e.CaseId == _caseId &&
+                e.WorkspaceId == _workspaceId &&
+                e.TemplateId == _templateId &&
+                e.TemplateName == "Explicit" &&
+                e.IsExplicitTemplate &&
+                !e.IsDefaultFallback)), Times.Once);
+        }
+
+        [Fact]
+        public async Task Run_TrimsExplicitTemplateId()
+        {
+            // Arrange
+            var createRequest = new CreateEgressWorkspaceRequest
+            {
+                CaseId = _caseId,
+                TemplateId = $"  {_templateId}  "
+            };
+
+            var caseResponse = new CaseDto { OperationName = _operationName, Urn = _urn };
+            var expectedWorkspaceName = $"{_operationName}-{_urn}";
+            var createWorkspaceArg = _fixture.Create<CreateEgressWorkspaceArg>();
+
+            SetupSuccessfulWorkspaceCreation(createRequest, caseResponse, expectedWorkspaceName, _templateId, createWorkspaceArg);
+
+            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_correlationId, _cmsAuthValues, _username, _bearerToken);
+            var httpRequest = HttpRequestStubHelper.CreateHttpRequestWithQueryParameters(new Dictionary<string, string>(), _correlationId);
+
+            // Act
+            var result = await _function.Run(httpRequest, functionContext);
+
+            // Assert
+            Assert.IsType<OkObjectResult>(result);
+            _egressArgFactoryMock.Verify(f => f.CreateEgressWorkspaceArg(expectedWorkspaceName, _templateId), Times.Once);
+            _egressTemplateResolverMock.Verify(r => r.ResolveTemplate(It.IsAny<string?>()), Times.Never);
+        }
+
+        [Theory]
+        [InlineData("Special Crime Division", "ccd-template", "Central Casework Divisions", false)]
+        [InlineData("Wessex", "default-template", "CPS Areas", true)]
+        [InlineData(null, "default-template", "CPS Areas", true)]
+        public async Task Run_ResolvesTemplateFromCaseArea_WhenTemplateIdIsOmitted(
+            string? areaName, string resolvedTemplateId, string resolvedTemplateName, bool isDefaultFallback)
+        {
+            // Arrange
+            var areaId = _fixture.Create<int>();
+            var createRequest = new CreateEgressWorkspaceRequest
+            {
+                CaseId = _caseId
+            };
+
+            var caseResponse = new CaseDto
+            {
+                OperationName = _operationName,
+                Urn = _urn,
+                LeadDefendantSurname = _leadDefendantName,
+                AreaId = areaId,
+                AreaName = areaName
+            };
+
+            var expectedWorkspaceName = $"{_operationName}-{_urn}";
+            var createWorkspaceArg = _fixture.Create<CreateEgressWorkspaceArg>();
+
+            SetupSuccessfulWorkspaceCreation(createRequest, caseResponse, expectedWorkspaceName, resolvedTemplateId, createWorkspaceArg);
+
+            _egressTemplateResolverMock
+                .Setup(r => r.ResolveTemplate(areaName))
+                .Returns(new EgressTemplateResolution(resolvedTemplateId, resolvedTemplateName, isDefaultFallback));
+
+            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_correlationId, _cmsAuthValues, _username, _bearerToken);
+            var httpRequest = HttpRequestStubHelper.CreateHttpRequestWithQueryParameters(new Dictionary<string, string>(), _correlationId);
+
+            // Act
+            var result = await _function.Run(httpRequest, functionContext);
+
+            // Assert
+            Assert.IsType<OkObjectResult>(result);
+            _egressTemplateResolverMock.Verify(r => r.ResolveTemplate(areaName), Times.Once);
+            _egressArgFactoryMock.Verify(f => f.CreateEgressWorkspaceArg(expectedWorkspaceName, resolvedTemplateId), Times.Once);
+            _egressClientMock.Verify(c => c.CreateWorkspaceAsync(createWorkspaceArg), Times.Once);
+            _telemetryClientMock.Verify(t => t.TrackEvent(It.Is<EgressWorkspaceCreatedEvent>(e =>
+                e.CaseId == _caseId &&
+                e.CorrelationId == _correlationId &&
+                e.WorkspaceId == _workspaceId &&
+                e.AreaId == areaId &&
+                e.AreaName == areaName &&
+                e.TemplateId == resolvedTemplateId &&
+                e.TemplateName == resolvedTemplateName &&
+                e.IsDefaultFallback == isDefaultFallback &&
+                !e.IsExplicitTemplate)), Times.Once);
+        }
+
+        [Fact]
+        public async Task Run_DoesNotTrackTelemetry_WhenWorkspaceCreationFails()
+        {
+            // Arrange
+            var createRequest = new CreateEgressWorkspaceRequest
+            {
+                CaseId = _caseId
+            };
+
+            var caseResponse = new CaseDto { OperationName = _operationName, Urn = _urn };
+            var createWorkspaceArg = _fixture.Create<CreateEgressWorkspaceArg>();
+
+            _requestValidatorMock
+                .Setup(v => v.GetJsonBody<CreateEgressWorkspaceRequest, CreateEgressWorkspaceRequestValidator>(It.IsAny<HttpRequest>()))
+                .ReturnsAsync(new ValidatableRequest<CreateEgressWorkspaceRequest> { IsValid = true, Value = createRequest });
+            _ddeiArgFactoryMock
+                .Setup(f => f.CreateCaseArg(It.IsAny<string>(), It.IsAny<Guid>(), It.IsAny<int>()))
+                .Returns(_fixture.Create<DdeiCaseIdArgDto>());
+            _ddeiClientMock
+                .Setup(c => c.GetCaseAsync(It.IsAny<DdeiCaseIdArgDto>()))
+                .ReturnsAsync(caseResponse);
+            _caseNamingServiceMock
+                .Setup(s => s.GenerateCaseName(caseResponse))
+                .ReturnsAsync(new CaseNameDto { CaseName = _fixture.Create<string>(), OperationName = _operationName });
+            _egressTemplateResolverMock
+                .Setup(r => r.ResolveTemplate(It.IsAny<string?>()))
+                .Returns(new EgressTemplateResolution("default-template", "CPS Areas", true));
+            _egressArgFactoryMock
+                .Setup(f => f.CreateEgressWorkspaceArg(It.IsAny<string>(), It.IsAny<string>()))
+                .Returns(createWorkspaceArg);
+            _egressClientMock
+                .Setup(c => c.CreateWorkspaceAsync(createWorkspaceArg))
+                .ThrowsAsync(new HttpRequestException("Egress unavailable"));
+
+            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_correlationId, _cmsAuthValues, _username, _bearerToken);
+            var httpRequest = HttpRequestStubHelper.CreateHttpRequestWithQueryParameters(new Dictionary<string, string>(), _correlationId);
+
+            // Act & Assert
+            await Assert.ThrowsAsync<HttpRequestException>(() => _function.Run(httpRequest, functionContext));
+            _telemetryClientMock.Verify(t => t.TrackEvent(It.IsAny<BaseTelemetryEvent>()), Times.Never);
+        }
+
+        private void SetupSuccessfulWorkspaceCreation(
+            CreateEgressWorkspaceRequest createRequest,
+            CaseDto caseResponse,
+            string expectedWorkspaceName,
+            string expectedTemplateId,
+            CreateEgressWorkspaceArg createWorkspaceArg)
+        {
+            var cmsArg = _fixture.Create<DdeiCaseIdArgDto>();
+            var grantPermissionArg = _fixture.Create<GrantWorkspacePermissionArg>();
+
+            _requestValidatorMock
+                .Setup(v => v.GetJsonBody<CreateEgressWorkspaceRequest, CreateEgressWorkspaceRequestValidator>(It.IsAny<HttpRequest>()))
+                .ReturnsAsync(new ValidatableRequest<CreateEgressWorkspaceRequest> { IsValid = true, Value = createRequest });
+
+            _ddeiArgFactoryMock
+                .Setup(f => f.CreateCaseArg(_cmsAuthValues, _correlationId, _caseId))
+                .Returns(cmsArg);
+
+            _ddeiClientMock
+                .Setup(c => c.GetCaseAsync(cmsArg))
+                .ReturnsAsync(caseResponse);
+
+            _caseNamingServiceMock
+                .Setup(s => s.GenerateCaseName(caseResponse))
+                .ReturnsAsync(new CaseNameDto { CaseName = expectedWorkspaceName, OperationName = _operationName });
+
+            _egressArgFactoryMock
+                .Setup(f => f.CreateEgressWorkspaceArg(expectedWorkspaceName, expectedTemplateId))
+                .Returns(createWorkspaceArg);
+
+            _egressClientMock
+                .Setup(c => c.CreateWorkspaceAsync(createWorkspaceArg))
+                .ReturnsAsync(new CreateWorkspaceResponse { Id = _workspaceId, Name = expectedWorkspaceName });
+
+            _egressClientMock
+                .Setup(c => c.ListWorkspaceRolesAsync(_workspaceId))
+                .ReturnsAsync([new ListWorkspaceRoleDto { RoleId = _administratorRoleId, RoleName = "Administrator" }]);
+
+            _egressArgFactoryMock
+                .Setup(f => f.CreateGrantWorkspacePermissionArg(_workspaceId, _username, _administratorRoleId))
+                .Returns(grantPermissionArg);
+
+            _egressClientMock
+                .Setup(c => c.GrantWorkspacePermission(grantPermissionArg))
+                .Returns(Task.CompletedTask);
         }
 
         [Fact]
@@ -228,7 +412,6 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
             var createRequest = new CreateEgressWorkspaceRequest
             {
                 CaseId = _caseId,
-                Description = _description,
                 TemplateId = _templateId
             };
 
@@ -250,8 +433,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
             var workspace = new CreateWorkspaceResponse
             {
                 Id = _workspaceId,
-                Name = expectedWorkspaceName,
-                Description = _description
+                Name = expectedWorkspaceName
             };
 
             var roles = new List<ListWorkspaceRoleDto>
@@ -276,7 +458,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
                 .ReturnsAsync(caseResponse);
 
             _egressArgFactoryMock
-                .Setup(f => f.CreateEgressWorkspaceArg(expectedWorkspaceName, _description, _templateId))
+                .Setup(f => f.CreateEgressWorkspaceArg(expectedWorkspaceName, _templateId))
                 .Returns(createWorkspaceArg);
 
             _egressClientMock
@@ -324,7 +506,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
             var okResult = Assert.IsType<OkObjectResult>(result);
             Assert.Equal(workspace, okResult.Value);
 
-            _egressArgFactoryMock.Verify(f => f.CreateEgressWorkspaceArg(expectedWorkspaceName, _description, _templateId), Times.Once);
+            _egressArgFactoryMock.Verify(f => f.CreateEgressWorkspaceArg(expectedWorkspaceName, _templateId), Times.Once);
         }
 
         [Fact]
@@ -366,7 +548,6 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
             var createRequest = new CreateEgressWorkspaceRequest
             {
                 CaseId = _caseId,
-                Description = _description,
                 TemplateId = _templateId
             };
 
@@ -388,8 +569,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
             var workspace = new CreateWorkspaceResponse
             {
                 Id = _workspaceId,
-                Name = expectedWorkspaceName,
-                Description = _description
+                Name = expectedWorkspaceName
             };
 
             var roles = new List<ListWorkspaceRoleDto>
@@ -417,7 +597,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
                 .ReturnsAsync(new CaseNameDto { CaseName = expectedWorkspaceName, OperationName = string.Empty });
 
             _egressArgFactoryMock
-                .Setup(f => f.CreateEgressWorkspaceArg(expectedWorkspaceName, _description, _templateId))
+                .Setup(f => f.CreateEgressWorkspaceArg(expectedWorkspaceName, _templateId))
                 .Returns(createWorkspaceArg);
 
             _egressClientMock

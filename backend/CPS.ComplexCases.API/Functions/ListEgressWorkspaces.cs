@@ -54,7 +54,7 @@ public class ListEgressWorkspaces(ILogger<ListEgressWorkspaces> logger,
 
         var response = await _egressClient.ListWorkspacesAsync(egressArg, context.Username);
 
-        var enrichedResponse = await _caseEnrichmentService.EnrichEgressWorkspacesWithMetadataAsync(response);
+        var enrichedResponse = await _caseEnrichmentService.EnrichEgressWorkspacesWithMetadataAsync(response, context.CmsAuthValues, context.CorrelationId);
 
         return new OkObjectResult(enrichedResponse);
     }
