@@ -25,6 +25,12 @@ const EgressPage = () => {
   const isRegistrationFlow = location.pathname.includes("/case-registration/");
   const caseId = isRegistrationFlow ? caseRegistrationCaseId : paramCaseId;
 
+  useEffect(() => {
+    if (isRegistrationFlow && !caseRegistrationCaseId) {
+      void navigate("/", { replace: true });
+    }
+  }, [isRegistrationFlow, caseRegistrationCaseId, navigate]);
+
   const { isNetAppConnected, searchQueryString } =
     state.appData.connectEgressPage;
 
