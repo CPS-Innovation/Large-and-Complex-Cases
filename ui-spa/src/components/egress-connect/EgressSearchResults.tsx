@@ -27,11 +27,15 @@ const EgressSearchResults: React.FC<EgressSearchResultsProps> = ({
   ): EgressSearchResultData => {
     const included = data.filter((item) => item.caseId);
     const excluded = data.filter((item) => !item.caseId);
-    const sortedIncluded = sortByStringProperty(
-      included,
-      "connectedCaseName",
-      order,
-    );
+    const sortedIncluded = [...included].sort((a, b) => {
+      const valA =
+        `Connected to ${a.connectedCaseName ?? "Connected"}`.toLowerCase();
+      const valB =
+        `Connected to ${b.connectedCaseName ?? "Connected"}`.toLowerCase();
+      return order === "ascending"
+        ? valA.localeCompare(valB)
+        : valB.localeCompare(valA);
+    });
     if (order === "ascending") return [...excluded, ...sortedIncluded];
     return [...sortedIncluded, ...excluded];
   };
@@ -60,6 +64,7 @@ const EgressSearchResults: React.FC<EgressSearchResultsProps> = ({
                 name="secondary"
                 onClick={() => handleConnect(data.id)}
                 disabled={disableBtns}
+                aria-label={`Connect to ${data.name}`}
               >
                 Connect
               </Button>
@@ -111,7 +116,9 @@ const EgressSearchResults: React.FC<EgressSearchResultsProps> = ({
               captionClassName="govuk-visually-hidden"
               head={[
                 {
-                  children: "",
+                  children: (
+                    <span className="govuk-visually-hidden">Action</span>
+                  ),
                   sortable: false,
                 },
                 {

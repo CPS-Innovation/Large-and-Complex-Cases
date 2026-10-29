@@ -50,7 +50,7 @@ const ManageEgressPage = () => {
 
   const { isLoading: isDivisionsOrAreasLoading } = useGetCaseDivisionsOrAreas();
   const { data: searchResults, isLoading: isSearchResultsLoading } = useQuery({
-    queryKey: [urn],
+    queryKey: ["case-search", urn],
     queryFn: () => getCaseSearchResults({ urn: urn }),
     retry: false,
     enabled: !!state.apiData?.caseDivisionsOrAreas,
@@ -170,16 +170,16 @@ const ManageEgressPage = () => {
       );
       return;
     }
-
-    if (caseId) {
-      await createEgressCaseMutation.mutateAsync({
-        caseId,
-      });
-
-      void navigate(`/case-registration/egress-connect-confirmation`);
-
+    if (!caseId) {
       setDisableButtons(false);
+      return;
     }
+
+    await createEgressCaseMutation.mutateAsync({
+      caseId,
+    });
+    void navigate(`/case-registration/egress-connect-confirmation`);
+    setDisableButtons(false);
   };
 
   if (isDivisionsOrAreasLoading || isSearchResultsLoading) {

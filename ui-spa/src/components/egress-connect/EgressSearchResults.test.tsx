@@ -68,7 +68,7 @@ describe("EgressSearchResults", () => {
 
     const headers = screen.getAllByRole("columnheader");
     expect(headers).toHaveLength(3);
-    expect(headers[0]).toHaveTextContent("");
+    expect(headers[0]).toHaveTextContent("Action");
     expect(headers[1]).toHaveTextContent("Name");
     expect(headers[2]).toHaveTextContent("Status");
 
@@ -130,7 +130,7 @@ describe("EgressSearchResults", () => {
 
     const headers = screen.getAllByRole("columnheader");
     expect(headers).toHaveLength(3);
-    expect(headers[0]).toHaveTextContent("");
+    expect(headers[0]).toHaveTextContent("Action");
     expect(headers[1]).toHaveTextContent("Name");
     expect(headers[2]).toHaveTextContent("Status");
 
@@ -202,7 +202,7 @@ describe("EgressSearchResults", () => {
 
     const headers = screen.getAllByRole("columnheader");
     expect(headers).toHaveLength(3);
-    expect(headers[0]).toHaveTextContent("");
+    expect(headers[0]).toHaveTextContent("Action");
     expect(headers[1]).toHaveTextContent("Name");
     expect(headers[2]).toHaveTextContent("Status");
 

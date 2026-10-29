@@ -3,7 +3,12 @@ import {
   getEgressSearchResults,
   connectEgressWorkspace,
 } from "../../apis/gateway-api";
-import { useNavigate, useSearchParams, useParams } from "react-router";
+import {
+  useNavigate,
+  useSearchParams,
+  useParams,
+  useLocation,
+} from "react-router";
 import { getUrlSearchParam } from "../../common/utils/getUrlSearchParam";
 import { useQuery } from "@tanstack/react-query";
 import { MainStateContext } from "../../providers/MainStateProvider";
@@ -12,6 +17,7 @@ import EgressSearchPage from "./EgressSearchPage";
 const EgressPage = () => {
   const { state, dispatch } = useContext(MainStateContext);
   const navigate = useNavigate();
+  const location = useLocation();
   const { caseId: paramCaseId } = useParams();
   const [searchParams] = useSearchParams();
   const { urn, caseId: caseRegistrationCaseId } =
