@@ -75,7 +75,9 @@ const EgressSearchResults: React.FC<EgressSearchResultsProps> = ({
           {
             children: data.caseId ? (
               <Tag gdsTagColour="grey" className={styles.statusTag}>
-                Connected to {data.connectedCaseName}
+                {data.connectedCaseName
+                  ? `Connected to ${data.connectedCaseName}`
+                  : "Connected"}
               </Tag>
             ) : (
               <Tag gdsTagColour="green" className={styles.statusTag}>
