@@ -4,12 +4,15 @@ import { CaseMaterialsManageEgressPage } from "../pages/case-registration-manage
 import { CaseRegistrationEgressConnectedConfirmationPage } from "../pages/case-registration-egress-connected-confirmation";
 import { EgressConnectExistingCasePage } from "../pages/egress-connect-existing-case";
 import { CaseRegistrationEgressConnectFailurePage } from "../pages/case-registration-egress-connect-failure";
+import { CASE_REGISTRATION_JOURNEY_URN } from "../../../src/mocks/handlers";
 
 test("case registration create new egress flow", async ({ page }) => {
-  await page.goto("/case-registration/manage-set-up-egress?urn=1x3445555");
+  await page.goto(
+    `/case-registration/manage-set-up-egress?urn=${CASE_REGISTRATION_JOURNEY_URN}`,
+  );
   const caseMaterialsManageEgressPage = new CaseMaterialsManageEgressPage(page);
   await caseMaterialsManageEgressPage.verifyUrl(
-    "/case-registration/manage-set-up-egress?urn=1x3445555",
+    `/case-registration/manage-set-up-egress?urn=${CASE_REGISTRATION_JOURNEY_URN}`,
   );
   await caseMaterialsManageEgressPage.verifyPageElements();
   await caseMaterialsManageEgressPage.errorValidations();
@@ -34,10 +37,12 @@ test("case registration connect existing egress case flow", async ({
       return new HttpResponse(null, { status: 200 });
     }),
   );
-  await page.goto("/case-registration/manage-set-up-egress?urn=1x3445555");
+  await page.goto(
+    `/case-registration/manage-set-up-egress?urn=${CASE_REGISTRATION_JOURNEY_URN}`,
+  );
   const caseMaterialsManageEgressPage = new CaseMaterialsManageEgressPage(page);
   await caseMaterialsManageEgressPage.verifyUrl(
-    "/case-registration/manage-set-up-egress?urn=1x3445555",
+    `/case-registration/manage-set-up-egress?urn=${CASE_REGISTRATION_JOURNEY_URN}`,
   );
   await caseMaterialsManageEgressPage.verifyPageElements();
   await caseMaterialsManageEgressPage.errorValidations();
@@ -85,10 +90,12 @@ test("case registration connect existing egress case error flow", async ({
       return new HttpResponse(null, { status: 500 });
     }),
   );
-  await page.goto("/case-registration/manage-set-up-egress?urn=1x3445555");
+  await page.goto(
+    `/case-registration/manage-set-up-egress?urn=${CASE_REGISTRATION_JOURNEY_URN}`,
+  );
   const caseMaterialsManageEgressPage = new CaseMaterialsManageEgressPage(page);
   await caseMaterialsManageEgressPage.verifyUrl(
-    "/case-registration/manage-set-up-egress?urn=1x3445555",
+    `/case-registration/manage-set-up-egress?urn=${CASE_REGISTRATION_JOURNEY_URN}`,
   );
   await caseMaterialsManageEgressPage.verifyPageElements();
   await caseMaterialsManageEgressPage.errorValidations();

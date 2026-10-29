@@ -41,9 +41,9 @@ describe("EgressSearchResults", () => {
       id: "3",
       dateCreated: "2000-01-27",
       name: "thunderstrikeabc",
-      caseId: null,
-      connectedCaseUrn: null,
-      connectedCaseName: null,
+      caseId: 124,
+      connectedCaseUrn: "16XL2628727",
+      connectedCaseName: "Thunderstrike2 Case",
     },
     {
       id: "4",
@@ -85,7 +85,7 @@ describe("EgressSearchResults", () => {
     expect(rowValues).toEqual([
       ["Connect", "thunderstrike", "Available to connect"],
       ["", "thunderstrikeab", "Connected to Thunderstrike1 Case"],
-      ["Connect", "thunderstrikeabc", "Available to connect"],
+      ["", "thunderstrikeabc", "Connected to Thunderstrike2 Case"],
       ["Connect", "ahunderstrikeabcd", "Available to connect"],
     ]);
     expect(screen.queryByTestId("egress-results-count")).toHaveTextContent(
@@ -154,7 +154,7 @@ describe("EgressSearchResults", () => {
     expect(rowValues).toEqual([
       ["Connect", "thunderstrike", "Available to connect"],
       ["", "thunderstrikeab", "Connected to Thunderstrike1 Case"],
-      ["Connect", "thunderstrikeabc", "Available to connect"],
+      ["", "thunderstrikeabc", "Connected to Thunderstrike2 Case"],
       ["Connect", "ahunderstrikeabcd", "Available to connect"],
     ]);
 
@@ -170,7 +170,7 @@ describe("EgressSearchResults", () => {
       ["Connect", "ahunderstrikeabcd", "Available to connect"],
       ["Connect", "thunderstrike", "Available to connect"],
       ["", "thunderstrikeab", "Connected to Thunderstrike1 Case"],
-      ["Connect", "thunderstrikeabc", "Available to connect"],
+      ["", "thunderstrikeabc", "Connected to Thunderstrike2 Case"],
     ]);
 
     fireEvent.click(btnName);
@@ -182,7 +182,7 @@ describe("EgressSearchResults", () => {
     );
 
     expect(newRowValuesDescending).toEqual([
-      ["Connect", "thunderstrikeabc", "Available to connect"],
+      ["", "thunderstrikeabc", "Connected to Thunderstrike2 Case"],
       ["", "thunderstrikeab", "Connected to Thunderstrike1 Case"],
       ["Connect", "thunderstrike", "Available to connect"],
       ["Connect", "ahunderstrikeabcd", "Available to connect"],
@@ -227,7 +227,7 @@ describe("EgressSearchResults", () => {
     expect(rowValues).toEqual([
       ["Connect", "thunderstrike", "Available to connect"],
       ["", "thunderstrikeab", "Connected to Thunderstrike1 Case"],
-      ["Connect", "thunderstrikeabc", "Available to connect"],
+      ["", "thunderstrikeabc", "Connected to Thunderstrike2 Case"],
       ["Connect", "ahunderstrikeabcd", "Available to connect"],
     ]);
 
@@ -240,10 +240,10 @@ describe("EgressSearchResults", () => {
     );
 
     expect(newRowValuesAscending).toEqual([
-      ["", "thunderstrikeab", "Connected to Thunderstrike1 Case"],
       ["Connect", "thunderstrike", "Available to connect"],
-      ["Connect", "thunderstrikeabc", "Available to connect"],
       ["Connect", "ahunderstrikeabcd", "Available to connect"],
+      ["", "thunderstrikeab", "Connected to Thunderstrike1 Case"],
+      ["", "thunderstrikeabc", "Connected to Thunderstrike2 Case"],
     ]);
 
     fireEvent.click(btnStatus);
@@ -255,10 +255,10 @@ describe("EgressSearchResults", () => {
     );
 
     expect(newRowValuesDescending).toEqual([
-      ["Connect", "thunderstrike", "Available to connect"],
-      ["Connect", "thunderstrikeabc", "Available to connect"],
-      ["Connect", "ahunderstrikeabcd", "Available to connect"],
+      ["", "thunderstrikeabc", "Connected to Thunderstrike2 Case"],
       ["", "thunderstrikeab", "Connected to Thunderstrike1 Case"],
+      ["Connect", "thunderstrike", "Available to connect"],
+      ["Connect", "ahunderstrikeabcd", "Available to connect"],
     ]);
   });
 
@@ -285,10 +285,10 @@ describe("EgressSearchResults", () => {
     ).not.toBeInTheDocument();
 
     expect(
-      within(rows[3]).getByRole("button", {
+      within(rows[3]).queryByRole("button", {
         name: /Connect/i,
       }),
-    ).not.toBeDisabled();
+    ).not.toBeInTheDocument();
     expect(
       within(rows[4]).getByRole("button", {
         name: /Connect/i,

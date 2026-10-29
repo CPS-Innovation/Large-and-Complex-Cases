@@ -29,6 +29,8 @@ import {
 import { IndexingFileTransferPayload } from "../schemas/requests/indexingFileTransferPayload";
 import { InitiateFileTransferPayload } from "../schemas/requests/initiateFileTransferPayload";
 
+export const CASE_REGISTRATION_JOURNEY_URN = "11AA1234567";
+
 export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
   const isDevMock = () => apiMockSource === "dev";
   const RESPONSE_DELAY = isDevMock() ? 10 : 0;
@@ -37,15 +39,32 @@ export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
       const results = isDevMock() ? caseAreasDev : caseAreasPlaywright;
       await delay(RESPONSE_DELAY);
       return HttpResponse.json(results);
-      // return new HttpResponse(null, { status: 401 });
     }),
 
-    http.get(`${baseUrl}/api/v1/case-search`, async () => {
+    http.get(`${baseUrl}/api/v1/case-search`, async (req) => {
+      const url = new URL(req.request.url);
+      const urn = url.searchParams.get("urn");
+
       const caseSearchResults = isDevMock()
         ? casesSearchResultsDev
         : casesSearchResultsPlaywright;
       await delay(RESPONSE_DELAY);
-      // return new HttpResponse(null, { status: 401 });
+      // If there are multiple results for the case registration extended journey ui will throw error.
+      // So on mock, always use  URN 11AA1234567 for case registration extended journey
+      const caseRegistrationJourneyCaseDetail = [
+        {
+          operationName: "Thunderstruck1_pl",
+          urn: CASE_REGISTRATION_JOURNEY_URN,
+          caseId: 12,
+          leadDefendantName: "abc1",
+          egressWorkspaceId: null,
+          netappFolderPath: null,
+          registrationDate: "2000-01-02",
+        },
+      ];
+      if (urn === CASE_REGISTRATION_JOURNEY_URN) {
+        return HttpResponse.json(caseRegistrationJourneyCaseDetail);
+      }
       return HttpResponse.json(caseSearchResults);
     }),
 

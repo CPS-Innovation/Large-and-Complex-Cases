@@ -1,10 +1,7 @@
 import { useMemo, useState } from "react";
 import { type EgressSearchResultData } from "../../schemas";
 import { Button, SortableTable, Tag } from "../govuk";
-import {
-  sortByStringProperty,
-  sortByDateProperty,
-} from "../../common/utils/sortUtils";
+import { sortByStringProperty } from "../../common/utils/sortUtils";
 import styles from "./EgressSearchResults.module.scss";
 
 type EgressSearchResultsProps = {
@@ -30,20 +27,19 @@ const EgressSearchResults: React.FC<EgressSearchResultsProps> = ({
   ): EgressSearchResultData => {
     const included = data.filter((item) => item.caseId);
     const excluded = data.filter((item) => !item.caseId);
-    if (order === "ascending") return [...included, ...excluded];
-    return [...excluded, ...included];
+    const sortedIncluded = sortByStringProperty(
+      included,
+      "connectedCaseName",
+      order,
+    );
+    if (order === "ascending") return [...excluded, ...sortedIncluded];
+    return [...sortedIncluded, ...excluded];
   };
 
   const egressSearchResultsData = useMemo(() => {
     if (!egressSearchResults) return [];
     if (sortValues?.name === "workspace-name")
       return sortByStringProperty(egressSearchResults, "name", sortValues.type);
-    if (sortValues?.name === "date-created")
-      return sortByDateProperty(
-        egressSearchResults,
-        "dateCreated",
-        sortValues.type,
-      );
     if (sortValues?.name === "status")
       return sortByStatus(egressSearchResults, sortValues.type);
     return egressSearchResults;

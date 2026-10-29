@@ -61,6 +61,9 @@ const ManageEgressPage = () => {
       if (!data || data.length === 0) {
         throw new Error("No Case found for the provided URN");
       }
+      if (data.length > 1) {
+        throw new Error("Multiple cases found for the provided URN");
+      }
       return data;
     },
   });
