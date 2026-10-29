@@ -18,10 +18,10 @@ test("case registration create new egress flow", async ({ page }) => {
 
   const caseRegistrationEgressConnectedConfirmationPage =
     new CaseRegistrationEgressConnectedConfirmationPage(page);
-  caseRegistrationEgressConnectedConfirmationPage.verifyUrl(
+  await caseRegistrationEgressConnectedConfirmationPage.verifyUrl(
     "/case-registration/egress-connect-confirmation",
   );
-  caseRegistrationEgressConnectedConfirmationPage.verifyPageElements();
+  await caseRegistrationEgressConnectedConfirmationPage.verifyPageElements();
 });
 
 test("case registration connect existing egress case flow", async ({
