@@ -3,7 +3,6 @@ import { useEffect, useContext } from "react";
 import CaseSearchPage from "./search-page";
 import CaseSearchResultPage from "./search-result-page";
 import EgressPage from "./egress-connect";
-import EgressConnectConfirmationPage from "./egress-connect/EgressConnectConfirmationPage";
 import EgressConnectFailurePage from "./egress-connect/EgressConnectFailurePage";
 import NetAppPage from "./netapp-connect";
 import NetAppConnectConfirmationPage from "./netapp-connect/NetAppConnectConfirmationPage";
@@ -17,6 +16,9 @@ import DisconnectConfirmationPage from "./case-management/disconnect/DisconnectC
 import DisconnectSuccessPage from "./case-management/disconnect/DisconnectSuccessPage";
 import DisconnectFailurePage from "./case-management/disconnect/DisconnectFailurePage";
 import TransferDestinationPage from "./case-management/transfer-materials/TransferDestinationPage";
+import CaseRegistrationEgressConnectFailurePage from "./case-registration/manage-egress/CaseRegistrationEgressConnectFailurePage";
+import ManageEgressPage from "./case-registration/manage-egress";
+import EgressConnectedConfirmationPage from "./case-registration/manage-egress/EgressConnectedConfirmationPage";
 import MaintenancePage from "./maintenance-page";
 import UnAuthorisedPage from "./unauthorised";
 import { MainStateContext } from "../providers/MainStateProvider";
@@ -41,13 +43,13 @@ const AppRoutes = () => {
     }
 
     if (featureFlags?.maintenanceMode && location.pathname !== "/maintenance") {
-      navigate("/maintenance", { replace: true });
+      void navigate("/maintenance", { replace: true });
     }
     if (
       !featureFlags?.maintenanceMode &&
       location.pathname === "/maintenance"
     ) {
-      navigate("/", { replace: true });
+      void navigate("/", { replace: true });
     }
   }, [featureFlagsData, featureFlags, dispatch, navigate]);
 
@@ -61,6 +63,10 @@ const AppRoutes = () => {
       />
       <Route path="/maintenance" element={<MaintenancePage />} />
       <Route path="/unauthorised" element={<UnAuthorisedPage />} />
+      <Route
+        path="/case-registration/manage-set-up-egress"
+        element={<ManageEgressPage />}
+      />
 
       <Route element={<ProtectedRoutes />}>
         <Route
@@ -84,10 +90,7 @@ const AppRoutes = () => {
           element={<DisconnectFailurePage />}
         />
         <Route path="/case/:caseId/egress-connect" element={<EgressPage />} />
-        <Route
-          path="/case/:caseId/egress-connect/confirmation"
-          element={<EgressConnectConfirmationPage />}
-        />
+
         <Route
           path="/case/:caseId/egress-connect/error"
           element={<EgressConnectFailurePage />}
@@ -125,7 +128,20 @@ const AppRoutes = () => {
           path="/case/:caseId/case-management/transfer-destination-page"
           element={<TransferDestinationPage />}
         />
+        <Route
+          path="/case-registration/egress-connect-search-results"
+          element={<EgressPage />}
+        />
+        <Route
+          path="/case-registration/egress-connect-error"
+          element={<CaseRegistrationEgressConnectFailurePage />}
+        />
+        <Route
+          path="/case-registration/egress-connect-confirmation"
+          element={<EgressConnectedConfirmationPage />}
+        />
       </Route>
+
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

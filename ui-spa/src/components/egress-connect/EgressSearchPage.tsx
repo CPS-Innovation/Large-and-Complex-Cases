@@ -1,6 +1,6 @@
 import { useRef, useEffect } from "react";
-import { Button, Input, InsetText, ErrorSummary, BackLink } from "../govuk";
-import EgressSearchResults from "./EgressSearchResults";
+import { Button, Input, ErrorSummary, BackLink } from "../govuk";
+import EgressSearchResults from "../egress-connect/EgressSearchResults";
 import { type EgressSearchResultData } from "../../schemas";
 import { PageContentWrapper } from "../govuk/PageContentWrapper";
 import styles from "./EgressSearchPage.module.scss";
@@ -12,6 +12,7 @@ type EgressSearchPageProps = {
   workspaceName: string;
   egressSearchResults: EgressSearchResultData | undefined;
   isEgressSearchResultLoading: boolean;
+  disableBtns: boolean;
   handleFormChange: (value: string) => void;
   handleSearch: () => void;
   handleConnectFolder: (id: string) => void;
@@ -23,13 +24,14 @@ const EgressSearchPage: React.FC<EgressSearchPageProps> = ({
   egressSearchResults,
   isEgressSearchResultLoading,
   workspaceName,
+  disableBtns,
   handleFormChange,
   handleSearch,
   handleConnectFolder,
 }) => {
   const errorSummaryRef = useRef<HTMLInputElement>(null);
 
-  const handleFormSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleFormSubmit = (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     handleSearch();
@@ -65,15 +67,7 @@ const EgressSearchPage: React.FC<EgressSearchPageProps> = ({
             </div>
           )}
 
-          <h1 className="govuk-heading-xl govuk-!-margin-bottom-0">
-            Link Egress to the case
-          </h1>
-          <InsetText>
-            <p>
-              If the case you need is not listed, check you have the correct
-              permissions in Egress or contact the product team for support.
-            </p>
-          </InsetText>
+          <h1 className="govuk-heading-xl">Connect Egress to this case</h1>
         </div>
         <form onSubmit={handleFormSubmit}>
           <div className={styles.inputWrapper}>
@@ -82,7 +76,7 @@ const EgressSearchPage: React.FC<EgressSearchPageProps> = ({
               data-testid="search-folder-name"
               className="govuk-input--width-20"
               label={{
-                children: "Search for a case on Egress",
+                children: <b>Search</b>,
               }}
               errorMessage={
                 formDataErrorText
@@ -97,10 +91,12 @@ const EgressSearchPage: React.FC<EgressSearchPageProps> = ({
               onChange={(value: string) => {
                 handleFormChange(value);
               }}
-              disabled={false}
+              disabled={disableBtns}
             />
             <div className={styles.btnWrapper}>
-              <Button type="submit">Search</Button>
+              <Button type="submit" disabled={disableBtns}>
+                Search
+              </Button>
             </div>
           </div>
         </form>
@@ -109,6 +105,7 @@ const EgressSearchPage: React.FC<EgressSearchPageProps> = ({
           <EgressSearchResults
             workspaceName={workspaceName}
             egressSearchResults={egressSearchResults}
+            disableBtns={disableBtns}
             handleConnectFolder={handleConnectFolder}
           />
         )}

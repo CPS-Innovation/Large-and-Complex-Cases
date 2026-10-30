@@ -1,21 +1,19 @@
 import { useMemo, useState } from "react";
 import { type EgressSearchResultData } from "../../schemas";
 import { Button, SortableTable, Tag } from "../govuk";
-import { formatDate } from "../../common/utils/formatDate";
-import {
-  sortByStringProperty,
-  sortByDateProperty,
-} from "../../common/utils/sortUtils";
+import { sortByStringProperty } from "../../common/utils/sortUtils";
 import styles from "./EgressSearchResults.module.scss";
 
 type EgressSearchResultsProps = {
   workspaceName: string;
   egressSearchResults: EgressSearchResultData;
+  disableBtns?: boolean;
   handleConnectFolder: (id: string) => void;
 };
 const EgressSearchResults: React.FC<EgressSearchResultsProps> = ({
   workspaceName,
   egressSearchResults,
+  disableBtns = false,
   handleConnectFolder,
 }) => {
   const [sortValues, setSortValues] = useState<{
@@ -29,20 +27,23 @@ const EgressSearchResults: React.FC<EgressSearchResultsProps> = ({
   ): EgressSearchResultData => {
     const included = data.filter((item) => item.caseId);
     const excluded = data.filter((item) => !item.caseId);
-    if (order === "ascending") return [...included, ...excluded];
-    return [...excluded, ...included];
+    const sortedIncluded = [...included].sort((a, b) => {
+      const valA =
+        `Connected to ${a.connectedCaseName ?? "Connected"}`.toLowerCase();
+      const valB =
+        `Connected to ${b.connectedCaseName ?? "Connected"}`.toLowerCase();
+      return order === "ascending"
+        ? valA.localeCompare(valB)
+        : valB.localeCompare(valA);
+    });
+    if (order === "ascending") return [...excluded, ...sortedIncluded];
+    return [...sortedIncluded, ...excluded];
   };
 
   const egressSearchResultsData = useMemo(() => {
     if (!egressSearchResults) return [];
     if (sortValues?.name === "workspace-name")
       return sortByStringProperty(egressSearchResults, "name", sortValues.type);
-    if (sortValues?.name === "date-created")
-      return sortByDateProperty(
-        egressSearchResults,
-        "dateCreated",
-        sortValues.type,
-      );
     if (sortValues?.name === "status")
       return sortByStatus(egressSearchResults, sortValues.type);
     return egressSearchResults;
@@ -57,36 +58,32 @@ const EgressSearchResults: React.FC<EgressSearchResultsProps> = ({
       return {
         cells: [
           {
-            children: (
-              <div>
-                <b>{data.name}</b>
-              </div>
-            ),
-          },
-          {
-            children: data.caseId ? (
-              <Tag gdsTagColour="green" className={styles.statusTag}>
-                Connected
-              </Tag>
-            ) : (
-              <Tag gdsTagColour="grey" className={styles.statusTag}>
-                Not connected
-              </Tag>
-            ),
-          },
-          {
-            children: formatDate(data.dateCreated),
-          },
-          {
-            children: (
+            children: !data.caseId && (
               <Button
                 className="govuk-button--secondary"
                 name="secondary"
                 onClick={() => handleConnect(data.id)}
-                disabled={!!data.caseId}
+                disabled={disableBtns}
+                aria-label={`Connect to ${data.name}`}
               >
                 Connect
               </Button>
+            ),
+          },
+          {
+            children: <div>{data.name}</div>,
+          },
+          {
+            children: data.caseId ? (
+              <Tag gdsTagColour="grey" className={styles.statusTag}>
+                {data.connectedCaseName
+                  ? `Connected to ${data.connectedCaseName}`
+                  : "Connected"}
+              </Tag>
+            ) : (
+              <Tag gdsTagColour="green" className={styles.statusTag}>
+                Available to connect
+              </Tag>
             ),
           },
         ],
@@ -105,24 +102,27 @@ const EgressSearchResults: React.FC<EgressSearchResultsProps> = ({
     <div className={styles.results}>
       {!!egressSearchResultsData.length && (
         <>
-          <div
-            className={styles.searchResultsCount}
+          <p
+            className={`govuk-body ${styles.searchResultsCount}`}
             data-testid="egress-results-count"
           >
-            There {egressSearchResultsData.length > 1 ? "are" : "is"}{" "}
-            <b>
-              {egressSearchResultsData.length}{" "}
-              {egressSearchResultsData.length > 1 ? "cases" : "case"}
-            </b>{" "}
-            matching <b>{workspaceName}</b>.
-          </div>
+            {egressSearchResultsData.length}{" "}
+            {egressSearchResultsData.length > 1 ? "cases" : "case"} found for{" "}
+            <b>{workspaceName}</b>
+          </p>
           <div className={styles.tableWrapper}>
             <SortableTable
               caption="egress cases table, column headers with buttons are sortable"
               captionClassName="govuk-visually-hidden"
               head={[
                 {
-                  children: "Operation or defendant last name",
+                  children: (
+                    <span className="govuk-visually-hidden">Action</span>
+                  ),
+                  sortable: false,
+                },
+                {
+                  children: "Name",
                   sortable: true,
                   sortName: "workspace-name",
                 },
@@ -130,16 +130,6 @@ const EgressSearchResults: React.FC<EgressSearchResultsProps> = ({
                   children: "Status",
                   sortable: true,
                   sortName: "status",
-                },
-
-                {
-                  children: "Date created",
-                  sortable: true,
-                  sortName: "date-created",
-                },
-                {
-                  children: "",
-                  sortable: false,
                 },
               ]}
               rows={getTableRowData()}
@@ -150,9 +140,9 @@ const EgressSearchResults: React.FC<EgressSearchResultsProps> = ({
       )}
       {!egressSearchResultsData.length && (
         <>
-          <div className={styles.searchResultsCount}>
+          <p className={`govuk-body ${styles.searchResultsCount}`}>
             There are <b>no cases </b>matching <b>{workspaceName}</b>.
-          </div>
+          </p>
           <div className={styles.noResultsContent}>
             <div>
               <span>You can:</span>

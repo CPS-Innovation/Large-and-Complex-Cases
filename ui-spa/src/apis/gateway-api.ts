@@ -25,6 +25,7 @@ import {
   type InitiateFileTransferPayload,
   type ConnectEgressPayload,
   type ConnectNetAppPayload,
+  type CreateEgressCasePayload,
   caseDivisionsOrAreaResponseSchema,
   searchResultDataSchema,
   egressSearchResultResponseSchema,
@@ -652,4 +653,22 @@ export const logTelemetryEvent = async (payload: TelemetryPayload) => {
       error,
     );
   }
+};
+
+export const createEgressCase = async (payload: CreateEgressCasePayload) => {
+  const url = `${GATEWAY_BASE_URL}/api/v1/egress/workspaces`;
+  const headers = await buildCommonHeaders();
+  const response = await fetchOrThrow(
+    url,
+    headers,
+    "POST",
+    JSON.stringify(payload),
+  );
+
+  if (!response.ok) {
+    throw new ApiError(`create egress case api failed`, url, response, {
+      correlationId: headers[CORRELATION_ID],
+    });
+  }
+  return response;
 };

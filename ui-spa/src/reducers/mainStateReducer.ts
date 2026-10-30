@@ -1,6 +1,7 @@
 import {
   type CaseDivisionsOrAreaResponse,
   type CaseMetaDataResponse,
+  type SearchResult,
 } from "../schemas";
 import { mapAreaLookups } from "./utils/mapAreaLookups";
 import { FeatureFlagData } from "../common/types/FeatureFlagData";
@@ -81,6 +82,7 @@ export type MainState = {
       transferSourceEgressFolderPath: string;
       transferSourceNetAppFolderPath: string;
     } | null;
+    caseRegistrationCaseDetails: SearchResult | null;
   };
   formData: FormData;
   apiData: {
@@ -124,6 +126,7 @@ export const initialState: MainState = {
     connectSharedDriveFailurePage: {
       backLinkUrl: "",
     },
+    caseRegistrationCaseDetails: null,
     transferDestinationPage: {
       transferSource: null,
       selectedTransferAction: null,
@@ -228,6 +231,10 @@ export type MainStateActions =
       payload: {
         backLinkUrl: string;
       };
+    }
+  | {
+      type: "SET_CASE_REGISTRATION_CASE_DETAILS";
+      payload: SearchResult;
     }
   | {
       type: "SET_SHARED_DRIVE_CONNECT_FAILURE_PAGE";
@@ -433,6 +440,16 @@ export const mainStateReducer = (
           ...state.apiData,
           initiateFileTransferResponseData:
             action.payload.initiateFileTransferResponse,
+        },
+      };
+    }
+
+    case "SET_CASE_REGISTRATION_CASE_DETAILS": {
+      return {
+        ...state,
+        appData: {
+          ...state.appData,
+          caseRegistrationCaseDetails: action.payload,
         },
       };
     }

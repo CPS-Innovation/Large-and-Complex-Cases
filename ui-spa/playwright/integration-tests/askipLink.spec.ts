@@ -86,7 +86,7 @@ test.describe("Skip-link test ", () => {
     await expect(await page.getByTestId("search-urn")).toBeFocused();
   });
 
-  test("Egress Connect, confirmation and error page - clicking skip-link should take you to the main content", async ({
+  test("Egress Connection and error page - clicking skip-link should take you to the main content", async ({
     page,
     worker,
   }) => {
@@ -111,25 +111,7 @@ test.describe("Skip-link test ", () => {
     await expect(page).toHaveURL(/#main-content$/);
     await page.keyboard.press("Tab");
     await expect(await page.getByTestId("search-folder-name")).toBeFocused();
-    await page.getByRole("button", { name: "Connect" }).first().click();
-    await expect(page).toHaveURL("/case/13/egress-connect/confirmation");
-    await expect(page.locator("h1")).toHaveText(`Are you sure?`);
-    await expect(
-      page.getByText(
-        `Confirm you want to link "thunderstrike" on Egress to the case?`,
-      ),
-    ).toBeVisible();
-    await page.keyboard.press("Tab");
 
-    await expect(
-      page.getByRole("link", { name: /Skip to main content/i }),
-    ).toBeFocused();
-    await page.keyboard.press("Enter");
-    await expect(page).toHaveURL(/#main-content$/);
-    await page.keyboard.press("Tab");
-    await expect(
-      await page.getByTestId("radio-egress-connect-yes"),
-    ).toBeFocused();
     await worker.use(
       http.post(
         "https://mocked-out-api/api/v1/egress/connections",
@@ -139,7 +121,8 @@ test.describe("Skip-link test ", () => {
         },
       ),
     );
-    await page.getByRole("button", { name: "Continue" }).click();
+    await page.getByRole("button", { name: "Connect" }).first().click();
+
     await expect(page).toHaveURL("/case/13/egress-connect/error");
     await expect(page.locator("h1")).toHaveText(
       "There is a problem connecting to Egress",
