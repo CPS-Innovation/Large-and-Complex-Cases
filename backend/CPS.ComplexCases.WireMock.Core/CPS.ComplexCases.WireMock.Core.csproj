@@ -11,6 +11,8 @@
     <PackageReference Include="WireMock.Net" Version="1.7.2" />
     <!-- Override transitive Scriban.Signed 5.5.0 (pulled in by WireMock.Net) which has known vulnerabilities; 7.x is patched -->
     <PackageReference Include="Scriban.Signed" Version="7.2.5" />
+    <!-- Pinned to resolve CVE-2026-72923 / GHSA-7pxr-59rr-hqj2 (DoS via OpenApiYamlReader) -->
+    <PackageReference Include="Microsoft.OpenApi.Readers" Version="1.6.30" />
   </ItemGroup>
 
 </Project>

@@ -23,6 +23,8 @@
     <PackageReference Include="xunit" Version="2.5.3" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.5.3" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="10.0.5" />
+    <!-- Pinned to resolve CVE-2026-72923 / GHSA-7pxr-59rr-hqj2 (DoS via OpenApiYamlReader) -->
+    <PackageReference Include="Microsoft.OpenApi.Readers" Version="1.6.30" />
   </ItemGroup>
 
   <ItemGroup>
