@@ -160,7 +160,7 @@ const ManageEgressPage = () => {
 
     setDisableButtons(true);
     if (formData.manageEgressRadio === "skip-egress") {
-      // Navigate the user to the Shared Drive set up page
+      void navigate(`/case-registration/manage-set-up-shared-drive`);
       return;
     }
 
