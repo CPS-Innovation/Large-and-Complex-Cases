@@ -1,11 +1,4 @@
-import {
-  useRef,
-  useEffect,
-  useState,
-  useCallback,
-  useMemo,
-  useContext,
-} from "react";
+import { useEffect, useState, useCallback, useMemo, useContext } from "react";
 import { Radios, Button, ErrorSummary } from "../../govuk";
 import { useNavigate, useLocation } from "react-router";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -16,6 +9,7 @@ import {
   getCaseSearchResults,
 } from "../../../apis/gateway-api";
 import { Spinner } from "../../common/Spinner";
+import { useErrorSummary } from "../../../common/hooks/useErrorSummary";
 import { PageContentWrapper } from "../../govuk/PageContentWrapper";
 import { MainStateContext } from "../../../providers/MainStateProvider";
 import styles from "./index.module.scss";
@@ -74,7 +68,6 @@ const ManageEgressPage = () => {
   type FormDataErrors = {
     manageEgressRadio?: ErrorText;
   };
-  const errorSummaryRef = useRef<HTMLInputElement>(null);
 
   const [disableButtons, setDisableButtons] = useState(false);
 
@@ -96,7 +89,10 @@ const ManageEgressPage = () => {
     },
     [formDataErrors],
   );
-
+  const { errorList, errorSummaryRef } = useErrorSummary({
+    formDataErrors,
+    errorSummaryProperties,
+  });
   const validateFormData = () => {
     const errors: FormDataErrors = {};
     const { manageEgressRadio = "" } = formData;
@@ -111,23 +107,6 @@ const ManageEgressPage = () => {
     }
     return true;
   };
-
-  const errorList = useMemo(() => {
-    const validErrorKeys = Object.keys(formDataErrors).filter(
-      (errorKey) => formDataErrors[errorKey as keyof FormDataErrors],
-    );
-
-    const errorSummary = validErrorKeys.map((errorKey, index) => ({
-      reactListKey: `${index}`,
-      ...errorSummaryProperties(errorKey as keyof FormDataErrors),
-    }));
-
-    return errorSummary;
-  }, [formDataErrors, errorSummaryProperties]);
-
-  useEffect(() => {
-    if (errorList.length) errorSummaryRef.current?.focus();
-  }, [errorList]);
 
   useEffect(() => {
     const casDetailsData = searchResults?.[0];
@@ -160,7 +139,7 @@ const ManageEgressPage = () => {
 
     setDisableButtons(true);
     if (formData.manageEgressRadio === "skip-egress") {
-      // Navigate the user to the Shared Drive set up page
+      void navigate(`/case-registration/manage-set-up-shared-drive`);
       return;
     }
 

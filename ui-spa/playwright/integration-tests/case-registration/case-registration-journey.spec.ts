@@ -4,6 +4,7 @@ import { CaseMaterialsManageEgressPage } from "../pages/case-registration-manage
 import { CaseRegistrationEgressConnectedConfirmationPage } from "../pages/case-registration-egress-connected-confirmation";
 import { EgressConnectExistingCasePage } from "../pages/egress-connect-existing-case";
 import { CaseRegistrationEgressConnectFailurePage } from "../pages/case-registration-egress-connect-failure";
+import { CaseRegistrationManageSharedDrivePage } from "../pages/case-registration-manage-shared-drive";
 import { CASE_REGISTRATION_JOURNEY_URN } from "../../../src/mocks/handlers";
 
 test("case registration create new egress flow", async ({ page }) => {
@@ -133,4 +134,24 @@ test("case registration connect existing egress case error flow", async ({
     "/case-registration/egress-connect-search-results?workspace-name=Thunderstruck1_pl",
   );
   await egressConnectExistingCasePage.verifyPageElements("Thunderstruck1_pl");
+});
+
+test("case registration skip set up egress flow", async ({ page }) => {
+  await page.goto(
+    `/case-registration/manage-set-up-egress?urn=${CASE_REGISTRATION_JOURNEY_URN}`,
+  );
+  const caseMaterialsManageEgressPage = new CaseMaterialsManageEgressPage(page);
+  await caseMaterialsManageEgressPage.verifyUrl(
+    `/case-registration/manage-set-up-egress?urn=${CASE_REGISTRATION_JOURNEY_URN}`,
+  );
+  await caseMaterialsManageEgressPage.verifyPageElements();
+  await caseMaterialsManageEgressPage.errorValidations();
+  await caseMaterialsManageEgressPage.selectSkipSettingEgress();
+  await caseMaterialsManageEgressPage.clickContinue();
+
+  const caseRegistrationManageSharedDrivePage =
+    new CaseRegistrationManageSharedDrivePage(page);
+  await caseRegistrationManageSharedDrivePage.verifyUrl();
+  await caseRegistrationManageSharedDrivePage.verifyPageElements();
+  await caseRegistrationManageSharedDrivePage.errorValidations();
 });

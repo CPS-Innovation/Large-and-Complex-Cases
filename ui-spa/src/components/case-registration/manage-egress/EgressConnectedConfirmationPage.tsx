@@ -1,11 +1,12 @@
 import { useMemo, useState } from "react";
 import { Button } from "../../govuk";
-import { useLocation } from "react-router";
+import { useLocation, useNavigate } from "react-router";
 import { PageContentWrapper } from "../../govuk/PageContentWrapper";
 import styles from "./EgressConnectedConfirmationPage.module.scss";
 
 const EgressConnectedConfirmationPage = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const egressWorkspaceName = useMemo(() => {
     const params = new URLSearchParams(location.search);
     return params.get("egress-workspace-name") ?? "";
@@ -18,7 +19,7 @@ const EgressConnectedConfirmationPage = () => {
   ) => {
     setDisableButtons(true);
     event.preventDefault();
-    // Navigate the user to the Shared Drive set up page
+    void navigate("/case-registration/manage-set-up-shared-drive");
   };
 
   return (
