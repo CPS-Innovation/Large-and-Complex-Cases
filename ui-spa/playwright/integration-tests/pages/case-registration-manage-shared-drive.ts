@@ -30,10 +30,6 @@ export class CaseRegistrationManageSharedDrivePage {
     await expect(this.page.locator("h1")).toHaveText(
       "How do you want to manage the Shared Drive?",
     );
-    await expect(
-      this.page.getByRole("button", { name: "continue" }),
-    ).toBeVisible();
-
     await expect(this.page.locator("label").nth(0)).toHaveText(
       "Create new Shared Drive folders",
     );
@@ -43,6 +39,9 @@ export class CaseRegistrationManageSharedDrivePage {
     await expect(this.page.locator("label").nth(2)).toHaveText(
       "Shared Drive folders not needed",
     );
+    await expect(
+      this.page.getByRole("button", { name: "continue" }),
+    ).toBeVisible();
   }
 
   async selectCreateNewSharedDrive() {
