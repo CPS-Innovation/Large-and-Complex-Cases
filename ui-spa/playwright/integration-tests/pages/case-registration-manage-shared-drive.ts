@@ -10,6 +10,20 @@ export class CaseRegistrationManageSharedDrivePage {
     await expect(this.page).toHaveURL(url);
   }
 
+  async errorValidations() {
+    await this.clickContinue();
+    await expect(
+      this.page.getByTestId("manage-shared-drive-error-summary"),
+    ).toBeVisible();
+    await expect(
+      this.page.getByTestId("manage-shared-drive-radio-link"),
+    ).toHaveText("Select how you want to manage the Shared Drive");
+    await this.page.getByTestId("manage-shared-drive-radio-link").click();
+    await expect(
+      this.page.locator("#manage-shared-drive-radio-create-new"),
+    ).toBeFocused();
+  }
+
   async verifyPageElements() {
     await expect(this.page.locator("h1")).toHaveText(
       "How do you want to manage the Shared Drive?",
@@ -27,19 +41,6 @@ export class CaseRegistrationManageSharedDrivePage {
     await expect(this.page.locator("label").nth(2)).toHaveText(
       "Shared Drive folders not needed",
     );
-  }
-  async errorValidations() {
-    await this.clickContinue();
-    await expect(
-      this.page.getByTestId("manage-shared-drive-error-summary"),
-    ).toBeVisible();
-    await expect(
-      this.page.getByTestId("manage-shared-drive-radio-link"),
-    ).toHaveText("Select how you want to manage the Shared Drive");
-    await this.page.getByTestId("manage-shared-drive-radio-link").click();
-    await expect(
-      this.page.locator("#manage-shared-drive-radio-create-new"),
-    ).toBeFocused();
   }
 
   async selectCreateNewSharedDrive() {
