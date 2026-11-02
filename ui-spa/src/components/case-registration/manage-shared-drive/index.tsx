@@ -1,7 +1,6 @@
-import { useRef, useEffect, useState, useCallback, useMemo } from "react";
+import { useState, useCallback } from "react";
 import { Radios, Button, ErrorSummary } from "../../govuk";
-import { useNavigate } from "react-router";
-import { getUrlSearchParam } from "../../../common/utils/getUrlSearchParam";
+import { useErrorSummary } from "../../../common/hooks/useErrorSummary";
 import { PageContentWrapper } from "../../govuk/PageContentWrapper";
 import styles from "./index.module.scss";
 
@@ -12,8 +11,6 @@ type ManageSharedDriveRadioValue =
   | "";
 
 const ManageSharedDrivePage = () => {
-  const navigate = useNavigate();
-
   type ErrorText = {
     errorSummaryText: string;
     inputErrorText?: string;
@@ -21,7 +18,6 @@ const ManageSharedDrivePage = () => {
   type FormDataErrors = {
     manageSharedDriveRadio?: ErrorText;
   };
-  const errorSummaryRef = useRef<HTMLInputElement>(null);
 
   const [disableButtons, setDisableButtons] = useState(false);
 
@@ -44,6 +40,11 @@ const ManageSharedDrivePage = () => {
     [formDataErrors],
   );
 
+  const { errorList, errorSummaryRef } = useErrorSummary({
+    formDataErrors,
+    errorSummaryProperties,
+  });
+
   const validateFormData = () => {
     const errors: FormDataErrors = {};
     const { manageSharedDriveRadio = "" } = formData;
@@ -58,23 +59,6 @@ const ManageSharedDrivePage = () => {
     }
     return true;
   };
-
-  const errorList = useMemo(() => {
-    const validErrorKeys = Object.keys(formDataErrors).filter(
-      (errorKey) => formDataErrors[errorKey as keyof FormDataErrors],
-    );
-
-    const errorSummary = validErrorKeys.map((errorKey, index) => ({
-      reactListKey: `${index}`,
-      ...errorSummaryProperties(errorKey as keyof FormDataErrors),
-    }));
-
-    return errorSummary;
-  }, [formDataErrors, errorSummaryProperties]);
-
-  useEffect(() => {
-    if (errorList.length) errorSummaryRef.current?.focus();
-  }, [errorList]);
 
   const setFormValue = (value: string) => {
     setFormData({
@@ -95,9 +79,8 @@ const ManageSharedDrivePage = () => {
     }
 
     if (formData.manageSharedDriveRadio === "connect-existing") {
-      void navigate(
-        `/case-registration/egress-connect-search-results?${getUrlSearchParam("workspace-name", "description")}`,
-      );
+      //Navigate the user to the existing Shared Drive connection page
+      return;
     }
   };
 
