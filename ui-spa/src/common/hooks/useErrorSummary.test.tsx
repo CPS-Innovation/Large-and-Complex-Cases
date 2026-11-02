@@ -121,24 +121,28 @@ describe("useErrorSummary", () => {
 
     expect(result.current.errorList).toHaveLength(2);
   });
-
-  it("should set errorSummaryRef when errorList is not empty", () => {
-    const errorSummaryProperties = vi.fn((errorKey) => ({
-      children: `Error for ${String(errorKey)}`,
-      href: `#${String(errorKey)}`,
-      "data-testid": `error-${String(errorKey)}`,
+  it("should focus errorSummaryRef element when errors are present", () => {
+    const errorSummaryProperties = vi.fn((key) => ({
+      children: `Error ${String(key)}`,
+      href: `#${String(key)}`,
+      "data-testid": `error-${String(key)}`,
     }));
 
-    const { result } = renderHook(() =>
+    const { result, rerender } = renderHook(() =>
       useErrorSummary({
-        formDataErrors: {
-          fieldOne: { errorSummaryText: "Error one" },
-        },
+        formDataErrors: { fieldOne: { errorSummaryText: "Error one" } },
         errorSummaryProperties,
       }),
     );
 
-    expect(result.current.errorSummaryRef).toBeDefined();
+    const mockElement = document.createElement("div");
+    const focusSpy = vi.spyOn(mockElement, "focus");
+
+    result.current.errorSummaryRef.current = mockElement;
+    rerender();
+
+    expect(focusSpy).toHaveBeenCalled();
+    focusSpy.mockRestore();
   });
 
   it("should not focus errorSummaryRef when errorList is empty", () => {

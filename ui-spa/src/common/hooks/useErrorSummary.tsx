@@ -20,7 +20,7 @@ export const useErrorSummary = <T extends FormDataErrors>({
   formDataErrors,
   errorSummaryProperties,
 }: UseErrorSummaryProps<T>) => {
-  const errorSummaryRef = useRef<HTMLInputElement>(null);
+  const errorSummaryRef = useRef<HTMLDivElement>(null);
 
   const errorList = useMemo(() => {
     const validErrorKeys = Object.keys(formDataErrors).filter(

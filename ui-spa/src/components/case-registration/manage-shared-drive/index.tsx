@@ -19,7 +19,7 @@ const ManageSharedDrivePage = () => {
     manageSharedDriveRadio?: ErrorText;
   };
 
-  const [disableButtons, setDisableButtons] = useState(false);
+  const [disableButtons] = useState(false);
 
   const [formData, setFormData] = useState<{
     manageSharedDriveRadio: ManageSharedDriveRadioValue;
@@ -72,7 +72,6 @@ const ManageSharedDrivePage = () => {
 
     if (!validateFormData()) return;
 
-    setDisableButtons(true);
     if (formData.manageSharedDriveRadio === "skip-shared-drive") {
       // Navigate the user to the case registration confirmation page
       return;
@@ -80,6 +79,10 @@ const ManageSharedDrivePage = () => {
 
     if (formData.manageSharedDriveRadio === "connect-existing") {
       //Navigate the user to the existing Shared Drive connection page
+      return;
+    }
+    if (formData.manageSharedDriveRadio === "create-new") {
+      //Navigate the user to the shared drive templates pages
       return;
     }
   };
