@@ -6,8 +6,10 @@ export class CaseRegistrationManageSharedDrivePage {
     this.page = page;
   }
 
-  async verifyUrl(url: string) {
-    await expect(this.page).toHaveURL(url);
+  async verifyUrl() {
+    await expect(this.page).toHaveURL(
+      "/case-registration/manage-set-up-shared-drive",
+    );
   }
 
   async errorValidations() {

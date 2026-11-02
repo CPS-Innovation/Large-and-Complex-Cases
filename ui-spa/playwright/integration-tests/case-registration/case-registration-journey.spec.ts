@@ -151,9 +151,7 @@ test("case registration skip set up egress flow", async ({ page }) => {
 
   const caseRegistrationManageSharedDrivePage =
     new CaseRegistrationManageSharedDrivePage(page);
-  await caseRegistrationManageSharedDrivePage.verifyUrl(
-    "/case-registration/manage-set-up-shared-drive",
-  );
+  await caseRegistrationManageSharedDrivePage.verifyUrl();
   await caseRegistrationManageSharedDrivePage.verifyPageElements();
   await caseRegistrationManageSharedDrivePage.errorValidations();
 });
