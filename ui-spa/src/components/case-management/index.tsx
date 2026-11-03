@@ -5,6 +5,7 @@ import { ItemProps } from "../common/tabs/types";
 import TransferMaterialsPage from "./transfer-materials";
 import TransferResolveFilePathPage from "./transfer-materials/TransferResolveFilePathPage";
 import ActivityLogPage from "./activity-log/index";
+import { ManageMaterialsPage } from "../../features/manage-materials";
 import { getCaseMetaData } from "../../apis/gateway-api";
 import { useNavigate, useLocation, useParams } from "react-router";
 import { MainStateContext } from "../../providers/MainStateProvider";
@@ -118,6 +119,25 @@ const CaseManagementPage = () => {
       },
     });
 
+    if (featureFlags?.caseDetails) {
+      items.push({
+        id: "manage-materials",
+        label: "Manage materials",
+        panel: {
+          children: caseMetaData?.netappFolderPath ? (
+            <ManageMaterialsPage
+              isTabActive={activeTabId === "manage-materials"}
+              caseId={caseId}
+              operationName={operationNameOrDefendantName}
+              netAppPath={caseMetaData.netappFolderPath}
+            />
+          ) : (
+            <></>
+          ),
+        },
+      });
+    }
+
     items.push({
       id: "activity-log",
       label: "Activity log",
@@ -134,21 +154,6 @@ const CaseManagementPage = () => {
         ),
       },
     });
-    if (featureFlags?.caseDetails) {
-      items.push({
-        id: "case-details",
-        label: "Case Details",
-        panel: {
-          children: caseMetaData ? (
-            <div>
-              <h3> Case Details</h3>
-            </div>
-          ) : (
-            <></>
-          ),
-        },
-      });
-    }
     return items;
   }, [
     activeTabId,
