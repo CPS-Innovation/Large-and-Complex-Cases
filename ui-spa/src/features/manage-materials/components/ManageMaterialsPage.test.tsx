@@ -1,3 +1,4 @@
+import { forwardRef } from "react";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, it, vi, expect, beforeEach } from "vitest";
@@ -9,6 +10,17 @@ import { getNetAppFolders } from "../../../apis/gateway-api";
 vi.mock("../../../apis/gateway-api", () => ({
   getNetAppFolders: vi.fn(),
 }));
+
+// The govuk-frontend Button uses webpackPrefetch, which vitest cannot resolve.
+vi.mock("../../../components/govuk", async () => {
+  const actual = await vi.importActual("../../../components/govuk");
+  const Button = forwardRef<
+    HTMLButtonElement,
+    React.ButtonHTMLAttributes<HTMLButtonElement>
+  >((props, ref) => <button type="button" {...props} ref={ref} />);
+  Button.displayName = "Button";
+  return { ...actual, Button };
+});
 
 const rootPath = "Thunderstruck/";
 
@@ -117,6 +129,59 @@ describe("ManageMaterialsPage", () => {
       .forEach((checkbox) =>
         expect((checkbox as HTMLInputElement).checked).toBe(false),
       );
+  });
+
+  describe("Actions on selection", () => {
+    const selectionActions = [
+      "Copy",
+      "Move",
+      "Rename selected items",
+      "Delete",
+    ];
+
+    const openActionsMenu = async () => {
+      await userEvent.click(
+        screen.getByRole("button", { name: "Actions on selection" }),
+      );
+      return screen.getByTestId("dropdown-panel");
+    };
+
+    it("disables all options when no materials are selected", async () => {
+      renderPage();
+      await screen.findByTestId("materials-table");
+
+      const panel = await openActionsMenu();
+      selectionActions.forEach((name) =>
+        expect(within(panel).getByRole("button", { name })).toBeDisabled(),
+      );
+    });
+
+    it("displays all options enabled when one or more materials are selected", async () => {
+      renderPage();
+      await screen.findByTestId("materials-table");
+
+      await userEvent.click(getCheckbox("Select file statement.pdf"));
+      const panel = await openActionsMenu();
+
+      const options = within(panel).getAllByRole("button");
+      expect(options.map((option) => option.textContent)).toEqual(
+        selectionActions,
+      );
+      options.forEach((option) => expect(option).toBeEnabled());
+    });
+
+    it("disables the options again when the selection is cleared", async () => {
+      renderPage();
+      await screen.findByTestId("materials-table");
+
+      await userEvent.click(getCheckbox("Select all files and folders"));
+      await userEvent.click(getCheckbox("Select all files and folders"));
+      const panel = await openActionsMenu();
+
+      selectionActions.forEach((name) =>
+        expect(within(panel).getByRole("button", { name })).toBeDisabled(),
+      );
+    });
   });
 
   it("opens a folder and clears the selection", async () => {
