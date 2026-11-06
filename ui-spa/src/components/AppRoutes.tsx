@@ -17,15 +17,18 @@ import DisconnectSuccessPage from "./case-management/disconnect/DisconnectSucces
 import DisconnectFailurePage from "./case-management/disconnect/DisconnectFailurePage";
 import TransferDestinationPage from "./case-management/transfer-materials/TransferDestinationPage";
 import CaseRegistrationEgressConnectFailurePage from "./case-registration/manage-egress/CaseRegistrationEgressConnectFailurePage";
+import CaseRegistrationSharedDriveConnectFailurePage from "./case-registration/manage-shared-drive/CaseRegistrationSharedDriveConnectFailurePage";
 import ManageEgressPage from "./case-registration/manage-egress";
 import EgressConnectedConfirmationPage from "./case-registration/manage-egress/EgressConnectedConfirmationPage";
 import ManageSharedDrivePage from "./case-registration/manage-shared-drive";
+import CaseRegistrationFinalConfirmationPage from "./case-registration/final-confirmation";
 import MaintenancePage from "./maintenance-page";
 import UnAuthorisedPage from "./unauthorised";
 import { MainStateContext } from "../providers/MainStateProvider";
 import { useUserGroupsFeatureFlag } from "../common/hooks/useUserGroupsFeatureFlag";
 
 import ProtectedRoutes from "./ProtectedRoutes";
+import SharedDriveTemplatePage from "./case-registration/manage-shared-drive/SharedDriveTemplatePage";
 
 const AppRoutes = () => {
   const navigate = useNavigate();
@@ -144,6 +147,26 @@ const AppRoutes = () => {
         <Route
           path="/case-registration/manage-set-up-shared-drive"
           element={<ManageSharedDrivePage />}
+        />
+        <Route
+          path="/case-registration/shared-drive-connect-error"
+          element={<CaseRegistrationSharedDriveConnectFailurePage />}
+        />
+        <Route
+          path="/case-registration/shared-drive-connect"
+          element={<NetAppPage />}
+        />
+        <Route
+          path="/case-registration/shared-drive-create"
+          element={<NetAppPage />}
+        />
+        <Route
+          path="/case-registration/shared-drive-templates"
+          element={<SharedDriveTemplatePage />}
+        />
+        <Route
+          path="/case-registration/case-registration-final-confirmation"
+          element={<CaseRegistrationFinalConfirmationPage />}
         />
       </Route>
 

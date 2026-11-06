@@ -25,6 +25,8 @@ import {
   // egressToNetAppIndexingErrorDev,
   activityLogDev,
   activityLogPlaywright,
+  sharedDriveTemplatesDev,
+  sharedDriveTemplatesPlaywright,
 } from "./data";
 import { IndexingFileTransferPayload } from "../schemas/requests/indexingFileTransferPayload";
 import { InitiateFileTransferPayload } from "../schemas/requests/initiateFileTransferPayload";
@@ -78,11 +80,13 @@ export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
     }),
 
     http.post(`${baseUrl}/api/v1/egress/workspaces`, async () => {
-      return HttpResponse.json({});
+      return new HttpResponse(null, { status: 500 });
+      // return HttpResponse.json({});
     }),
 
     http.post(`${baseUrl}/api/v1/egress/connections`, async () => {
-      return new HttpResponse(null, { status: 200 });
+      return new HttpResponse(null, { status: 500 });
+      // return new HttpResponse(null, { status: 200 });
     }),
 
     http.get(`${baseUrl}/api/v1/netapp/folders`, async (req) => {
@@ -99,7 +103,8 @@ export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
     }),
 
     http.post(`${baseUrl}/api/v1/netapp/connections`, async () => {
-      return HttpResponse.json({});
+      return new HttpResponse(null, { status: 500 });
+      // return HttpResponse.json({});
     }),
 
     http.get(`${baseUrl}/api/v1/cases/12`, async () => {
@@ -230,6 +235,13 @@ export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
     http.delete(`${baseUrl}/api/v1/egress/connections`, async () => {
       await delay(1500);
       return new HttpResponse(null, { status: 200 });
+    }),
+    http.get(`${baseUrl}/api/v1/netapp/templates`, async () => {
+      const netAppTemplateResults = isDevMock()
+        ? sharedDriveTemplatesDev
+        : sharedDriveTemplatesPlaywright;
+      await delay(500);
+      return HttpResponse.json(netAppTemplateResults);
     }),
   ];
 };

@@ -1,7 +1,10 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useContext } from "react";
 import { Radios, Button, ErrorSummary } from "../../govuk";
+import { useNavigate } from "react-router";
 import { useErrorSummary } from "../../../common/hooks/useErrorSummary";
 import { PageContentWrapper } from "../../govuk/PageContentWrapper";
+import { MainStateContext } from "../../../providers/MainStateProvider";
+import { getUrlSearchParam } from "../../../common/utils/getUrlSearchParam";
 import styles from "./index.module.scss";
 
 type ManageSharedDriveRadioValue =
@@ -18,8 +21,9 @@ const ManageSharedDrivePage = () => {
   type FormDataErrors = {
     manageSharedDriveRadio?: ErrorText;
   };
-
+  const { state } = useContext(MainStateContext);
   const [disableButtons] = useState(false);
+  const navigate = useNavigate();
 
   const [formData, setFormData] = useState<{
     manageSharedDriveRadio: ManageSharedDriveRadioValue;
@@ -73,17 +77,20 @@ const ManageSharedDrivePage = () => {
     if (!validateFormData()) return;
 
     if (formData.manageSharedDriveRadio === "skip-shared-drive") {
-      // Navigate the user to the case registration confirmation page
+      void navigate("/case-registration/case-registration-final-confirmation");
       return;
     }
 
     if (formData.manageSharedDriveRadio === "connect-existing") {
-      //Navigate the user to the existing Shared Drive connection page
+      void navigate(
+        `/case-registration/shared-drive-connect?${getUrlSearchParam("operation-name", state.appData.caseRegistrationCaseDetails?.operationName)}`,
+      );
       return;
     }
     if (formData.manageSharedDriveRadio === "create-new") {
-      //Navigate the user to the shared drive templates pages
-      return;
+      void navigate(
+        `/case-registration/shared-drive-create?${getUrlSearchParam("operation-name", state.appData.caseRegistrationCaseDetails?.operationName)}`,
+      );
     }
   };
 

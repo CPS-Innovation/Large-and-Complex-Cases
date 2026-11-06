@@ -26,6 +26,8 @@ import {
   type ConnectEgressPayload,
   type ConnectNetAppPayload,
   type CreateEgressCasePayload,
+  type SharedDriveTemplatesResponse,
+  type CreateSharedDriveFolderPayload,
   caseDivisionsOrAreaResponseSchema,
   searchResultDataSchema,
   egressSearchResultResponseSchema,
@@ -41,6 +43,7 @@ import {
   initiateFileTransferPayloadSchema,
   connectEgressPayloadSchema,
   connectNetAppPayloadSchema,
+  sharedDriveTemplatesResponseSchema,
 } from "../schemas";
 import { type CaseSearchParams } from "../common/types/CaseSearchParams";
 import { ApiError } from "../common/errors/ApiError";
@@ -667,6 +670,52 @@ export const createEgressCase = async (payload: CreateEgressCasePayload) => {
 
   if (!response.ok) {
     throw new ApiError(`create egress case api failed`, url, response, {
+      correlationId: headers[CORRELATION_ID],
+    });
+  }
+  return response;
+};
+
+export const getSharedDriveTemplates = async (path: string) => {
+  const params = new URLSearchParams({
+    path: path,
+  });
+  const url = `${GATEWAY_BASE_URL}/api/v1/netapp/templates?${params}`;
+  const headers = await buildCommonHeaders();
+
+  const response = await fetchOrThrow(url, headers, "GET");
+
+  if (!response.ok) {
+    throw new ApiError(`Getting shared drive templates failed`, url, response, {
+      correlationId: headers[CORRELATION_ID],
+    });
+  }
+
+  const result = await parseAndValidateResponse<SharedDriveTemplatesResponse>(
+    response,
+    url,
+    sharedDriveTemplatesResponseSchema,
+    "sharedDriveTemplatesResponseSchema",
+    headers[CORRELATION_ID],
+  );
+  return result;
+};
+
+export const createSharedDriveFolder = async (
+  caseId: number,
+  payload: CreateSharedDriveFolderPayload,
+) => {
+  const url = `${GATEWAY_BASE_URL}/api/v1/cases/${caseId}/netapp/provision`;
+  const headers = await buildCommonHeaders();
+  const response = await fetchOrThrow(
+    url,
+    headers,
+    "POST",
+    JSON.stringify(payload),
+  );
+
+  if (!response.ok) {
+    throw new ApiError(`create shared drive folder api failed`, url, response, {
       correlationId: headers[CORRELATION_ID],
     });
   }

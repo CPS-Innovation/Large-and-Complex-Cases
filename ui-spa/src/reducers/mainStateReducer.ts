@@ -83,6 +83,7 @@ export type MainState = {
       transferSourceNetAppFolderPath: string;
     } | null;
     caseRegistrationCaseDetails: SearchResult | null;
+    selectedCreateSharedDriveFolderPath: string | null;
   };
   formData: FormData;
   apiData: {
@@ -144,6 +145,7 @@ export const initialState: MainState = {
     },
     transferErrorsPage: null,
     transferPage: null,
+    selectedCreateSharedDriveFolderPath: null,
   },
   formData: {
     searchType: "urn",
@@ -241,6 +243,10 @@ export type MainStateActions =
       payload: {
         backLinkUrl: string;
       };
+    }
+  | {
+      type: "SET_SELECTED_CREATE_SHARED_DRIVE_FOLDER_PATH";
+      payload: string;
     }
   | {
       type: "SET_TRANSFER_DESTINATION_PAGE";
@@ -450,6 +456,16 @@ export const mainStateReducer = (
         appData: {
           ...state.appData,
           caseRegistrationCaseDetails: action.payload,
+        },
+      };
+    }
+
+    case "SET_SELECTED_CREATE_SHARED_DRIVE_FOLDER_PATH": {
+      return {
+        ...state,
+        appData: {
+          ...state.appData,
+          selectedCreateSharedDriveFolderPath: action.payload,
         },
       };
     }
