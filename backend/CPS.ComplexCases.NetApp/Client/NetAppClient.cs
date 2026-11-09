@@ -322,6 +322,55 @@ public class NetAppClient(
         }
     }
 
+    // Bypasses the credential-retry wrapper for the same reason as CanListPrefixAsync: this is
+    // called once per folder on a page, and an NTFS denial on one of them must not regenerate keys.
+    // Pages until a child folder is found, because files and directory markers under the prefix
+    // count towards MaxKeys and can fill a page without any CommonPrefixes.
+    public async Task<bool> HasChildFoldersAsync(ListFoldersInBucketArg arg)
+    {
+        var pageArg = arg;
+        try
+        {
+            while (true)
+            {
+                var response = await ListFoldersInBucketCoreAsync(pageArg);
+                if (response == null)
+                    return false;
+
+                if (response.Data.FolderData.Any(folder =>
+                        !string.IsNullOrEmpty(folder.Path) && folder.Path != arg.Prefix))
+                    return true;
+
+                if (string.IsNullOrEmpty(response.Pagination.NextContinuationToken))
+                    return false;
+
+                pageArg = new ListFoldersInBucketArg
+                {
+                    BearerToken = arg.BearerToken,
+                    BucketName = arg.BucketName,
+                    OperationName = arg.OperationName,
+                    MaxKeys = arg.MaxKeys,
+                    Prefix = arg.Prefix,
+                    ContinuationToken = response.Pagination.NextContinuationToken
+                };
+            }
+        }
+        catch (AmazonS3Exception ex) when (ex.StatusCode == HttpStatusCode.Forbidden || ex.ErrorCode == S3ErrorCodes.AccessDenied)
+        {
+            _logger.LogInformation(ex,
+                "Prefix {Prefix} is not listable in bucket {BucketName} when checking for child folders.",
+                arg.Prefix, arg.BucketName);
+            return false;
+        }
+        catch (AmazonS3Exception ex)
+        {
+            _logger.LogWarning(ex,
+                "Failed to check for child folders under {Prefix} in bucket {BucketName} (StatusCode={StatusCode}, ErrorCode={ErrorCode}).",
+                arg.Prefix, arg.BucketName, ex.StatusCode, ex.ErrorCode);
+            return false;
+        }
+    }
+
     private async Task<ListNetAppObjectsDto?> ListFoldersInBucketCoreAsync(ListFoldersInBucketArg arg)
     {
         var s3Client = await _s3ClientFactory.GetS3ClientAsync(arg.BearerToken);
