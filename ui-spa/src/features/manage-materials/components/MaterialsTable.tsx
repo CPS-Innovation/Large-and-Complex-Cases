@@ -52,10 +52,6 @@ const MaterialsTable: React.FC<MaterialsTableProps> = ({
       sortable: true,
       sortName: "name",
     },
-    {
-      children: <></>,
-      sortable: false,
-    },
   ];
 
   const getTableRowData = () =>
@@ -89,15 +85,13 @@ const MaterialsTable: React.FC<MaterialsTableProps> = ({
               <FolderIcon
                 className={styles.folderIcon}
                 data-testid="folder-icon"
+                aria-hidden="true"
               />
               <span className={styles.folderName}>{item.name}</span>
             </button>
           ) : (
             <span className={styles.fileName}>{item.name}</span>
           ),
-        },
-        {
-          children: <></>,
         },
       ],
     }));
