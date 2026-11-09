@@ -424,6 +424,145 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
             _netAppClientMock.Verify(c => c.CanListPrefixAsync(It.IsAny<ListFoldersInBucketArg>()), Times.Never);
         }
 
+        [Fact]
+        public async Task Run_SetsHasTemplatesPerFolder_BasedOnTemplatesFolderContents()
+        {
+            // Arrange
+            var queryParams = new Dictionary<string, string>
+            {
+                [InputParameters.Take] = "50",
+                [InputParameters.Path] = "RCF/"
+            };
+
+            var capturedDto = ArrangeFolderListing("RCF/", ["RCF/WithTemplates/", "RCF/WithoutTemplates/"]);
+            ArrangeTemplateChecks(foldersWithTemplates: ["RCF/WithTemplates/"]);
+
+            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername, _testBearerToken);
+
+            // Act
+            var result = await _function.Run(HttpRequestStubHelper.CreateHttpRequestWithQueryParameters(queryParams), functionContext);
+
+            // Assert
+            Assert.IsType<OkObjectResult>(result);
+            var folders = capturedDto().Data.FolderData.ToDictionary(f => f.Path!, f => f.HasTemplates);
+            Assert.True(folders["RCF/WithTemplates/"]);
+            Assert.False(folders["RCF/WithoutTemplates/"]);
+
+            _netAppArgFactoryMock.Verify(f => f.CreateListFoldersInBucketArg(
+                _testBearerToken, _testBucketName, null, null, It.IsAny<int?>(), "RCF/WithTemplates/_templates/"), Times.Once);
+            _netAppArgFactoryMock.Verify(f => f.CreateListFoldersInBucketArg(
+                _testBearerToken, _testBucketName, null, null, It.IsAny<int?>(), "RCF/WithoutTemplates/_templates/"), Times.Once);
+        }
+
+        [Fact]
+        public async Task Run_ExcludesTemplatesFolderFromListing()
+        {
+            // Arrange
+            var queryParams = new Dictionary<string, string>
+            {
+                [InputParameters.Take] = "50",
+                [InputParameters.Path] = "RCF/"
+            };
+
+            var capturedDto = ArrangeFolderListing("RCF/", ["RCF/_templates/", "RCF/_Templates/", "RCF/Case123/"]);
+            ArrangeTemplateChecks(foldersWithTemplates: []);
+
+            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername, _testBearerToken);
+
+            // Act
+            await _function.Run(HttpRequestStubHelper.CreateHttpRequestWithQueryParameters(queryParams), functionContext);
+
+            // Assert
+            Assert.Equal(["RCF/Case123/"], capturedDto().Data.FolderData.Select(f => f.Path));
+            _netAppClientMock.Verify(c => c.HasChildFoldersAsync(
+                It.Is<ListFoldersInBucketArg>(a => a.Prefix!.StartsWith("RCF/_templates/", StringComparison.OrdinalIgnoreCase))), Times.Never);
+        }
+
+        [Fact]
+        public async Task Run_WhenRootListingDenied_SetsHasTemplatesOnEntryPrefixes()
+        {
+            // Arrange
+            var queryParams = new Dictionary<string, string>
+            {
+                [InputParameters.OperationName] = "opName",
+                [InputParameters.Take] = "50"
+            };
+
+            ArrangeBucketWithEntryPrefixes("RCF/", "RCB/");
+            ArrangeDeniedRootListing(queryParams);
+            ArrangeProbeResults(accessiblePrefixes: ["RCF/", "RCB/"]);
+            ArrangeTemplateChecks(foldersWithTemplates: ["RCB/"]);
+
+            ListNetAppObjectsDto? capturedDto = null;
+            _caseEnrichmentServiceMock
+                .Setup(s => s.EnrichNetAppFoldersWithMetadataAsync(It.IsAny<ListNetAppObjectsDto>()))
+                .Callback<ListNetAppObjectsDto>(dto => capturedDto = dto)
+                .ReturnsAsync(_fixture.Create<ListNetAppObjectsResponse>());
+
+            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername, _testBearerToken);
+
+            // Act
+            await _function.Run(HttpRequestStubHelper.CreateHttpRequestWithQueryParameters(queryParams), functionContext);
+
+            // Assert
+            var folders = capturedDto!.Data.FolderData.ToDictionary(f => f.Path!, f => f.HasTemplates);
+            Assert.False(folders["RCF/"]);
+            Assert.True(folders["RCB/"]);
+        }
+
+        private Func<ListNetAppObjectsDto> ArrangeFolderListing(string rootPath, string[] folderPaths)
+        {
+            var listArg = new ListFoldersInBucketArg { BearerToken = _testBearerToken, BucketName = _testBucketName, Prefix = rootPath };
+
+            _netAppArgFactoryMock
+                .Setup(f => f.CreateListFoldersInBucketArg(
+                    _testBearerToken, _testBucketName, It.IsAny<string?>(), It.IsAny<string?>(), 50, rootPath))
+                .Returns(listArg);
+
+            _netAppClientMock
+                .Setup(c => c.ListFoldersInBucketAsync(listArg))
+                .ReturnsAsync(new ListNetAppObjectsDto
+                {
+                    Data = new ListNetAppDataDto
+                    {
+                        BucketName = _testBucketName,
+                        RootPath = rootPath,
+                        FolderData = folderPaths.Select(p => new ListNetAppFolderDataDto { Path = p }),
+                        FileData = []
+                    },
+                    Pagination = new PaginationDto()
+                });
+
+            ListNetAppObjectsDto? capturedDto = null;
+            _caseEnrichmentServiceMock
+                .Setup(s => s.EnrichNetAppFoldersWithMetadataAsync(It.IsAny<ListNetAppObjectsDto>()))
+                .Callback<ListNetAppObjectsDto>(dto => capturedDto = dto)
+                .ReturnsAsync(_fixture.Create<ListNetAppObjectsResponse>());
+
+            return () => capturedDto!;
+        }
+
+        private void ArrangeTemplateChecks(string[] foldersWithTemplates)
+        {
+            _netAppArgFactoryMock
+                .Setup(f => f.CreateListFoldersInBucketArg(
+                    _testBearerToken, _testBucketName, null, null, It.IsAny<int?>(),
+                    It.Is<string>(prefix => prefix != null && prefix.EndsWith("/_templates/"))))
+                .Returns((string token, string bucket, string? op, string? ct, int? maxKeys, string? prefix) =>
+                    new ListFoldersInBucketArg
+                    {
+                        BearerToken = token,
+                        BucketName = bucket,
+                        MaxKeys = maxKeys.ToString(),
+                        Prefix = prefix
+                    });
+
+            _netAppClientMock
+                .Setup(c => c.HasChildFoldersAsync(It.IsAny<ListFoldersInBucketArg>()))
+                .ReturnsAsync((ListFoldersInBucketArg templatesArg) =>
+                    foldersWithTemplates.Any(folder => templatesArg.Prefix == $"{folder}_templates/"));
+        }
+
         private void ArrangeBucketWithEntryPrefixes(params string[] entryPrefixes)
         {
             _userBucketAccessServiceMock

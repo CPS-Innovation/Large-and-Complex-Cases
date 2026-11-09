@@ -477,6 +477,44 @@ public class CaseEnrichmentServiceTests
     }
 
     [Fact]
+    public async Task EnrichNetAppFoldersWithMetadataAsync_PreservesHasTemplates()
+    {
+        // Arrange
+        var folders = CreateSampleNetAppFolders(2);
+        folders.Data.FolderData.First().HasTemplates = true;
+
+        _caseMetadataServiceMock
+            .Setup(s => s.GetCaseMetadataForNetAppFolderPathsAsync(It.IsAny<IEnumerable<string>>()))
+            .ReturnsAsync([]);
+
+        // Act
+        var result = await _service.EnrichNetAppFoldersWithMetadataAsync(folders);
+
+        // Assert
+        var hasTemplatesByPath = result.Data.Folders.ToDictionary(f => f.FolderPath, f => f.HasTemplates);
+        Assert.True(hasTemplatesByPath["folder-1"]);
+        Assert.False(hasTemplatesByPath["folder-2"]);
+    }
+
+    [Fact]
+    public async Task EnrichNetAppFoldersWithMetadataAsync_WhenMetadataServiceThrows_PreservesHasTemplates()
+    {
+        // Arrange
+        var folders = CreateSampleNetAppFolders(1);
+        folders.Data.FolderData.First().HasTemplates = true;
+
+        _caseMetadataServiceMock
+            .Setup(s => s.GetCaseMetadataForNetAppFolderPathsAsync(It.IsAny<IEnumerable<string>>()))
+            .ThrowsAsync(new InvalidOperationException("Database unavailable"));
+
+        // Act
+        var result = await _service.EnrichNetAppFoldersWithMetadataAsync(folders);
+
+        // Assert
+        Assert.True(result.Data.Folders.Single().HasTemplates);
+    }
+
+    [Fact]
     public async Task EnrichNetAppFoldersWithMetadataAsync_WhenMetadataNotFoundForSomeFolders_ReturnsEnrichedFoldersWithAvailableMetadata()
     {
         // Arrange

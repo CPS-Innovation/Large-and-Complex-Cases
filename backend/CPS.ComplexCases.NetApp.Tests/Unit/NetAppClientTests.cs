@@ -547,6 +547,115 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
         }
 
         [Fact]
+        public async Task HasChildFoldersAsync_WhenChildFolderExists_ReturnsTrue()
+        {
+            // Arrange
+            var arg = _fixture.Create<ListFoldersInBucketArg>();
+            arg.BearerToken = BearerToken;
+            arg.Prefix = "case1/_templates/";
+
+            _amazonS3Mock.Setup(x => x.ListObjectsV2Async(It.IsAny<ListObjectsV2Request>(), default))
+                .ReturnsAsync(new ListObjectsV2Response { CommonPrefixes = ["case1/_templates/Standard/"] });
+
+            // Act
+            var result = await _client.HasChildFoldersAsync(arg);
+
+            // Assert
+            Assert.True(result);
+        }
+
+        [Fact]
+        public async Task HasChildFoldersAsync_WhenNoChildFolders_ReturnsFalse()
+        {
+            // Arrange
+            var arg = _fixture.Create<ListFoldersInBucketArg>();
+            arg.BearerToken = BearerToken;
+            arg.Prefix = "case1/_templates/";
+
+            _amazonS3Mock.Setup(x => x.ListObjectsV2Async(It.IsAny<ListObjectsV2Request>(), default))
+                .ReturnsAsync(new ListObjectsV2Response { CommonPrefixes = [] });
+
+            // Act
+            var result = await _client.HasChildFoldersAsync(arg);
+
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
+        public async Task HasChildFoldersAsync_WhenFirstPageHasNoFolders_PagesUntilFolderFound()
+        {
+            // Arrange - files and directory markers count towards MaxKeys, so a page can be full
+            // without containing any child folders.
+            var arg = _fixture.Create<ListFoldersInBucketArg>();
+            arg.BearerToken = BearerToken;
+            arg.Prefix = "case1/_templates/";
+            arg.ContinuationToken = null;
+
+            _netAppRequestFactoryMock
+                .Setup(x => x.ListFoldersInBucketRequest(It.IsAny<ListFoldersInBucketArg>()))
+                .Returns((ListFoldersInBucketArg a) => new ListObjectsV2Request
+                {
+                    BucketName = a.BucketName,
+                    Prefix = a.Prefix,
+                    ContinuationToken = a.ContinuationToken
+                });
+
+            _amazonS3Mock
+                .Setup(x => x.ListObjectsV2Async(It.Is<ListObjectsV2Request>(r => r.ContinuationToken == null), default))
+                .ReturnsAsync(new ListObjectsV2Response { CommonPrefixes = [], NextContinuationToken = "page-2" });
+            _amazonS3Mock
+                .Setup(x => x.ListObjectsV2Async(It.Is<ListObjectsV2Request>(r => r.ContinuationToken == "page-2"), default))
+                .ReturnsAsync(new ListObjectsV2Response { CommonPrefixes = ["case1/_templates/Standard/"] });
+
+            // Act
+            var result = await _client.HasChildFoldersAsync(arg);
+
+            // Assert
+            Assert.True(result);
+            _amazonS3Mock.Verify(x => x.ListObjectsV2Async(It.IsAny<ListObjectsV2Request>(), default), Times.Exactly(2));
+        }
+
+        [Fact]
+        public async Task HasChildFoldersAsync_WhenAccessDenied_ReturnsFalseWithoutInvalidatingCredentials()
+        {
+            // Arrange
+            var arg = _fixture.Create<ListFoldersInBucketArg>();
+            arg.BearerToken = BearerToken;
+
+            _amazonS3Mock.Setup(x => x.ListObjectsV2Async(It.IsAny<ListObjectsV2Request>(), default))
+                .ThrowsAsync(new AmazonS3Exception("Access Denied")
+                { StatusCode = HttpStatusCode.Forbidden, ErrorCode = S3ErrorCodes.AccessDenied });
+
+            // Act
+            var result = await _client.HasChildFoldersAsync(arg);
+
+            // Assert
+            Assert.False(result);
+            _s3ClientFactoryMock.Verify(x => x.InvalidateClientAsync(), Times.Never);
+            _amazonS3Mock.Verify(x => x.ListObjectsV2Async(It.IsAny<ListObjectsV2Request>(), default), Times.Once);
+        }
+
+        [Fact]
+        public async Task HasChildFoldersAsync_WhenServerError_ReturnsFalse()
+        {
+            // Arrange
+            var arg = _fixture.Create<ListFoldersInBucketArg>();
+            arg.BearerToken = BearerToken;
+
+            _amazonS3Mock.Setup(x => x.ListObjectsV2Async(It.IsAny<ListObjectsV2Request>(), default))
+                .ThrowsAsync(new AmazonS3Exception(S3ErrorCodes.InternalError)
+                { StatusCode = HttpStatusCode.InternalServerError, ErrorCode = S3ErrorCodes.InternalError });
+
+            // Act
+            var result = await _client.HasChildFoldersAsync(arg);
+
+            // Assert
+            Assert.False(result);
+            _s3ClientFactoryMock.Verify(x => x.InvalidateClientAsync(), Times.Never);
+        }
+
+        [Fact]
         public async Task InitiateMultipartUploadAsync_ReturnsResponse_OnSuccess()
         {
             var arg = _fixture.Create<InitiateMultipartUploadArg>();

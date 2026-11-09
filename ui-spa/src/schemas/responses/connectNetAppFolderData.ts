@@ -3,6 +3,7 @@ import { z } from "zod";
 export const connectNetAppFolderSchema = z.object({
   folderPath: z.string(),
   caseId: z.number().nullable(),
+  hasTemplates: z.boolean().optional(),
 });
 export const connectNetAppFolderDataSchema = z.object({
   rootPath: z.string(),
