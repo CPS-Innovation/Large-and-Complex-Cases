@@ -36,6 +36,7 @@ describe("NetAppFolderResultsPage", () => {
     render(
       <MemoryRouter>
         <NetAppFolderResultsPage
+          setupType="connect"
           backLinkUrl="/search-results"
           rootFolderPath={rootFolderPath}
           netAppFolderResults={netAppFolderResults}
@@ -59,7 +60,7 @@ describe("NetAppFolderResultsPage", () => {
       screen.queryByTestId("restricted-root-text"),
     ).not.toBeInTheDocument();
     expect(
-      screen.getByText(/If the folder you need is not listed/),
+      screen.getByText(/Select a folder to connect it to this case./),
     ).toBeInTheDocument();
   });
 

@@ -130,17 +130,17 @@ const NetAppPage = () => {
           ? `/case-registration/shared-drive-connect`
           : `/case/${caseId}/shared-drive-connect`;
         dispatch({
-          type: "SET_SHARED_DRIVE_CONNECT_FAILURE_PAGE",
+          type: "SET_SHARED_DRIVE_CREATE_CONNECT_FAILURE_PAGE",
           payload: {
             backLinkUrl: `${basePath}?${getUrlSearchParam("operation-name", operationName)}`,
           },
         });
         if (isRegistrationFlow) {
-          void navigate(`/case-registration/shared-drive-connect-error`);
+          void navigate(`/case-registration/connect-shared-drive-folder-error`);
           return;
         }
 
-        navigate(`/case/${caseId}/shared-drive-connect/error`);
+        navigate(`/case/${caseId}/connect-shared-drive-folder-error`);
       }
     }
   };

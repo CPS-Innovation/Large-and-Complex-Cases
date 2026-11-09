@@ -204,18 +204,18 @@ describe("mainStateReducer", () => {
 
   it("sets egress/shared drive failure pages", () => {
     const state = mainStateReducer(initialState, {
-      type: "SET_EGRESS_CONNECT_FAILURE_PAGE",
+      type: "SET_EGRESS_CREATE_CONNECT_FAILURE_PAGE",
       payload: { backLinkUrl: "/x" },
     } as any);
-    expect(state.appData.connectEgressFailurePage.backLinkUrl).toBe("/x");
+    expect(state.appData.egressCreateConnectFailurePage.backLinkUrl).toBe("/x");
 
     const newState = mainStateReducer(initialState, {
-      type: "SET_SHARED_DRIVE_CONNECT_FAILURE_PAGE",
+      type: "SET_SHARED_DRIVE_CREATE_CONNECT_FAILURE_PAGE",
       payload: { backLinkUrl: "/y" },
     } as any);
-    expect(newState.appData.connectSharedDriveFailurePage.backLinkUrl).toBe(
-      "/y",
-    );
+    expect(
+      newState.appData.sharedDriveCreateConnectFailurePage.backLinkUrl,
+    ).toBe("/y");
   });
 
   it("sets transfer destination page (SET_TRANSFER_DESTINATION_PAGE)", () => {

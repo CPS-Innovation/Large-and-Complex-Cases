@@ -60,10 +60,10 @@ export type MainState = {
         folderPath: string;
       };
     };
-    connectEgressFailurePage: {
+    egressCreateConnectFailurePage: {
       backLinkUrl: string;
     };
-    connectSharedDriveFailurePage: {
+    sharedDriveCreateConnectFailurePage: {
       backLinkUrl: string;
     };
     transferDestinationPage: TransferDestinationPageData;
@@ -121,10 +121,10 @@ export const initialState: MainState = {
         folderPath: "",
       },
     },
-    connectEgressFailurePage: {
+    egressCreateConnectFailurePage: {
       backLinkUrl: "",
     },
-    connectSharedDriveFailurePage: {
+    sharedDriveCreateConnectFailurePage: {
       backLinkUrl: "",
     },
     caseRegistrationCaseDetails: null,
@@ -229,7 +229,7 @@ export type MainStateActions =
       };
     }
   | {
-      type: "SET_EGRESS_CONNECT_FAILURE_PAGE";
+      type: "SET_EGRESS_CREATE_CONNECT_FAILURE_PAGE";
       payload: {
         backLinkUrl: string;
       };
@@ -239,7 +239,7 @@ export type MainStateActions =
       payload: SearchResult;
     }
   | {
-      type: "SET_SHARED_DRIVE_CONNECT_FAILURE_PAGE";
+      type: "SET_SHARED_DRIVE_CREATE_CONNECT_FAILURE_PAGE";
       payload: {
         backLinkUrl: string;
       };
@@ -369,23 +369,23 @@ export const mainStateReducer = (
         },
       };
     }
-    case "SET_EGRESS_CONNECT_FAILURE_PAGE": {
+    case "SET_EGRESS_CREATE_CONNECT_FAILURE_PAGE": {
       return {
         ...state,
         appData: {
           ...state.appData,
-          connectEgressFailurePage: {
+          egressCreateConnectFailurePage: {
             ...action.payload,
           },
         },
       };
     }
-    case "SET_SHARED_DRIVE_CONNECT_FAILURE_PAGE": {
+    case "SET_SHARED_DRIVE_CREATE_CONNECT_FAILURE_PAGE": {
       return {
         ...state,
         appData: {
           ...state.appData,
-          connectSharedDriveFailurePage: {
+          sharedDriveCreateConnectFailurePage: {
             ...action.payload,
           },
         },

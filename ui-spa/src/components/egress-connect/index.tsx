@@ -119,16 +119,16 @@ const EgressPage = () => {
           ? `/case-registration/egress-connect-search-results`
           : `/case/${caseId}/egress-connect`;
         dispatch({
-          type: "SET_EGRESS_CONNECT_FAILURE_PAGE",
+          type: "SET_EGRESS_CREATE_CONNECT_FAILURE_PAGE",
           payload: {
             backLinkUrl: `${basePath}?${getUrlSearchParam("workspace-name", formValue)}`,
           },
         });
         if (isRegistrationFlow) {
-          void navigate(`/case-registration/egress-connect-error`);
+          void navigate(`/case-registration/connect-egress-case-error`);
           return;
         }
-        void navigate(`/case/${caseId}/egress-connect/error`);
+        void navigate(`/case/${caseId}/connect-egress-case-error`);
       }
     }
   };

@@ -16,14 +16,23 @@ import commonStyles from "../../case-management/index.module.scss";
 const SharedDriveTemplatePage = () => {
   const navigate = useNavigate();
 
-  const { state } = useContext(MainStateContext);
+  const { state, dispatch } = useContext(MainStateContext);
 
   const createSharedDriveFolderMutation = useMutation({
     mutationFn: (params: {
       caseId: number;
       payload: { templateFolderPath: string; parentFolderPath: string };
     }) => createSharedDriveFolder(params.caseId, params.payload),
-    throwOnError: true,
+    onError: () => {
+      setDisableButtons(false);
+      dispatch({
+        type: "SET_SHARED_DRIVE_CREATE_CONNECT_FAILURE_PAGE",
+        payload: {
+          backLinkUrl: `/case-registration/manage-set-up-shared-drive`,
+        },
+      });
+      void navigate(`/case-registration/create-shared-drive-error`);
+    },
   });
 
   const selectedFolderPath = useMemo(() => {

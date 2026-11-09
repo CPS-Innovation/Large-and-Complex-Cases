@@ -39,7 +39,16 @@ const ManageEgressPage = () => {
   }, [urn, navigate]);
   const createEgressCaseMutation = useMutation({
     mutationFn: createEgressCase,
-    throwOnError: true,
+    onError: () => {
+      setDisableButtons(false);
+      dispatch({
+        type: "SET_EGRESS_CREATE_CONNECT_FAILURE_PAGE",
+        payload: {
+          backLinkUrl: `/case-registration/manage-set-up-egress`,
+        },
+      });
+      void navigate(`/case-registration/create-egress-case-error`);
+    },
   });
 
   const { isLoading: isDivisionsOrAreasLoading } = useGetCaseDivisionsOrAreas();
