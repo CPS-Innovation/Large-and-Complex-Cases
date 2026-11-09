@@ -1,0 +1,143 @@
+.materialsTableWrapper {
+  position: relative;
+  margin: 16px 15px 0;
+  min-height: 21.875rem;
+
+  .spinnerWrapper {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: absolute;
+    top: 5rem;
+    & .spinnerText {
+      margin-top: 1rem;
+    }
+  }
+}
+
+.materialsTable {
+  width: 100%;
+  max-width: 75%;
+  table-layout: fixed;
+
+  @media (max-width: 40.0625em) {
+    max-width: 100%;
+  }
+
+  & :global(.govuk-table__header) {
+    font-size: 19px;
+    background: white;
+  }
+
+  & :global(.govuk-table__body .govuk-table__cell) {
+    font-size: 1rem;
+    align-content: center;
+    padding-top: 20px;
+    padding-bottom: 20px;
+  }
+
+  & :global(.govuk-table__header:first-child),
+  & :global(.govuk-table__cell:first-child) {
+    width: 56px;
+    padding-right: 20px;
+    white-space: nowrap;
+  }
+
+  & :global(.govuk-table__header:nth-child(2)),
+  & :global(.govuk-table__cell:nth-child(2)) {
+    width: calc(68% - 50px);
+    max-width: calc(68% - 50px);
+    padding-left: 0;
+    padding-right: 0;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    vertical-align: top;
+  }
+
+  & :global(.govuk-table__cell:nth-child(2)) {
+    padding-right: 24px;
+  }
+
+  & :global(.govuk-checkboxes--small) {
+    padding-left: 18px;
+    margin-left: 0;
+
+    & :global(.govuk-checkboxes__item) {
+      float: none;
+      min-height: 0;
+      height: 24px;
+      margin: 0;
+      padding-left: 24px;
+    }
+
+    & :global(.govuk-checkboxes__input) {
+      top: -10px;
+      left: -10px;
+    }
+
+    & :global(.govuk-checkboxes__label) {
+      display: block;
+      float: none;
+      height: 24px;
+      margin: 0;
+      padding: 0;
+    }
+
+    & :global(.govuk-checkboxes__label::before) {
+      top: 0;
+    }
+
+    & :global(.govuk-checkboxes__label::after) {
+      top: 7px;
+    }
+  }
+
+  & :global(.govuk-table__header) button {
+    text-decoration: underline;
+    text-decoration-thickness: max(1px, 0.0625rem);
+    text-underline-offset: 0.1578em;
+
+    &:hover:not(:focus) {
+      text-decoration-thickness: max(3px, 0.1875rem, 0.12em);
+    }
+
+    &:focus {
+      text-decoration: none;
+    }
+  }
+}
+
+.folderOpen {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 1px 6px;
+  border: 0;
+  background: none;
+  font-size: 19px;
+  cursor: pointer;
+  text-decoration: none !important;
+}
+
+.folderIcon {
+  flex: 0 0 auto;
+  width: 1.2em;
+  height: 1.2em;
+  margin: -0.05em 0.25em -0.15em 0;
+  vertical-align: middle;
+}
+
+.folderName {
+  text-decoration: underline;
+  text-decoration-thickness: max(1px, 0.0625rem);
+  text-underline-offset: 0.1em;
+}
+
+.fileName {
+  display: inline-block;
+  padding: 1px 6px;
+  font-size: 19px;
+}
