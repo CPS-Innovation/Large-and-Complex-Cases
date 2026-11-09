@@ -1,11 +1,13 @@
 import { forwardRef } from "react";
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, it, vi, expect, beforeEach } from "vitest";
 import { MemoryRouter } from "react-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ErrorBoundary } from "react-error-boundary";
 import ManageMaterialsPage from "./ManageMaterialsPage";
 import { getNetAppFolders } from "../../../apis/gateway-api";
+import { ApiError } from "../../../common/errors/ApiError";
 
 vi.mock("../../../apis/gateway-api", () => ({
   getNetAppFolders: vi.fn(),
@@ -22,18 +24,26 @@ vi.mock("../../../components/govuk", async () => {
   return { ...actual, Button };
 });
 
+const mockNavigate = vi.fn();
+vi.mock("react-router", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("react-router")>()),
+  useNavigate: () => mockNavigate,
+}));
+
 const rootPath = "Thunderstruck/";
 
-const renderPage = () =>
+const renderPage = (onError?: (error: unknown) => void) =>
   render(
     <QueryClientProvider client={new QueryClient()}>
       <MemoryRouter>
-        <ManageMaterialsPage
-          isTabActive={true}
-          caseId="12"
-          operationName="Thunderstruck"
-          netAppPath={rootPath}
-        />
+        <ErrorBoundary fallback={<></>} onError={onError}>
+          <ManageMaterialsPage
+            isTabActive={true}
+            caseId="12"
+            operationName="Thunderstruck"
+            netAppPath={rootPath}
+          />
+        </ErrorBoundary>
       </MemoryRouter>
     </QueryClientProvider>,
   );
@@ -41,8 +51,18 @@ const renderPage = () =>
 const getCheckbox = (name: string) =>
   screen.getByRole("checkbox", { name }) as HTMLInputElement;
 
+const getRowNames = () =>
+  within(screen.getByTestId("materials-table"))
+    .getAllByRole("row")
+    .slice(1)
+    .map((row) => within(row).getAllByRole("cell")[1].textContent);
+
+const apiError = (status: number) =>
+  new ApiError("failed", "/netapp/folders", { status, statusText: "" });
+
 describe("ManageMaterialsPage", () => {
   beforeEach(() => {
+    mockNavigate.mockReset();
     vi.mocked(getNetAppFolders).mockImplementation(async (path: string) => {
       if (path === rootPath)
         return {
@@ -209,5 +229,71 @@ describe("ManageMaterialsPage", () => {
         name: "Select file statement.pdf",
       })) as HTMLInputElement,
     ).not.toBeChecked();
+  });
+
+  it("sorts materials by name, toggling between ascending and descending", async () => {
+    renderPage();
+    await screen.findByTestId("materials-table");
+    const sortButton = screen.getByRole("button", { name: /File or folder/ });
+
+    await userEvent.click(sortButton);
+    expect(getRowNames()).toEqual([
+      "1. Case management",
+      "2. Experts",
+      "statement.pdf",
+    ]);
+
+    await userEvent.click(sortButton);
+    expect(getRowNames()).toEqual([
+      "statement.pdf",
+      "2. Experts",
+      "1. Case management",
+    ]);
+
+    await userEvent.click(sortButton);
+    expect(getRowNames()).toEqual([
+      "1. Case management",
+      "2. Experts",
+      "statement.pdf",
+    ]);
+  });
+
+  it("redirects to the shared drive connection error page on a 404", async () => {
+    vi.mocked(getNetAppFolders).mockRejectedValue(apiError(404));
+    renderPage();
+
+    await waitFor(() =>
+      expect(mockNavigate).toHaveBeenCalledWith(
+        "/case/12/case-management/shared-drive-connection-error?operation-name=Thunderstruck",
+        { state: { isRouteValid: true } },
+      ),
+    );
+  });
+
+  it("redirects to the shared drive connection error page on a 401", async () => {
+    vi.mocked(getNetAppFolders).mockRejectedValue(apiError(401));
+    renderPage();
+
+    await waitFor(() =>
+      expect(mockNavigate).toHaveBeenCalledWith(
+        "/case/12/case-management/connection-error?type=shareddrive",
+        { state: { isRouteValid: true } },
+      ),
+    );
+  });
+
+  it("passes other API errors to the error boundary unchanged", async () => {
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+    const error = apiError(500);
+    vi.mocked(getNetAppFolders).mockRejectedValue(error);
+    const onError = vi.fn();
+    renderPage(onError);
+
+    await waitFor(() => expect(onError).toHaveBeenCalled());
+    expect(onError.mock.calls[0][0]).toBe(error);
+    expect(mockNavigate).not.toHaveBeenCalled();
+    consoleError.mockRestore();
   });
 });

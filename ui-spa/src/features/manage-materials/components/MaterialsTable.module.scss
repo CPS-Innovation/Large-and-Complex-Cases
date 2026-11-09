@@ -60,18 +60,6 @@
     padding-right: 24px;
   }
 
-  & :global(.govuk-table__header:last-child),
-  & :global(.govuk-table__cell:last-child) {
-    width: 120px;
-    padding-left: 8px;
-    white-space: nowrap;
-    text-align: right;
-  }
-
-  & :global(.govuk-table__cell:last-child) {
-    vertical-align: middle;
-  }
-
   & :global(.govuk-checkboxes--small) {
     padding-left: 18px;
     margin-left: 0;

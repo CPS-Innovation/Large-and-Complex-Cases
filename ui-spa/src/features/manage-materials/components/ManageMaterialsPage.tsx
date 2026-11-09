@@ -77,21 +77,21 @@ const ManageMaterialsPage: React.FC<ManageMaterialsPageProps> = ({
 
   useEffect(() => {
     if (!isError || !error) return;
-    if ((error as ApiError).code === 404) {
+    if (error instanceof ApiError && error.code === 404) {
       navigate(
         `/case/${caseId}/case-management/shared-drive-connection-error?${getUrlSearchParam("operation-name", operationName)}`,
         { state: { isRouteValid: true } },
       );
       return;
     }
-    if ((error as ApiError).code === 401) {
+    if (error instanceof ApiError && error.code === 401) {
       navigate(
         `/case/${caseId}/case-management/connection-error?type=shareddrive`,
         { state: { isRouteValid: true } },
       );
       return;
     }
-    throw new Error(`${error}`);
+    throw error;
   }, [isError, error, caseId, operationName, navigate]);
 
   const handleCheckboxChange = (id: string, checked: boolean) => {
@@ -126,7 +126,7 @@ const ManageMaterialsPage: React.FC<ManageMaterialsPageProps> = ({
     }),
   );
 
-  if (!isTabActive) return <> </>;
+  if (!isTabActive) return null;
 
   return (
     <div data-testid="manage-materials-page">
