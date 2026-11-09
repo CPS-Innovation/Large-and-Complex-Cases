@@ -17,6 +17,7 @@ public class ListNetAppDataDto
 public class ListNetAppFolderDataDto
 {
     public string? Path { get; set; }
+    public bool HasTemplates { get; set; }
 }
 
 public class ListNetAppFileDataDto

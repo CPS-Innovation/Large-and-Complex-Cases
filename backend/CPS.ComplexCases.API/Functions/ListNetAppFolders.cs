@@ -7,6 +7,7 @@ using CPS.ComplexCases.API.Domain.Response;
 using CPS.ComplexCases.API.Services;
 using CPS.ComplexCases.Common.Attributes;
 using CPS.ComplexCases.Common.Handlers;
+using CPS.ComplexCases.Common.Helpers;
 using CPS.ComplexCases.Common.Services;
 using CPS.ComplexCases.NetApp.Client;
 using CPS.ComplexCases.NetApp.Exceptions;
@@ -29,6 +30,9 @@ public class ListNetAppFolders(ILogger<ListNetAppFolders> logger,
     ICaseMetadataService caseMetadataService,
     IInitializationHandler initializationHandler)
 {
+    private const int MaxConcurrentTemplateChecks = 10;
+    private const int TemplateCheckPageSize = 10;
+
     private readonly ILogger<ListNetAppFolders> _logger = logger;
     private readonly INetAppClient _netAppClient = netAppClient;
     private readonly INetAppArgFactory _netAppArgFactory = netAppArgFactory;
@@ -92,9 +96,38 @@ public class ListNetAppFolders(ILogger<ListNetAppFolders> logger,
             return new BadRequestResult();
         }
 
+        response.Data.FolderData = response.Data.FolderData
+            .Where(folder => !IsTemplatesFolder(folder.Path))
+            .ToList();
+
+        await PopulateHasTemplatesAsync(context.BearerToken, bucket.BucketName, response.Data.FolderData);
+
         var enrichedResponse = await _caseEnrichmentService.EnrichNetAppFoldersWithMetadataAsync(response);
 
         return new OkObjectResult(enrichedResponse);
+    }
+
+    private static bool IsTemplatesFolder(string? folderPath) =>
+        !string.IsNullOrEmpty(folderPath)
+        && string.Equals(
+            NetAppTemplatePathHelper.GetFolderName(folderPath),
+            NetAppTemplatePathHelper.TemplatesFolderName,
+            StringComparison.OrdinalIgnoreCase);
+
+    private async Task PopulateHasTemplatesAsync(string bearerToken, string bucketName, IEnumerable<ListNetAppFolderDataDto> folders)
+    {
+        var parallelOptions = new ParallelOptions { MaxDegreeOfParallelism = MaxConcurrentTemplateChecks };
+
+        await Parallel.ForEachAsync(folders.Where(folder => !string.IsNullOrEmpty(folder.Path)), parallelOptions, async (folder, _) =>
+        {
+            var templatesArg = _netAppArgFactory.CreateListFoldersInBucketArg(
+                bearerToken,
+                bucketName,
+                maxKeys: TemplateCheckPageSize,
+                prefix: NetAppTemplatePathHelper.GetTemplatesFolderPath(folder.Path));
+
+            folder.HasTemplates = await _netAppClient.HasChildFoldersAsync(templatesArg);
+        });
     }
 
     private async Task<IActionResult> ListAccessibleEntryPrefixesAsync(string bearerToken, SecurityGroup bucket)
@@ -135,7 +168,7 @@ public class ListNetAppFolders(ILogger<ListNetAppFolders> logger,
             {
                 BucketName = bucket.BucketName,
                 RootPath = string.Empty,
-                FolderData = accessiblePrefixes.Select(prefix => new ListNetAppFolderDataDto { Path = prefix }),
+                FolderData = accessiblePrefixes.Select(prefix => new ListNetAppFolderDataDto { Path = prefix }).ToList(),
                 FileData = []
             },
             Pagination = new PaginationDto
@@ -146,6 +179,8 @@ public class ListNetAppFolders(ILogger<ListNetAppFolders> logger,
                 KeyCount = accessiblePrefixes.Count
             }
         };
+
+        await PopulateHasTemplatesAsync(bearerToken, bucket.BucketName, entryPrefixResponse.Data.FolderData);
 
         var enrichedResponse = await _caseEnrichmentService.EnrichNetAppFoldersWithMetadataAsync(entryPrefixResponse);
         enrichedResponse.Data.IsRestrictedRoot = true;
