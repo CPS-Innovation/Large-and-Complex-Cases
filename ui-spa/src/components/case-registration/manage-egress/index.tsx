@@ -44,7 +44,7 @@ const ManageEgressPage = () => {
       dispatch({
         type: "SET_EGRESS_CREATE_CONNECT_FAILURE_PAGE",
         payload: {
-          backLinkUrl: `/case-registration/manage-set-up-egress`,
+          backLinkUrl: `/case-registration/manage-set-up-egress?${getUrlSearchParam("urn", urn)}`,
         },
       });
       void navigate(`/case-registration/create-egress-case-error`);

@@ -31,7 +31,7 @@ const SharedDriveTemplatePage = () => {
           backLinkUrl: `/case-registration/manage-set-up-shared-drive`,
         },
       });
-      void navigate(`/case-registration/create-shared-drive-error`);
+      void navigate(`/case-registration/create-shared-drive-folder-error`);
     },
   });
 

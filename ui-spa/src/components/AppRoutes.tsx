@@ -91,7 +91,10 @@ const AppRoutes = () => {
         />
         <Route path="/case/:caseId/egress-connect" element={<EgressPage />} />
 
-        <Route path="/case/:caseId/netapp-connect" element={<NetAppPage />} />
+        <Route
+          path="/case/:caseId/shared-drive-connect"
+          element={<NetAppPage />}
+        />
 
         <Route
           path="/case/:caseId/case-management/egress-connection-error"

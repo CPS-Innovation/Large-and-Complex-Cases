@@ -75,6 +75,9 @@ const ManageSharedDrivePage = () => {
     event.preventDefault();
 
     if (!validateFormData()) return;
+    const operationName =
+      state.appData.caseRegistrationCaseDetails?.operationName ||
+      state.appData.caseRegistrationCaseDetails?.leadDefendantName;
 
     if (formData.manageSharedDriveRadio === "skip-shared-drive") {
       void navigate("/case-registration/case-registration-final-confirmation");
@@ -83,14 +86,12 @@ const ManageSharedDrivePage = () => {
 
     if (formData.manageSharedDriveRadio === "connect-existing") {
       void navigate(
-        `/case-registration/shared-drive-connect?${getUrlSearchParam("operation-name", state.appData.caseRegistrationCaseDetails?.operationName)}`,
+        `/case-registration/shared-drive-connect?${getUrlSearchParam("operation-name", operationName)}`,
       );
       return;
     }
     if (formData.manageSharedDriveRadio === "create-new") {
-      void navigate(
-        `/case-registration/shared-drive-create?${getUrlSearchParam("operation-name", state.appData.caseRegistrationCaseDetails?.operationName)}`,
-      );
+      void navigate(`/case-registration/shared-drive-create`);
     }
   };
 
