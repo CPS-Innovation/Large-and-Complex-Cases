@@ -28,6 +28,7 @@ public class ListNetAppFoldersDataResponse
 {
     public required string FolderPath { get; set; }
     public int? CaseId { get; set; }
+    public bool HasTemplates { get; set; }
 }
 
 public class ListNetAppFilesDataResponse

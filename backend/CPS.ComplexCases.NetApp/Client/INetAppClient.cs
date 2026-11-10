@@ -16,6 +16,7 @@ namespace CPS.ComplexCases.NetApp.Client
         Task<ListNetAppObjectsDto?> ListObjectsInBucketAsync(ListObjectsInBucketArg arg);
         Task<ListNetAppObjectsDto?> ListFoldersInBucketAsync(ListFoldersInBucketArg arg);
         Task<bool> CanListPrefixAsync(ListFoldersInBucketArg arg);
+        Task<bool> HasChildFoldersAsync(ListFoldersInBucketArg arg);
         Task<InitiateMultipartUploadResponse?> InitiateMultipartUploadAsync(InitiateMultipartUploadArg arg);
         Task<UploadPartResponse?> UploadPartAsync(UploadPartArg arg);
         Task<CompleteMultipartUploadResponse?> CompleteMultipartUploadAsync(CompleteMultipartUploadArg arg, CancellationToken cancellationToken = default);

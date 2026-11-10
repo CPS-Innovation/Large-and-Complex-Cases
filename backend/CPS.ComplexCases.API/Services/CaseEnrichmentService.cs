@@ -142,11 +142,14 @@ public class CaseEnrichmentService : ICaseEnrichmentService
             // Enrich data with metadata
             response.Data = new ListNetAppObjectsDataResponse
             {
-                Folders = folderPaths.Select(folderPath => new ListNetAppFoldersDataResponse
-                {
-                    FolderPath = folderPath,
-                    CaseId = ResolveNetAppFolderCaseId(folderPath, folders.Data.BucketName, metadataLookup)
-                }).ToList(),
+                Folders = folders.Data.FolderData
+                    .Where(folder => folder.Path != null)
+                    .Select(folder => new ListNetAppFoldersDataResponse
+                    {
+                        FolderPath = folder.Path!,
+                        CaseId = ResolveNetAppFolderCaseId(folder.Path!, folders.Data.BucketName, metadataLookup),
+                        HasTemplates = folder.HasTemplates
+                    }).ToList(),
                 Files = new List<ListNetAppFilesDataResponse>(),
                 RootPath = folders.Data.RootPath
             };
@@ -301,7 +304,8 @@ public class CaseEnrichmentService : ICaseEnrichmentService
                 Folders = foldersDto.Data.FolderData.Select(folder => new ListNetAppFoldersDataResponse
                 {
                     FolderPath = folder.Path ?? string.Empty,
-                    CaseId = null
+                    CaseId = null,
+                    HasTemplates = folder.HasTemplates
                 }).ToList(),
                 Files = new List<ListNetAppFilesDataResponse>(),
                 RootPath = foldersDto.Data.RootPath ?? string.Empty

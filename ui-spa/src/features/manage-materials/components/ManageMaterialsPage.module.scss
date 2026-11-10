@@ -1,0 +1,34 @@
+.sectionBreak {
+  height: 0;
+  margin: 8px 0;
+  border: 1px inset #808080;
+}
+
+.breadcrumbs {
+  margin: 25px 0 10px 30px;
+}
+
+.toolbar {
+  margin: 16px 15px 0;
+
+  & :global(#dropdown-panel .govuk-button--secondary:not(:disabled)) {
+    &:hover,
+    &:active {
+      background: #767676;
+      color: #ffffff;
+    }
+  }
+}
+
+.breadcrumbLink {
+  padding: 0;
+  border: 0;
+  background: none;
+  font-size: inherit;
+  line-height: inherit;
+  cursor: pointer;
+
+  &:disabled {
+    cursor: not-allowed;
+  }
+}
