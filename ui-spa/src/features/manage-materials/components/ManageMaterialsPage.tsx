@@ -8,8 +8,19 @@ import { getFolderNameFromPath } from "../../../common/utils/getFolderNameFromPa
 import { getUrlSearchParam } from "../../../common/utils/getUrlSearchParam";
 import { sortByStringProperty } from "../../../common/utils/sortUtils";
 import { type NetAppFileFolder } from "../../../schemas";
+import {
+  DropdownButton,
+  type DropdownButtonItem,
+} from "../../../components/common/DropdownButton";
 import MaterialsTable, { SELECT_ALL_CHECKBOX_ID } from "./MaterialsTable";
 import styles from "./ManageMaterialsPage.module.scss";
+
+const SELECTION_ACTIONS = [
+  { id: "copy", label: "Copy" },
+  { id: "move", label: "Move" },
+  { id: "rename", label: "Rename selected items" },
+  { id: "delete", label: "Delete" },
+];
 
 type ManageMaterialsPageProps = {
   isTabActive: boolean;
@@ -106,6 +117,15 @@ const ManageMaterialsPage: React.FC<ManageMaterialsPageProps> = ({
     type: "ascending" | "descending",
   ) => setSortType(type);
 
+  const selectionActionItems: DropdownButtonItem[] = SELECTION_ACTIONS.map(
+    ({ id, label }) => ({
+      id,
+      label,
+      ariaLabel: label,
+      disabled: !selectedPaths.length,
+    }),
+  );
+
   if (!isTabActive) return null;
 
   return (
@@ -141,6 +161,16 @@ const ManageMaterialsPage: React.FC<ManageMaterialsPageProps> = ({
           ))}
         </ol>
       </nav>
+
+      <div className={styles.toolbar}>
+        <DropdownButton
+          name="Actions on selection"
+          dropDownItems={selectionActionItems}
+          callBackFn={() => {}}
+          dataTestId="materials-actions-dropdown"
+          disabled={isLoading}
+        />
+      </div>
 
       <MaterialsTable
         items={items}
