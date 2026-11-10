@@ -41,7 +41,7 @@ const MetaDataErrorPage = () => {
       netappRootFolderPath: "",
     };
     return navigate(
-      `/case/${caseId}/netapp-connect?${getUrlSearchParam("operation-name", operationName)}`,
+      `/case/${caseId}/shared-drive-connect?${getUrlSearchParam("operation-name", operationName)}`,
       {
         state: payload,
       },

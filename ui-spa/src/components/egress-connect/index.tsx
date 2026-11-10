@@ -107,7 +107,7 @@ const EgressPage = () => {
             },
           });
           navigate(
-            `/case/${caseId}/netapp-connect?${getUrlSearchParam("operation-name", selectedWorkspace.name)}`,
+            `/case/${caseId}/shared-drive-connect?${getUrlSearchParam("operation-name", selectedWorkspace.name)}`,
           );
           return;
         }
