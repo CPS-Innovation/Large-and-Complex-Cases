@@ -21,7 +21,7 @@ vi.mock("../govuk", async () => {
 });
 
 describe("NetAppFolderResultsPage", () => {
-  const handleConnectFolderMock = vi.fn();
+  const handleFolderActionMock = vi.fn();
   const handleGetFolderContentMock = vi.fn();
 
   const renderPage = ({
@@ -42,7 +42,7 @@ describe("NetAppFolderResultsPage", () => {
           netAppFolderResults={netAppFolderResults}
           isNetAppFolderResultsLoading={false}
           accessibleRoots={accessibleRoots}
-          handleConnectFolder={handleConnectFolderMock}
+          handleFolderAction={handleFolderActionMock}
           handleGetFolderContent={handleGetFolderContentMock}
         />
       </MemoryRouter>,
@@ -52,7 +52,9 @@ describe("NetAppFolderResultsPage", () => {
     renderPage({
       netAppFolderResults: {
         rootPath: "",
-        folders: [{ folderPath: "thunderstrike/", caseId: null }],
+        folders: [
+          { folderPath: "thunderstrike/", caseId: null, hasTemplates: true },
+        ],
       },
     });
 
@@ -69,8 +71,8 @@ describe("NetAppFolderResultsPage", () => {
       netAppFolderResults: {
         rootPath: "",
         folders: [
-          { folderPath: "RCF/", caseId: null },
-          { folderPath: "RCW/Cardiff/", caseId: null },
+          { folderPath: "RCF/", caseId: null, hasTemplates: true },
+          { folderPath: "RCW/Cardiff/", caseId: null, hasTemplates: false },
         ],
         isRestrictedRoot: true,
         accessibleRoots: ["RCF/", "RCW/Cardiff/"],

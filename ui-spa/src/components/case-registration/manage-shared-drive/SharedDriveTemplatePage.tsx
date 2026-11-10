@@ -168,7 +168,7 @@ const SharedDriveTemplatePage = () => {
               name="manageTemplatesRadio"
               fieldset={{
                 legend: {
-                  children: <h1>How do you want to manage SharedDrive?</h1>,
+                  children: <h1>How do you want to manage Shared Drive?</h1>,
                 },
               }}
               errorMessage={

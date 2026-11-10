@@ -87,6 +87,17 @@ const NetAppPage = () => {
     setRootFolderPath(path);
   };
 
+  const handleCreateFolder = async (path: string) => {
+    if (isRegistrationCreateFlow) {
+      dispatch({
+        type: "SET_SELECTED_CREATE_SHARED_DRIVE_FOLDER_PATH",
+        payload: path,
+      });
+
+      void navigate("/case-registration/shared-drive-templates");
+    }
+  };
+
   const handleConnectFolder = async (path: string) => {
     if (isRegistrationConnectFlow) {
       dispatch({
@@ -96,16 +107,6 @@ const NetAppPage = () => {
           accessibleRoots,
         },
       });
-    }
-
-    if (isRegistrationCreateFlow) {
-      dispatch({
-        type: "SET_SELECTED_CREATE_SHARED_DRIVE_FOLDER_PATH",
-        payload: path,
-      });
-
-      void navigate("/case-registration/shared-drive-templates");
-      return;
     }
 
     try {
@@ -156,7 +157,9 @@ const NetAppPage = () => {
       isNetAppFolderResultsLoading={isNetAppFolderResultsLoading}
       accessibleRoots={accessibleRoots}
       setupType={isRegistrationCreateFlow ? "create" : "connect"}
-      handleConnectFolder={handleConnectFolder}
+      handleFolderAction={
+        isRegistrationCreateFlow ? handleCreateFolder : handleConnectFolder
+      }
       handleGetFolderContent={handleGetFolderContent}
     />
   );

@@ -6,10 +6,12 @@ export const netAppRootFolderResultsPlaywright: ConnectNetAppFolderResponse = {
       {
         folderPath: "thunderstrike/",
         caseId: null,
+        hasTemplates: false,
       },
       {
         folderPath: "thunderstrikeab/",
         caseId: 123,
+        hasTemplates: true,
       },
     ],
   },

@@ -6,15 +6,18 @@ export const netAppRootFolderResultsDev: ConnectNetAppFolderResponse = {
       {
         folderPath: "thunderstrikeab/",
         caseId: 123,
+        hasTemplates: true,
       },
       {
         folderPath: "thunderstrike/",
         caseId: null,
+        hasTemplates: true,
       },
 
       {
         folderPath: "thunderstrikeabc/",
         caseId: null,
+        hasTemplates: false,
       },
     ],
   },
@@ -35,10 +38,12 @@ export const netAppRestrictedRootFolderResultsDev: ConnectNetAppFolderResponse =
         {
           folderPath: "RCF/",
           caseId: null,
+          hasTemplates: true,
         },
         {
           folderPath: "RCW/Cardiff/",
           caseId: null,
+          hasTemplates: true,
         },
       ],
       isRestrictedRoot: true,

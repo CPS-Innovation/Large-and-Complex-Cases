@@ -16,7 +16,7 @@ type NetAppFolderResultsPageProps = {
   accessibleRoots?: string[] | null;
   setupType: "create" | "connect";
   handleGetFolderContent: (folderId: string) => void;
-  handleConnectFolder: (id: string) => void;
+  handleFolderAction: (id: string) => void;
 };
 
 const NetAppFolderResultsPage: React.FC<NetAppFolderResultsPageProps> = ({
@@ -26,7 +26,7 @@ const NetAppFolderResultsPage: React.FC<NetAppFolderResultsPageProps> = ({
   isNetAppFolderResultsLoading,
   accessibleRoots,
   setupType,
-  handleConnectFolder,
+  handleFolderAction,
   handleGetFolderContent,
 }) => {
   const [sortValues, setSortValues] = useState<{
@@ -72,22 +72,35 @@ const NetAppFolderResultsPage: React.FC<NetAppFolderResultsPageProps> = ({
     return withHome;
   }, [rootFolderPath, accessibleRoots]);
 
+  const getActionsRow = (data: {
+    folderPath: string;
+    caseId: number | null;
+    hasTemplates: boolean;
+  }) => {
+    if (
+      (setupType === "create" && data.hasTemplates) ||
+      (setupType === "connect" && !data.caseId)
+    ) {
+      return {
+        children: (
+          <Button
+            className="govuk-button--secondary"
+            name="secondary"
+            onClick={() => handleFolderAction(data.folderPath)}
+          >
+            {setupType === "create" ? "Create" : "Connect"}
+          </Button>
+        ),
+      };
+    }
+    return { children: <></> };
+  };
+
   const getTableRowData = () => {
     return netappFolderData.map((data) => {
       return {
         cells: [
-          {
-            children: (
-              <Button
-                className="govuk-button--secondary"
-                name="secondary"
-                onClick={() => handleConnect(data.folderPath)}
-                disabled={!!data.caseId}
-              >
-                {setupType === "create" ? "Create" : "Connect"}
-              </Button>
-            ),
-          },
+          getActionsRow(data),
           {
             children: (
               <div className={styles.folderWrapper}>
@@ -127,10 +140,6 @@ const NetAppFolderResultsPage: React.FC<NetAppFolderResultsPageProps> = ({
     sortType: "ascending" | "descending",
   ) => {
     setSortValues({ name: sortName, type: sortType });
-  };
-
-  const handleConnect = (id: string) => {
-    handleConnectFolder(id);
   };
 
   const handleFolderPathClick = (path: string) => {

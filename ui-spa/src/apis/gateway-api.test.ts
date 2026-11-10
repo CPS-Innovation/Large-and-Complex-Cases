@@ -623,7 +623,9 @@ describe("gateway apis", () => {
       const mockData1 = {
         data: {
           rootPath: "netapp/",
-          folders: [{ folderPath: "thunderstrikeab/", caseId: 123 }],
+          folders: [
+            { folderPath: "thunderstrikeab/", caseId: 123, hasTemplates: true },
+          ],
         },
 
         pagination: {
@@ -634,7 +636,13 @@ describe("gateway apis", () => {
       const mockData2 = {
         data: {
           rootPath: "netapp/",
-          folders: [{ folderPath: "thunderstrikeacb/", caseId: 1243 }],
+          folders: [
+            {
+              folderPath: "thunderstrikeacb/",
+              caseId: 1243,
+              hasTemplates: false,
+            },
+          ],
         },
         pagination: {
           maxKeys: 100,
@@ -660,8 +668,12 @@ describe("gateway apis", () => {
       expect(result).toEqual({
         rootPath: "netapp/",
         folders: [
-          { folderPath: "thunderstrikeab/", caseId: 123 },
-          { folderPath: "thunderstrikeacb/", caseId: 1243 },
+          { folderPath: "thunderstrikeab/", caseId: 123, hasTemplates: true },
+          {
+            folderPath: "thunderstrikeacb/",
+            caseId: 1243,
+            hasTemplates: false,
+          },
         ],
       });
       expect(fetch).toHaveBeenCalledTimes(2);
