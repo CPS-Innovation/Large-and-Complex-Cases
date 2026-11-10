@@ -80,13 +80,11 @@ export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
     }),
 
     http.post(`${baseUrl}/api/v1/egress/workspaces`, async () => {
-      return new HttpResponse(null, { status: 500 });
-      // return HttpResponse.json({});
+      return HttpResponse.json({});
     }),
 
     http.post(`${baseUrl}/api/v1/egress/connections`, async () => {
-      return new HttpResponse(null, { status: 500 });
-      // return new HttpResponse(null, { status: 200 });
+      return new HttpResponse(null, { status: 200 });
     }),
 
     http.get(`${baseUrl}/api/v1/netapp/folders`, async (req) => {
@@ -103,8 +101,7 @@ export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
     }),
 
     http.post(`${baseUrl}/api/v1/netapp/connections`, async () => {
-      return new HttpResponse(null, { status: 500 });
-      // return HttpResponse.json({});
+      return HttpResponse.json({});
     }),
 
     http.get(`${baseUrl}/api/v1/cases/12`, async () => {
@@ -242,6 +239,9 @@ export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
         : sharedDriveTemplatesPlaywright;
       await delay(500);
       return HttpResponse.json(netAppTemplateResults);
+    }),
+    http.post(`${baseUrl}/api/v1/cases/:caseId/netapp/provision`, async () => {
+      return HttpResponse.json({});
     }),
   ];
 };

@@ -62,7 +62,7 @@ const CreateConnectErrorPage: React.FC<CreateConnectErrorPageProps> = ({
   return (
     <div>
       <PageContentWrapper>
-        <div>
+        <div className="govuk-main-wrapper">
           <h1 className="govuk-heading-xl">{title}</h1>
           <p>You can:</p>
           <ul className="govuk-list govuk-list--bullet">

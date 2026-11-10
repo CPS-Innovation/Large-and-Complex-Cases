@@ -52,7 +52,6 @@ const NetAppPage = () => {
     persistedAccessibleRoots ?? null,
   );
 
-  console.log("operationName>>>", operationName);
   const { data: netAppFolderResults, isLoading: isNetAppFolderResultsLoading } =
     useQuery({
       queryKey: [operationName, rootFolderPath],
@@ -147,7 +146,11 @@ const NetAppPage = () => {
 
   return (
     <NetAppFolderResultsPage
-      backLinkUrl={`/search-results?${searchQueryString}`}
+      backLinkUrl={
+        isRegistrationFlow
+          ? `/case-registration/manage-set-up-shared-drive`
+          : `/search-results?${searchQueryString}`
+      }
       rootFolderPath={rootFolderPath}
       netAppFolderResults={netAppFolderResults ?? { rootPath: "", folders: [] }}
       isNetAppFolderResultsLoading={isNetAppFolderResultsLoading}

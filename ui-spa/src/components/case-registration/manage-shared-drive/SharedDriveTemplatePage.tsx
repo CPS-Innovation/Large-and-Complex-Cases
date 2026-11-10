@@ -156,7 +156,7 @@ const SharedDriveTemplatePage = () => {
             className={styles.errorSummaryWrapper}
           >
             <ErrorSummary
-              data-testid={"manage-egress-error-summary"}
+              data-testid={"shared-drive-templates-summary"}
               errorList={errorList}
               titleChildren="There is a problem"
             />
@@ -185,6 +185,7 @@ const SharedDriveTemplatePage = () => {
                   children: template.name,
                   value: template.path,
                   "data-testid": `manage-templates-radio-template-${index}`,
+                  disabled: disableButtons,
                 })) ?? []
               }
               value={formData.manageTemplatesRadio}

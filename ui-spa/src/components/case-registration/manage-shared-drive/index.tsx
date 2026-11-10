@@ -91,7 +91,9 @@ const ManageSharedDrivePage = () => {
       return;
     }
     if (formData.manageSharedDriveRadio === "create-new") {
-      void navigate(`/case-registration/shared-drive-create`);
+      void navigate(
+        `/case-registration/shared-drive-create?${getUrlSearchParam("operation-name", operationName)}`,
+      );
     }
   };
 
