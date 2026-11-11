@@ -123,13 +123,17 @@ const SharedDriveTemplatePage = () => {
     const templateParentFolderPath = templatesData?.parentFolderPath;
     if (selectedTemplate && caseId && templateParentFolderPath) {
       setDisableButtons(true);
-      await createSharedDriveFolderMutation.mutateAsync({
-        caseId,
-        payload: {
-          templateFolderPath: selectedTemplate.path,
-          parentFolderPath: templateParentFolderPath,
-        },
-      });
+      try {
+        await createSharedDriveFolderMutation.mutateAsync({
+          caseId,
+          payload: {
+            templateFolderPath: selectedTemplate.path,
+            parentFolderPath: templateParentFolderPath,
+          },
+        });
+      } catch {
+        return;
+      }
     }
     void navigate("/case-registration/case-registration-final-confirmation");
     setDisableButtons(false);

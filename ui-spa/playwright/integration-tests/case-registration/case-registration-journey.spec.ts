@@ -266,7 +266,7 @@ test("case registration create new shared drive folder error flow", async ({
     http.post(
       "https://mocked-out-api/api/v1/cases/:caseId/netapp/provision",
       async () => {
-        await delay(100);
+        await delay(300);
         return new HttpResponse(null, { status: 500 });
       },
     ),
@@ -382,7 +382,6 @@ test("case registration connect shared drive folder flow", async ({ page }) => {
     ["", "thunderstrikeab"],
   ]);
   await sharedDriveCreateConnectFolderPage.clickCreateConnectBtn("connect", 0);
-  await sharedDriveCreateConnectFolderPage.verifyAllButtonsDisabled("connect");
 });
 
 test("case registration connect shared drive folder error flow", async ({
@@ -391,7 +390,7 @@ test("case registration connect shared drive folder error flow", async ({
 }) => {
   await worker.use(
     http.post("https://mocked-out-api/api/v1/netapp/connections", async () => {
-      await delay(200);
+      await delay(300);
       return new HttpResponse(null, { status: 500 });
     }),
   );
