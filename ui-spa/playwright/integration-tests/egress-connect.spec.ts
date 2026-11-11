@@ -70,19 +70,21 @@ test.describe("egress connect", () => {
     );
     await expect(page.locator("h1")).toHaveText(`Connect Egress to this case`);
     await page.getByRole("button", { name: "Connect" }).first().click();
-    await expect(page).toHaveURL("/case/13/egress-connect/error");
+    await expect(page).toHaveURL("/case/13/connect-egress-case-error");
     await expect(page.locator("h1")).toHaveText(
       "There is a problem connecting to Egress",
     );
     const listItems = page.locator("ul > li");
     await expect(listItems).toHaveCount(2);
     await expect(listItems).toHaveText([
-      "check the case exists and you have access on the Case Management System",
+      "return to the previous screen and try to connect again",
       "contact the product team if you need help",
     ]);
-    await page.getByRole("link", { name: "Search for another case" }).click();
-    await expect(page).toHaveURL("/");
-    await expect(page.locator("h1")).toHaveText("Find a case");
+    await page.getByRole("button", { name: "Try again" }).click();
+    await expect(page).toHaveURL(
+      "/case/13/egress-connect?workspace-name=Thunderstruck2_pl",
+    );
+    await expect(page.locator("h1")).toHaveText(`Connect Egress to this case`);
   });
 
   test("Should validate the egress folder name search input", async ({
@@ -286,7 +288,7 @@ test.describe("egress connect", () => {
   test("Should navigate user back the case search page if the user lands directly on any of the egress connect error page", async ({
     page,
   }) => {
-    await page.goto("/case/13/egress-connect/error");
+    await page.goto("/case/13/connect-egress-case-error");
     await expect(
       page.locator("h1", {
         hasText: "There is a problem connecting to the Shared Drive",

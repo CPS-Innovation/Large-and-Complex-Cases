@@ -126,9 +126,6 @@ test("case registration connect existing egress case error flow", async ({
     new CaseRegistrationEgressConnectFailurePage(page);
   await caseRegistrationEgressConnectFailurePage.verifyUrl();
   await caseRegistrationEgressConnectFailurePage.verifyPageElements();
-  await caseRegistrationEgressConnectFailurePage.verifyBackLink(
-    "/case-registration/egress-connect-search-results?workspace-name=Thunderstruck1_pl",
-  );
   await caseRegistrationEgressConnectFailurePage.tryAgainBtnClick();
   await egressConnectExistingCasePage.verifyUrl(
     "/case-registration/egress-connect-search-results?workspace-name=Thunderstruck1_pl",

@@ -8,7 +8,7 @@ export class CaseRegistrationEgressConnectFailurePage {
 
   async verifyUrl() {
     await expect(this.page).toHaveURL(
-      "/case-registration/egress-connect-error",
+      "/case-registration/connect-egress-case-error",
     );
   }
 
@@ -29,16 +29,6 @@ export class CaseRegistrationEgressConnectFailurePage {
     );
   }
 
-  async verifyBackLink(url: string) {
-    await expect(this.page.getByRole("link", { name: "Back" })).toBeVisible();
-    await expect(this.page.getByRole("link", { name: "Back" })).toHaveAttribute(
-      "href",
-      url,
-    );
-  }
-  async backLinkClick() {
-    await this.page.getByRole("link", { name: "Back" }).click();
-  }
   async tryAgainBtnClick() {
     await this.page.getByRole("button", { name: "Try again" }).click();
   }

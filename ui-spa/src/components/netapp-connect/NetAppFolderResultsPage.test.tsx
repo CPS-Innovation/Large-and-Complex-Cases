@@ -82,7 +82,7 @@ describe("NetAppFolderResultsPage", () => {
 
     expect(screen.getByTestId("restricted-root-text")).toBeInTheDocument();
     expect(
-      screen.queryByText(/If the folder you need is not listed/),
+      screen.queryByText(/Select a folder to connect it to this case./),
     ).not.toBeInTheDocument();
   });
 

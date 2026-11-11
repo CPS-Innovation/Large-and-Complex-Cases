@@ -256,10 +256,10 @@ test.describe("netapp meta data issues", () => {
     await expect(page.getByRole("button", { name: "cancel" })).toBeVisible();
     await page.getByRole("button", { name: "Reconnect" }).click();
     await expect(page).toHaveURL(
-      "/case/12/netapp-connect?operation-name=Thunderstruck",
+      "/case/12/shared-drive-connect?operation-name=Thunderstruck",
     );
     await expect(page.locator("h1")).toHaveText(
-      "Link a Shared Drive folder to the case",
+      "Connect a Shared Drive folder to this case",
     );
   });
   test("Should handle if the user lands on the transfer material but the netapp folder is not accessible for the user, by navigating to connection error page", async ({

@@ -75,10 +75,10 @@ const NetAppFolderResultsPage: React.FC<NetAppFolderResultsPageProps> = ({
   const getActionsRow = (data: {
     folderPath: string;
     caseId: number | null;
-    hasTemplates: boolean;
+    hasTemplates?: boolean;
   }) => {
     if (
-      (setupType === "create" && data.hasTemplates) ||
+      (setupType === "create" && data?.hasTemplates) ||
       (setupType === "connect" && !data.caseId)
     ) {
       return {
