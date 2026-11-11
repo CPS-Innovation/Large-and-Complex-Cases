@@ -28,11 +28,11 @@ export class CaseRegistrationSharedDriveTemplatesPage {
       this.page.getByTestId("shared-drive-templates-error-summary"),
     ).toBeVisible();
     await expect(
-      this.page.getByTestId("shared-drive-templates-radio-link"),
+      this.page.getByTestId("shared-drive-template-radio-link"),
     ).toHaveText("Select which template you want to use");
-    await this.page.getByTestId("shared-drive-templates-radio-link").click();
+    await this.page.getByTestId("shared-drive-template-radio-link").click();
     await expect(
-      this.page.locator("#shared-drive-templates-radio-template-0"),
+      this.page.locator("#shared-drive-template-radio-template-0"),
     ).toBeFocused();
   }
 

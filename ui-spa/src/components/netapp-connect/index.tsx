@@ -22,6 +22,7 @@ const NetAppPage = () => {
   const { caseId: caseRegistrationCaseId } =
     state.appData.caseRegistrationCaseDetails ?? {};
   const location = useLocation();
+  const [disableBtns, setDisableBtns] = useState(false);
 
   const isRegistrationCreateFlow = location.pathname.includes(
     "/case-registration/shared-drive-create",
@@ -89,25 +90,26 @@ const NetAppPage = () => {
 
   const handleCreateFolder = async (path: string) => {
     if (isRegistrationCreateFlow) {
+      setDisableBtns(true);
       dispatch({
         type: "SET_SELECTED_CREATE_SHARED_DRIVE_FOLDER_PATH",
         payload: path,
       });
-
+      setDisableBtns(false);
       void navigate("/case-registration/shared-drive-templates");
     }
   };
 
   const handleConnectFolder = async (path: string) => {
-    if (isRegistrationConnectFlow) {
-      dispatch({
-        type: "SET_SHARED_DRIVE_CONNECT_PAGE",
-        payload: {
-          netappRootFolderPath: rootFolderPath,
-          accessibleRoots,
-        },
-      });
-    }
+    setDisableBtns(true);
+
+    dispatch({
+      type: "SET_SHARED_DRIVE_CONNECT_PAGE",
+      payload: {
+        netappRootFolderPath: rootFolderPath,
+        accessibleRoots,
+      },
+    });
 
     try {
       if (caseId && operationName) {
@@ -143,6 +145,7 @@ const NetAppPage = () => {
         navigate(`/case/${caseId}/connect-shared-drive-folder-error`);
       }
     }
+    setDisableBtns(false);
   };
 
   return (
@@ -157,6 +160,7 @@ const NetAppPage = () => {
       isNetAppFolderResultsLoading={isNetAppFolderResultsLoading}
       accessibleRoots={accessibleRoots}
       setupType={isRegistrationCreateFlow ? "create" : "connect"}
+      disableBtns={disableBtns}
       handleFolderAction={
         isRegistrationCreateFlow ? handleCreateFolder : handleConnectFolder
       }

@@ -15,7 +15,7 @@ export class CaseRegistrationCreateConnectFailurePage {
     type: "egress" | "shared-drive",
   ) => {
     if (action === "create" && type === "egress") {
-      return { title: "There is a problem creating an Egress case" };
+      return { title: "There is a problem creating a case on Egress" };
     }
     if (action === "connect" && type === "egress") {
       return { title: "There is a problem connecting to Egress" };

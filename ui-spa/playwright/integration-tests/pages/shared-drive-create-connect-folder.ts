@@ -49,7 +49,6 @@ export class SharedDriveCreateConnectFolderPage {
       name: new RegExp(btnName, "i"),
     });
     const buttonCount = await buttons.count();
-
     await Promise.all(
       Array.from({ length: buttonCount }).map((_, i) =>
         expect(buttons.nth(i)).toBeDisabled(),

@@ -15,6 +15,7 @@ type NetAppFolderResultsPageProps = {
   isNetAppFolderResultsLoading: boolean;
   accessibleRoots?: string[] | null;
   setupType: "create" | "connect";
+  disableBtns?: boolean;
   handleGetFolderContent: (folderId: string) => void;
   handleFolderAction: (id: string) => void;
 };
@@ -26,6 +27,7 @@ const NetAppFolderResultsPage: React.FC<NetAppFolderResultsPageProps> = ({
   isNetAppFolderResultsLoading,
   accessibleRoots,
   setupType,
+  disableBtns = false,
   handleFolderAction,
   handleGetFolderContent,
 }) => {
@@ -87,6 +89,7 @@ const NetAppFolderResultsPage: React.FC<NetAppFolderResultsPageProps> = ({
             className="govuk-button--secondary"
             name="secondary"
             onClick={() => handleFolderAction(data.folderPath)}
+            disabled={disableBtns}
           >
             {setupType === "create" ? "Create" : "Connect"}
           </Button>
