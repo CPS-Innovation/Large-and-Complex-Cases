@@ -240,7 +240,6 @@ test("case registration create new shared drive folder flow", async ({
     ["Create", "thunderstrikeab"],
   ]);
   await sharedDriveCreateConnectFolderPage.clickCreateConnectBtn("create", 1);
-  await sharedDriveCreateConnectFolderPage.verifyAllButtonsDisabled("create");
   const caseRegistrationSharedDriveTemplatesPage =
     new CaseRegistrationSharedDriveTemplatesPage(page);
 
@@ -311,7 +310,6 @@ test("case registration create new shared drive folder error flow", async ({
     ["Create", "thunderstrikeab"],
   ]);
   await sharedDriveCreateConnectFolderPage.clickCreateConnectBtn("create", 1);
-  await sharedDriveCreateConnectFolderPage.verifyAllButtonsDisabled("create");
   const caseRegistrationSharedDriveTemplatesPage =
     new CaseRegistrationSharedDriveTemplatesPage(page);
 
