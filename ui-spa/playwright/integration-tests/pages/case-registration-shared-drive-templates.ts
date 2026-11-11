@@ -6,26 +6,6 @@ export class CaseRegistrationSharedDriveTemplatesPage {
     this.page = page;
   }
 
-  async verifyUrl() {
-    await expect(this.page).toHaveURL(
-      "/case-registration/shared-drive-templates",
-    );
-  }
-
-  async errorValidations() {
-    await this.clickContinue();
-    await expect(
-      this.page.getByTestId("shared-drive-templates-error-summary"),
-    ).toBeVisible();
-    await expect(
-      this.page.getByTestId("shared-drive-templates-radio-link"),
-    ).toHaveText("Select which template you want to use");
-    await this.page.getByTestId("shared-drive-templates-radio-link").click();
-    await expect(
-      this.page.locator("#shared-drive-templates-radio-template-0"),
-    ).toBeFocused();
-  }
-
   async verifyPageElements(templates: string[]) {
     await expect(this.page.locator("h1")).toHaveText(
       "Select a Shared Drive folder template",
@@ -40,6 +20,26 @@ export class CaseRegistrationSharedDriveTemplatesPage {
     await expect(
       this.page.getByRole("button", { name: "continue" }),
     ).toBeVisible();
+  }
+
+  async pageErrorValidations() {
+    await this.clickContinue();
+    await expect(
+      this.page.getByTestId("shared-drive-templates-error-summary"),
+    ).toBeVisible();
+    await expect(
+      this.page.getByTestId("shared-drive-templates-radio-link"),
+    ).toHaveText("Select which template you want to use");
+    await this.page.getByTestId("shared-drive-templates-radio-link").click();
+    await expect(
+      this.page.locator("#shared-drive-templates-radio-template-0"),
+    ).toBeFocused();
+  }
+
+  async verifyUrl() {
+    await expect(this.page).toHaveURL(
+      "/case-registration/shared-drive-templates",
+    );
   }
 
   async selectSharedDriveTemplate(name: string) {
