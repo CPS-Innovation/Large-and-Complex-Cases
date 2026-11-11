@@ -3,7 +3,7 @@ import { delay, HttpResponse, http } from "msw";
 import { CaseMaterialsManageEgressPage } from "../pages/case-registration-manage-egress";
 import { CaseRegistrationEgressConnectedConfirmationPage } from "../pages/case-registration-egress-connected-confirmation";
 import { EgressConnectExistingCasePage } from "../pages/egress-connect-existing-case";
-import { CaseRegistrationEgressConnectFailurePage } from "../pages/case-registration-egress-connect-failure";
+import { CaseRegistrationCreateConnectFailurePage } from "../pages/case-registration-create-connect-failure";
 import { CaseRegistrationManageSharedDrivePage } from "../pages/case-registration-manage-shared-drive";
 import { CASE_REGISTRATION_JOURNEY_URN } from "../../../src/mocks/handlers";
 
@@ -122,11 +122,16 @@ test("case registration connect existing egress case error flow", async ({
     ["", "thunderstrike1", "Connected to Thunderstrike1 Case"],
   ]);
   await egressConnectExistingCasePage.clickConnectBtn(0);
-  const caseRegistrationEgressConnectFailurePage =
-    new CaseRegistrationEgressConnectFailurePage(page);
-  await caseRegistrationEgressConnectFailurePage.verifyUrl();
-  await caseRegistrationEgressConnectFailurePage.verifyPageElements();
-  await caseRegistrationEgressConnectFailurePage.tryAgainBtnClick();
+  const caseRegistrationCreateConnectFailurePage =
+    new CaseRegistrationCreateConnectFailurePage(page);
+  await caseRegistrationCreateConnectFailurePage.verifyUrl(
+    "/case-registration/connect-egress-case-error",
+  );
+  await caseRegistrationCreateConnectFailurePage.verifyPageElements(
+    "connect",
+    "egress",
+  );
+  await caseRegistrationCreateConnectFailurePage.tryAgainBtnClick();
   await egressConnectExistingCasePage.verifyUrl(
     "/case-registration/egress-connect-search-results?workspace-name=Thunderstruck1_pl",
   );

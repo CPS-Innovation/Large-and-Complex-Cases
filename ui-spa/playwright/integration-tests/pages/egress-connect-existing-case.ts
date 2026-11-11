@@ -1,4 +1,8 @@
 import { type Page, expect } from "@playwright/test";
+import {
+  verifyTableHeaders,
+  verifyTableRows,
+} from "../utils/verifyTableELements";
 export class EgressConnectExistingCasePage {
   private readonly page: Page;
 
@@ -27,31 +31,11 @@ export class EgressConnectExistingCasePage {
   }
 
   async verifyTableHeaders(expectedHeaders: string[]) {
-    const headers = this.page.locator("table thead th");
-    await expect(headers).toHaveCount(expectedHeaders.length);
-
-    await Promise.all(
-      expectedHeaders.map((header, i) =>
-        expect(headers.nth(i)).toHaveText(header),
-      ),
-    );
+    await verifyTableHeaders(this.page, expectedHeaders);
   }
 
   async verifyTableRows(expectedRows: string[][]) {
-    const rows = this.page.locator("table tbody tr");
-    await expect(rows).toHaveCount(expectedRows.length);
-
-    await Promise.all(
-      expectedRows.map((expectedCells, i) => {
-        const cells = rows.nth(i).locator("td");
-        return Promise.all([
-          expect(cells).toHaveCount(expectedCells.length),
-          ...expectedCells.map((cell, j) =>
-            expect(cells.nth(j)).toHaveText(cell),
-          ),
-        ]);
-      }),
-    );
+    await verifyTableRows(this.page, expectedRows);
   }
 
   async verifyAllButtonsDisabled() {

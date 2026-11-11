@@ -61,15 +61,15 @@ const SharedDriveTemplatePage = () => {
     inputErrorText?: string;
   };
   type FormDataErrors = {
-    manageTemplatesRadio?: ErrorText;
+    sharedDriveTemplatesRadio?: ErrorText;
   };
 
   const [disableButtons, setDisableButtons] = useState(false);
 
   const [formData, setFormData] = useState<{
-    manageTemplatesRadio: string;
+    sharedDriveTemplatesRadio: string;
   }>({
-    manageTemplatesRadio: "",
+    sharedDriveTemplatesRadio: "",
   });
 
   const [formDataErrors, setFormDataErrors] = useState<FormDataErrors>({});
@@ -78,8 +78,8 @@ const SharedDriveTemplatePage = () => {
     (errorKey: keyof FormDataErrors) => {
       return {
         children: formDataErrors[errorKey]?.errorSummaryText,
-        href: `#manage-templates-radio-template-0`,
-        "data-testid": "manage-templates-radio-link",
+        href: `#shared-drive-template-radio-template-0`,
+        "data-testid": "shared-drive-template-radio-link",
       };
     },
     [formDataErrors],
@@ -90,10 +90,10 @@ const SharedDriveTemplatePage = () => {
   });
   const validateFormData = () => {
     const errors: FormDataErrors = {};
-    const { manageTemplatesRadio = "" } = formData;
+    const { sharedDriveTemplatesRadio = "" } = formData;
 
-    if (!manageTemplatesRadio) {
-      errors.manageTemplatesRadio = {
+    if (!sharedDriveTemplatesRadio) {
+      errors.sharedDriveTemplatesRadio = {
         errorSummaryText: "Select which template you want to use",
         inputErrorText: "Select which template you want to use",
       };
@@ -106,7 +106,7 @@ const SharedDriveTemplatePage = () => {
   const setFormValue = (value: string) => {
     setFormData({
       ...formData,
-      manageTemplatesRadio: value,
+      sharedDriveTemplatesRadio: value,
     });
   };
 
@@ -118,7 +118,7 @@ const SharedDriveTemplatePage = () => {
     const caseId = state.appData.caseRegistrationCaseDetails?.caseId;
 
     const selectedTemplate = templatesData?.templates.find(
-      (template) => template.path === formData.manageTemplatesRadio,
+      (template) => template.path === formData.sharedDriveTemplatesRadio,
     );
     const templateParentFolderPath = templatesData?.parentFolderPath;
     if (selectedTemplate && caseId && templateParentFolderPath) {
@@ -156,7 +156,7 @@ const SharedDriveTemplatePage = () => {
             className={styles.errorSummaryWrapper}
           >
             <ErrorSummary
-              data-testid={"shared-drive-templates-summary"}
+              data-testid={"shared-drive-templates-error-summary"}
               errorList={errorList}
               titleChildren="There is a problem"
             />
@@ -165,30 +165,31 @@ const SharedDriveTemplatePage = () => {
         <form onSubmit={handleSubmit}>
           <div className={styles.inputWrapper}>
             <Radios
-              name="manageTemplatesRadio"
+              name="sharedDriveTemplatesRadio"
               fieldset={{
                 legend: {
-                  children: <h1>How do you want to manage Shared Drive?</h1>,
+                  children: <h1>Select a Shared Drive folder template</h1>,
                 },
               }}
               errorMessage={
-                formDataErrors["manageTemplatesRadio"]
+                formDataErrors["sharedDriveTemplatesRadio"]
                   ? {
                       children:
-                        formDataErrors["manageTemplatesRadio"].inputErrorText,
+                        formDataErrors["sharedDriveTemplatesRadio"]
+                          .inputErrorText,
                     }
                   : undefined
               }
               items={
                 templatesData?.templates.map((template, index) => ({
-                  id: `manage-templates-radio-template-${index}`,
+                  id: `shared-drive-template-radio-template-${index}`,
                   children: template.name,
                   value: template.path,
-                  "data-testid": `manage-templates-radio-template-${index}`,
+                  "data-testid": `shared-drive-template-radio-template-${index}`,
                   disabled: disableButtons,
                 })) ?? []
               }
-              value={formData.manageTemplatesRadio}
+              value={formData.sharedDriveTemplatesRadio}
               onChange={(value) => {
                 if (value) setFormValue(value);
               }}
