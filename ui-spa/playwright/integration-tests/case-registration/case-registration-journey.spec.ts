@@ -1,4 +1,4 @@
-import { test } from "../utils/test";
+import { test, expect } from "../utils/test";
 import { delay, HttpResponse, http } from "msw";
 import { CaseMaterialsManageEgressPage } from "../pages/case-registration-manage-egress";
 import { CaseRegistrationEgressConnectedConfirmationPage } from "../pages/case-registration-egress-connected-confirmation";
@@ -257,6 +257,209 @@ test("case registration create new shared drive folder flow", async ({
   await caseRegistrationSharedDriveTemplatesPage.clickContinue();
 });
 
+test("case registration create new shared drive folder with zero templates error flow", async ({
+  page,
+  worker,
+}) => {
+  await worker.use(
+    http.get("https://mocked-out-api/api/v1/netapp/templates", async () => {
+      await delay(300);
+      return new HttpResponse(
+        JSON.stringify({
+          parentFolderPath: "RCF/Cases/",
+          templates: [],
+          count: 0,
+        }),
+      );
+    }),
+  );
+  await page.goto(
+    `/case-registration/manage-set-up-egress?urn=${CASE_REGISTRATION_JOURNEY_URN}`,
+  );
+  const caseMaterialsManageEgressPage = new CaseMaterialsManageEgressPage(page);
+  await caseMaterialsManageEgressPage.verifyUrl(
+    `/case-registration/manage-set-up-egress?urn=${CASE_REGISTRATION_JOURNEY_URN}`,
+  );
+  await caseMaterialsManageEgressPage.verifyPageElements();
+  await caseMaterialsManageEgressPage.errorValidations();
+  await caseMaterialsManageEgressPage.selectSkipSettingEgress();
+  await caseMaterialsManageEgressPage.clickContinue();
+
+  const caseRegistrationManageSharedDrivePage =
+    new CaseRegistrationManageSharedDrivePage(page);
+  await caseRegistrationManageSharedDrivePage.verifyUrl();
+  await caseRegistrationManageSharedDrivePage.verifyPageElements();
+  await caseRegistrationManageSharedDrivePage.errorValidations();
+
+  await caseRegistrationManageSharedDrivePage.selectCreateNewSharedDrive();
+  await caseRegistrationManageSharedDrivePage.clickContinue();
+
+  const sharedDriveCreateConnectFolderPage =
+    new SharedDriveCreateConnectFolderPage(page);
+  await sharedDriveCreateConnectFolderPage.verifyUrl(
+    "case-registration/shared-drive-create?operation-name=Thunderstruck1_pl",
+  );
+  await sharedDriveCreateConnectFolderPage.verifyPageElements("create");
+  await sharedDriveCreateConnectFolderPage.verifyBackLink(
+    "/case-registration/manage-set-up-shared-drive",
+  );
+
+  await sharedDriveCreateConnectFolderPage.verifyTableHeaders([
+    "Action",
+    "Folder name",
+  ]);
+  await sharedDriveCreateConnectFolderPage.verifyTableRows([
+    ["", "thunderstrike"],
+    ["Create", "thunderstrikeab"],
+  ]);
+  await sharedDriveCreateConnectFolderPage.clickCreateConnectBtn("create", 1);
+  const caseRegistrationCreateConnectFailurePage =
+    new CaseRegistrationCreateConnectFailurePage(page);
+  await caseRegistrationCreateConnectFailurePage.verifyUrl(
+    "/case-registration/create-shared-drive-folder-error",
+  );
+  await caseRegistrationCreateConnectFailurePage.verifyPageElements(
+    "create",
+    "shared-drive",
+  );
+  await caseRegistrationCreateConnectFailurePage.tryAgainBtnClick();
+  await caseRegistrationManageSharedDrivePage.verifyUrl();
+  await caseRegistrationManageSharedDrivePage.verifyPageElements();
+});
+
+test("case registration create new shared drive folder with get templates error flow", async ({
+  page,
+  worker,
+}) => {
+  await worker.use(
+    http.get("https://mocked-out-api/api/v1/netapp/templates", async () => {
+      await delay(300);
+      return new HttpResponse(null, { status: 500 });
+    }),
+  );
+  await page.goto(
+    `/case-registration/manage-set-up-egress?urn=${CASE_REGISTRATION_JOURNEY_URN}`,
+  );
+  const caseMaterialsManageEgressPage = new CaseMaterialsManageEgressPage(page);
+  await caseMaterialsManageEgressPage.verifyUrl(
+    `/case-registration/manage-set-up-egress?urn=${CASE_REGISTRATION_JOURNEY_URN}`,
+  );
+  await caseMaterialsManageEgressPage.verifyPageElements();
+  await caseMaterialsManageEgressPage.errorValidations();
+  await caseMaterialsManageEgressPage.selectSkipSettingEgress();
+  await caseMaterialsManageEgressPage.clickContinue();
+
+  const caseRegistrationManageSharedDrivePage =
+    new CaseRegistrationManageSharedDrivePage(page);
+  await caseRegistrationManageSharedDrivePage.verifyUrl();
+  await caseRegistrationManageSharedDrivePage.verifyPageElements();
+  await caseRegistrationManageSharedDrivePage.errorValidations();
+
+  await caseRegistrationManageSharedDrivePage.selectCreateNewSharedDrive();
+  await caseRegistrationManageSharedDrivePage.clickContinue();
+
+  const sharedDriveCreateConnectFolderPage =
+    new SharedDriveCreateConnectFolderPage(page);
+  await sharedDriveCreateConnectFolderPage.verifyUrl(
+    "case-registration/shared-drive-create?operation-name=Thunderstruck1_pl",
+  );
+  await sharedDriveCreateConnectFolderPage.verifyPageElements("create");
+  await sharedDriveCreateConnectFolderPage.verifyBackLink(
+    "/case-registration/manage-set-up-shared-drive",
+  );
+
+  await sharedDriveCreateConnectFolderPage.verifyTableHeaders([
+    "Action",
+    "Folder name",
+  ]);
+  await sharedDriveCreateConnectFolderPage.verifyTableRows([
+    ["", "thunderstrike"],
+    ["Create", "thunderstrikeab"],
+  ]);
+  await sharedDriveCreateConnectFolderPage.clickCreateConnectBtn("create", 1);
+  const caseRegistrationCreateConnectFailurePage =
+    new CaseRegistrationCreateConnectFailurePage(page);
+  await caseRegistrationCreateConnectFailurePage.verifyUrl(
+    "/case-registration/create-shared-drive-folder-error",
+  );
+  await caseRegistrationCreateConnectFailurePage.verifyPageElements(
+    "create",
+    "shared-drive",
+  );
+  await caseRegistrationCreateConnectFailurePage.tryAgainBtnClick();
+  await caseRegistrationManageSharedDrivePage.verifyUrl();
+  await caseRegistrationManageSharedDrivePage.verifyPageElements();
+});
+
+test("case registration create new shared drive folder should do auto submission if there is only one template", async ({
+  page,
+  worker,
+}) => {
+  await worker.use(
+    http.get("https://mocked-out-api/api/v1/netapp/templates", async () => {
+      await delay(300);
+      return new HttpResponse(
+        JSON.stringify({
+          parentFolderPath: "RCF/Cases/",
+          templates: [
+            {
+              name: "Standard Case",
+              path: "RCF/Cases/_templates/Standard Case/",
+            },
+          ],
+          count: 1,
+        }),
+      );
+    }),
+  );
+  await page.goto(
+    `/case-registration/manage-set-up-egress?urn=${CASE_REGISTRATION_JOURNEY_URN}`,
+  );
+  const caseMaterialsManageEgressPage = new CaseMaterialsManageEgressPage(page);
+  await caseMaterialsManageEgressPage.verifyUrl(
+    `/case-registration/manage-set-up-egress?urn=${CASE_REGISTRATION_JOURNEY_URN}`,
+  );
+  await caseMaterialsManageEgressPage.verifyPageElements();
+  await caseMaterialsManageEgressPage.errorValidations();
+  await caseMaterialsManageEgressPage.selectSkipSettingEgress();
+  await caseMaterialsManageEgressPage.clickContinue();
+
+  const caseRegistrationManageSharedDrivePage =
+    new CaseRegistrationManageSharedDrivePage(page);
+  await caseRegistrationManageSharedDrivePage.verifyUrl();
+  await caseRegistrationManageSharedDrivePage.verifyPageElements();
+  await caseRegistrationManageSharedDrivePage.errorValidations();
+
+  await caseRegistrationManageSharedDrivePage.selectCreateNewSharedDrive();
+  await caseRegistrationManageSharedDrivePage.clickContinue();
+
+  const sharedDriveCreateConnectFolderPage =
+    new SharedDriveCreateConnectFolderPage(page);
+  await sharedDriveCreateConnectFolderPage.verifyUrl(
+    "case-registration/shared-drive-create?operation-name=Thunderstruck1_pl",
+  );
+  await sharedDriveCreateConnectFolderPage.verifyPageElements("create");
+  await sharedDriveCreateConnectFolderPage.verifyBackLink(
+    "/case-registration/manage-set-up-shared-drive",
+  );
+
+  await sharedDriveCreateConnectFolderPage.verifyTableHeaders([
+    "Action",
+    "Folder name",
+  ]);
+  await sharedDriveCreateConnectFolderPage.verifyTableRows([
+    ["", "thunderstrike"],
+    ["Create", "thunderstrikeab"],
+  ]);
+  await sharedDriveCreateConnectFolderPage.clickCreateConnectBtn("create", 1);
+  const caseRegistrationSharedDriveTemplatesPage =
+    new CaseRegistrationSharedDriveTemplatesPage(page);
+
+  await caseRegistrationSharedDriveTemplatesPage.verifyUrl();
+  await expect(page).toHaveURL(
+    "/case-registration/case-registration-final-confirmation",
+  );
+});
 test("case registration create new shared drive folder error flow", async ({
   page,
   worker,
