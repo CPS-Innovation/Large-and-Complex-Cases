@@ -244,6 +244,8 @@ test("case registration create new shared drive folder flow", async ({
     new CaseRegistrationSharedDriveTemplatesPage(page);
 
   await caseRegistrationSharedDriveTemplatesPage.verifyUrl();
+  await caseRegistrationSharedDriveTemplatesPage.verifyPageLoaderVisible();
+  await caseRegistrationSharedDriveTemplatesPage.verifyPageLoaderHidden();
   await caseRegistrationSharedDriveTemplatesPage.verifyPageElements([
     "Standard Case",
     "Terrorism Case",
@@ -313,6 +315,11 @@ test("case registration create new shared drive folder with zero templates error
     ["Create", "thunderstrikeab"],
   ]);
   await sharedDriveCreateConnectFolderPage.clickCreateConnectBtn("create", 1);
+  const caseRegistrationSharedDriveTemplatesPage =
+    new CaseRegistrationSharedDriveTemplatesPage(page);
+
+  await caseRegistrationSharedDriveTemplatesPage.verifyUrl();
+  await caseRegistrationSharedDriveTemplatesPage.verifyPageLoaderVisible();
   const caseRegistrationCreateConnectFailurePage =
     new CaseRegistrationCreateConnectFailurePage(page);
   await caseRegistrationCreateConnectFailurePage.verifyUrl(
@@ -377,6 +384,12 @@ test("case registration create new shared drive folder with get templates error 
     ["Create", "thunderstrikeab"],
   ]);
   await sharedDriveCreateConnectFolderPage.clickCreateConnectBtn("create", 1);
+  const caseRegistrationSharedDriveTemplatesPage =
+    new CaseRegistrationSharedDriveTemplatesPage(page);
+
+  await caseRegistrationSharedDriveTemplatesPage.verifyUrl();
+  await caseRegistrationSharedDriveTemplatesPage.verifyPageLoaderVisible();
+
   const caseRegistrationCreateConnectFailurePage =
     new CaseRegistrationCreateConnectFailurePage(page);
   await caseRegistrationCreateConnectFailurePage.verifyUrl(
@@ -456,6 +469,7 @@ test("case registration create new shared drive folder should do auto submission
     new CaseRegistrationSharedDriveTemplatesPage(page);
 
   await caseRegistrationSharedDriveTemplatesPage.verifyUrl();
+  await caseRegistrationSharedDriveTemplatesPage.verifyPageLoaderVisible();
   await expect(page).toHaveURL(
     "/case-registration/case-registration-final-confirmation",
   );

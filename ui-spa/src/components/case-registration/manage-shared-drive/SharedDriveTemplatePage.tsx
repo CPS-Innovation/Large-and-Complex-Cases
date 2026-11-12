@@ -79,7 +79,13 @@ const SharedDriveTemplatePage = () => {
       });
       void navigate(`/case-registration/create-shared-drive-folder-error`);
     }
-  }, [isTemplatesError, templatesData?.templates.length, dispatch, navigate]);
+  }, [
+    isTemplatesError,
+    templatesData?.templates.length,
+    isTemplatesLoading,
+    dispatch,
+    navigate,
+  ]);
 
   type ErrorText = {
     errorSummaryText: string;
@@ -117,7 +123,7 @@ const SharedDriveTemplatePage = () => {
       }
 
       setDisableButtons(true);
-      await createSharedDriveFolderMutation.mutateAsync({
+      createSharedDriveFolderMutation.mutate({
         caseId,
         payload: {
           templateFolderPath: selectedTemplate.path,
@@ -216,7 +222,7 @@ const SharedDriveTemplatePage = () => {
     );
   };
 
-  if (isTemplatesLoading) {
+  if (isTemplatesLoading || templatesData?.templates.length === 1) {
     return (
       <PageContentWrapper>
         <div className={commonStyles.pageLoadingSpinnerWrapper}>

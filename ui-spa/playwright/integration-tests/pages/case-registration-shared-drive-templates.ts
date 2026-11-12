@@ -6,6 +6,15 @@ export class CaseRegistrationSharedDriveTemplatesPage {
     this.page = page;
   }
 
+  async verifyPageLoaderVisible() {
+    await expect(this.page.getByTestId("page-loading-spinner")).toBeVisible();
+    await expect(this.page.getByText("Loading...")).toBeVisible();
+  }
+  async verifyPageLoaderHidden() {
+    await expect(this.page.getByTestId("page-loading-spinner")).toBeHidden();
+    await expect(this.page.getByText("Loading...")).toBeHidden();
+  }
+
   async verifyPageElements(templates: string[]) {
     await expect(this.page.locator("h1")).toHaveText(
       "Select a Shared Drive folder template",
