@@ -176,6 +176,16 @@ namespace CPS.ComplexCases.Data.Migrations
 
                     b.HasKey("CaseId");
 
+                    b.HasIndex("EgressWorkspaceId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_case_metadata_egress_workspace_id")
+                        .HasFilter("egress_workspace_id IS NOT NULL");
+
+                    b.HasIndex("NetappFolderPath")
+                        .IsUnique()
+                        .HasDatabaseName("ux_case_metadata_netapp_folder_path")
+                        .HasFilter("netapp_folder_path IS NOT NULL");
+
                     b.ToTable("case_metadata", "large_complex_cases");
                 });
 #pragma warning restore 612, 618

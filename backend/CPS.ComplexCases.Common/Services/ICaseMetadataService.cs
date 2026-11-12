@@ -7,8 +7,8 @@ namespace CPS.ComplexCases.Common.Services;
 
 public interface ICaseMetadataService
 {
-    Task CreateEgressConnectionAsync(CreateEgressConnectionDto createEgressConnectionDto);
-    Task CreateNetAppConnectionAsync(CreateNetAppConnectionDto createNetAppConnectionDto);
+    Task<CreateConnectionResult> CreateEgressConnectionAsync(CreateEgressConnectionDto createEgressConnectionDto);
+    Task<CreateConnectionResult> CreateNetAppConnectionAsync(CreateNetAppConnectionDto createNetAppConnectionDto);
     Task<IEnumerable<CaseMetadata>> GetCaseMetadataForCaseIdsAsync(IEnumerable<int> caseIds);
     Task<IEnumerable<CaseMetadata>> GetCaseMetadataForEgressWorkspaceIdsAsync(IEnumerable<string> egressWorkspaceIds);
     Task<CaseMetadata?> GetCaseMetadataForCaseIdAsync(int caseId);

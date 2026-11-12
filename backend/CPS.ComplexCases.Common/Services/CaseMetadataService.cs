@@ -18,31 +18,25 @@ public class CaseMetadataService : ICaseMetadataService
         _logger = logger;
     }
 
-    public async Task CreateEgressConnectionAsync(CreateEgressConnectionDto createEgressConnectionDto)
+    public async Task<CreateConnectionResult> CreateEgressConnectionAsync(CreateEgressConnectionDto createEgressConnectionDto)
     {
         _logger.LogInformation("Creating Egress connection for case {CaseId}", createEgressConnectionDto.CaseId);
         try
         {
-            var existingMetadata = await _caseMetadataRepository.GetByCaseIdAsync(createEgressConnectionDto.CaseId);
+            var created = await _caseMetadataRepository.TrySetEgressConnectionAsync(
+                createEgressConnectionDto.CaseId,
+                createEgressConnectionDto.EgressWorkspaceId,
+                createEgressConnectionDto.EgressWorkspaceName);
 
-            if (existingMetadata != null)
+            if (!created)
             {
-                existingMetadata.EgressWorkspaceId = createEgressConnectionDto.EgressWorkspaceId;
-                existingMetadata.EgressWorkspaceName = createEgressConnectionDto.EgressWorkspaceName;
-                await _caseMetadataRepository.UpdateAsync(existingMetadata);
-                return;
+                _logger.LogWarning(
+                    "Egress connection for case {CaseId} not created: the case already has a workspace or workspace {WorkspaceId} is linked to another case",
+                    createEgressConnectionDto.CaseId, createEgressConnectionDto.EgressWorkspaceId);
+                return CreateConnectionResult.Conflict;
             }
-            else
-            {
-                var newMetadata = new CaseMetadata
-                {
-                    CaseId = createEgressConnectionDto.CaseId,
-                    EgressWorkspaceId = createEgressConnectionDto.EgressWorkspaceId,
-                    EgressWorkspaceName = createEgressConnectionDto.EgressWorkspaceName
-                };
-                await _caseMetadataRepository.AddAsync(newMetadata);
-                return;
-            }
+
+            return CreateConnectionResult.Created;
         }
         catch (Exception ex)
         {
@@ -51,38 +45,25 @@ public class CaseMetadataService : ICaseMetadataService
         }
     }
 
-    public async Task CreateNetAppConnectionAsync(CreateNetAppConnectionDto createNetAppConnectionDto)
+    public async Task<CreateConnectionResult> CreateNetAppConnectionAsync(CreateNetAppConnectionDto createNetAppConnectionDto)
     {
         _logger.LogInformation("Creating NetApp connection for case {CaseId}", createNetAppConnectionDto.CaseId);
         try
         {
-            var existingMetadata = await _caseMetadataRepository.GetByCaseIdAsync(createNetAppConnectionDto.CaseId);
+            var created = await _caseMetadataRepository.TrySetNetAppConnectionAsync(
+                createNetAppConnectionDto.CaseId,
+                createNetAppConnectionDto.NetAppFolderPath,
+                createNetAppConnectionDto.BucketName);
 
-            if (existingMetadata != null)
+            if (!created)
             {
-                existingMetadata.NetappFolderPath = createNetAppConnectionDto.NetAppFolderPath;
-
-                // Only overwrite when a bucket was supplied, so callers that do not resolve one
-                // cannot wipe an already-persisted value.
-                if (!string.IsNullOrEmpty(createNetAppConnectionDto.BucketName))
-                {
-                    existingMetadata.NetappBucketName = createNetAppConnectionDto.BucketName;
-                }
-
-                await _caseMetadataRepository.UpdateAsync(existingMetadata);
-                return;
+                _logger.LogWarning(
+                    "NetApp connection for case {CaseId} not created: the case already has a folder or folder '{FolderPath}' is linked to another case",
+                    createNetAppConnectionDto.CaseId, createNetAppConnectionDto.NetAppFolderPath);
+                return CreateConnectionResult.Conflict;
             }
-            else
-            {
-                var newMetadata = new CaseMetadata
-                {
-                    CaseId = createNetAppConnectionDto.CaseId,
-                    NetappFolderPath = createNetAppConnectionDto.NetAppFolderPath,
-                    NetappBucketName = createNetAppConnectionDto.BucketName
-                };
-                await _caseMetadataRepository.AddAsync(newMetadata);
-                return;
-            }
+
+            return CreateConnectionResult.Created;
         }
         catch (Exception ex)
         {

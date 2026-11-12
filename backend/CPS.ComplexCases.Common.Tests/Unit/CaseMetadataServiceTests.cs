@@ -1,6 +1,7 @@
 using AutoFixture;
 using AutoFixture.AutoMoq;
 using CPS.ComplexCases.Common.Enums;
+using CPS.ComplexCases.Common.Models.Results;
 using CPS.ComplexCases.Common.Services;
 using CPS.ComplexCases.Data.Entities;
 using CPS.ComplexCases.Data.Models.Requests;
@@ -32,18 +33,12 @@ public class CaseMetadataServiceTests
     }
 
     [Fact]
-    public async Task CreateEgressConnectionAsync_WhenMetadataExists_UpdatesExistingRecord()
+    public async Task CreateEgressConnectionAsync_WhenRepositorySetsConnection_ReturnsCreated()
     {
         // Arrange
         var caseId = _fixture.Create<int>();
         var egressWorkspaceId = _fixture.Create<string>();
         var egressWorkspaceName = _fixture.Create<string>();
-        var existingMetadata = new CaseMetadata
-        {
-            CaseId = caseId,
-            EgressWorkspaceId = _fixture.Create<string>(),
-            EgressWorkspaceName = _fixture.Create<string>()
-        };
 
         var createDto = new CreateEgressConnectionDto
         {
@@ -53,49 +48,28 @@ public class CaseMetadataServiceTests
         };
 
         _repositoryMock
-            .Setup(r => r.GetByCaseIdAsync(caseId))
-            .ReturnsAsync(existingMetadata);
-
-        _repositoryMock
-            .Setup(r => r.UpdateAsync(It.IsAny<CaseMetadata>()))
-            .ReturnsAsync(existingMetadata);
+            .Setup(r => r.TrySetEgressConnectionAsync(caseId, egressWorkspaceId, egressWorkspaceName))
+            .ReturnsAsync(true);
 
         // Act
-        await _service.CreateEgressConnectionAsync(createDto);
+        var result = await _service.CreateEgressConnectionAsync(createDto);
 
         // Assert
-        Assert.Equal(egressWorkspaceId, existingMetadata.EgressWorkspaceId);
-        Assert.Equal(egressWorkspaceName, existingMetadata.EgressWorkspaceName);
-
+        Assert.Equal(CreateConnectionResult.Created, result);
         _repositoryMock.Verify(
-            r => r.GetByCaseIdAsync(caseId),
+            r => r.TrySetEgressConnectionAsync(caseId, egressWorkspaceId, egressWorkspaceName),
             Times.Once);
-
-        _repositoryMock.Verify(
-            r => r.UpdateAsync(It.Is<CaseMetadata>(m =>
-                m.CaseId == caseId &&
-                m.EgressWorkspaceId == egressWorkspaceId &&
-                m.EgressWorkspaceName == egressWorkspaceName)),
-            Times.Once);
-
-        _repositoryMock.Verify(
-            r => r.AddAsync(It.IsAny<CaseMetadata>()),
-            Times.Never);
+        _repositoryMock.Verify(r => r.UpdateAsync(It.IsAny<CaseMetadata>()), Times.Never);
+        _repositoryMock.Verify(r => r.AddAsync(It.IsAny<CaseMetadata>()), Times.Never);
     }
 
     [Fact]
-    public async Task CreateEgressConnectionAsync_WhenMetadataDoesNotExist_CreatesNewRecord()
+    public async Task CreateEgressConnectionAsync_WhenConnectionAlreadyExists_ReturnsConflict()
     {
         // Arrange
         var caseId = _fixture.Create<int>();
         var egressWorkspaceId = _fixture.Create<string>();
         var egressWorkspaceName = _fixture.Create<string>();
-        var newMetadata = new CaseMetadata
-        {
-            CaseId = caseId,
-            EgressWorkspaceId = egressWorkspaceId,
-            EgressWorkspaceName = egressWorkspaceName
-        };
 
         var createDto = new CreateEgressConnectionDto
         {
@@ -105,31 +79,16 @@ public class CaseMetadataServiceTests
         };
 
         _repositoryMock
-            .Setup(r => r.GetByCaseIdAsync(caseId))
-            .ReturnsAsync((CaseMetadata?)null);
-
-        _repositoryMock
-            .Setup(r => r.AddAsync(It.IsAny<CaseMetadata>()))
-            .ReturnsAsync(newMetadata);
+            .Setup(r => r.TrySetEgressConnectionAsync(caseId, egressWorkspaceId, egressWorkspaceName))
+            .ReturnsAsync(false);
 
         // Act
-        await _service.CreateEgressConnectionAsync(createDto);
+        var result = await _service.CreateEgressConnectionAsync(createDto);
 
         // Assert
-        _repositoryMock.Verify(
-            r => r.GetByCaseIdAsync(caseId),
-            Times.Once);
-
-        _repositoryMock.Verify(
-            r => r.UpdateAsync(It.IsAny<CaseMetadata>()),
-            Times.Never);
-
-        _repositoryMock.Verify(
-            r => r.AddAsync(It.Is<CaseMetadata>(m =>
-                m.CaseId == caseId &&
-                m.EgressWorkspaceId == egressWorkspaceId &&
-                m.EgressWorkspaceName == egressWorkspaceName)),
-            Times.Once);
+        Assert.Equal(CreateConnectionResult.Conflict, result);
+        _repositoryMock.Verify(r => r.UpdateAsync(It.IsAny<CaseMetadata>()), Times.Never);
+        _repositoryMock.Verify(r => r.AddAsync(It.IsAny<CaseMetadata>()), Times.Never);
     }
 
     [Fact]
@@ -148,7 +107,7 @@ public class CaseMetadataServiceTests
         };
 
         _repositoryMock
-            .Setup(r => r.GetByCaseIdAsync(caseId))
+            .Setup(r => r.TrySetEgressConnectionAsync(caseId, egressWorkspaceId, It.IsAny<string?>()))
             .ThrowsAsync(expectedException);
 
         // Act & Assert
@@ -745,7 +704,7 @@ public class CaseMetadataServiceTests
     }
 
     [Fact]
-    public async Task CreateNetAppConnectionAsync_WhenNoMetadataExists_PersistsBucketName()
+    public async Task CreateNetAppConnectionAsync_WhenRepositorySetsConnection_PassesBucketAndReturnsCreated()
     {
         // Arrange
         var caseId = _fixture.Create<int>();
@@ -758,72 +717,26 @@ public class CaseMetadataServiceTests
         };
 
         _repositoryMock
-            .Setup(r => r.GetByCaseIdAsync(caseId))
-            .ReturnsAsync((CaseMetadata?)null);
+            .Setup(r => r.TrySetNetAppConnectionAsync(caseId, "/netapp/path", "manchester-bucket"))
+            .ReturnsAsync(true);
 
         // Act
-        await _service.CreateNetAppConnectionAsync(dto);
+        var result = await _service.CreateNetAppConnectionAsync(dto);
 
         // Assert
+        Assert.Equal(CreateConnectionResult.Created, result);
         _repositoryMock.Verify(
-            r => r.AddAsync(It.Is<CaseMetadata>(m =>
-                m.CaseId == caseId &&
-                m.NetappFolderPath == "/netapp/path" &&
-                m.NetappBucketName == "manchester-bucket")),
+            r => r.TrySetNetAppConnectionAsync(caseId, "/netapp/path", "manchester-bucket"),
             Times.Once);
+        _repositoryMock.Verify(r => r.UpdateAsync(It.IsAny<CaseMetadata>()), Times.Never);
+        _repositoryMock.Verify(r => r.AddAsync(It.IsAny<CaseMetadata>()), Times.Never);
     }
 
     [Fact]
-    public async Task CreateNetAppConnectionAsync_WhenMetadataExists_UpdatesBucketName()
+    public async Task CreateNetAppConnectionAsync_WhenConnectionAlreadyExists_ReturnsConflict()
     {
         // Arrange
         var caseId = _fixture.Create<int>();
-        var existingMetadata = new CaseMetadata
-        {
-            CaseId = caseId,
-            NetappFolderPath = "/old/path",
-            NetappBucketName = "york-bucket"
-        };
-
-        var dto = new CreateNetAppConnectionDto
-        {
-            CaseId = caseId,
-            NetAppFolderPath = "/netapp/path",
-            OperationName = _fixture.Create<string>(),
-            BucketName = "manchester-bucket"
-        };
-
-        _repositoryMock
-            .Setup(r => r.GetByCaseIdAsync(caseId))
-            .ReturnsAsync(existingMetadata);
-
-        _repositoryMock
-            .Setup(r => r.UpdateAsync(It.IsAny<CaseMetadata>()))
-            .ReturnsAsync(existingMetadata);
-
-        // Act
-        await _service.CreateNetAppConnectionAsync(dto);
-
-        // Assert
-        _repositoryMock.Verify(
-            r => r.UpdateAsync(It.Is<CaseMetadata>(m =>
-                m.NetappFolderPath == "/netapp/path" &&
-                m.NetappBucketName == "manchester-bucket")),
-            Times.Once);
-    }
-
-    [Fact]
-    public async Task CreateNetAppConnectionAsync_WhenNoBucketSupplied_LeavesExistingBucketIntact()
-    {
-        // Arrange
-        var caseId = _fixture.Create<int>();
-        var existingMetadata = new CaseMetadata
-        {
-            CaseId = caseId,
-            NetappFolderPath = "/old/path",
-            NetappBucketName = "york-bucket"
-        };
-
         var dto = new CreateNetAppConnectionDto
         {
             CaseId = caseId,
@@ -833,20 +746,16 @@ public class CaseMetadataServiceTests
         };
 
         _repositoryMock
-            .Setup(r => r.GetByCaseIdAsync(caseId))
-            .ReturnsAsync(existingMetadata);
-
-        _repositoryMock
-            .Setup(r => r.UpdateAsync(It.IsAny<CaseMetadata>()))
-            .ReturnsAsync(existingMetadata);
+            .Setup(r => r.TrySetNetAppConnectionAsync(caseId, "/netapp/path", null))
+            .ReturnsAsync(false);
 
         // Act
-        await _service.CreateNetAppConnectionAsync(dto);
+        var result = await _service.CreateNetAppConnectionAsync(dto);
 
         // Assert
-        _repositoryMock.Verify(
-            r => r.UpdateAsync(It.Is<CaseMetadata>(m => m.NetappBucketName == "york-bucket")),
-            Times.Once);
+        Assert.Equal(CreateConnectionResult.Conflict, result);
+        _repositoryMock.Verify(r => r.UpdateAsync(It.IsAny<CaseMetadata>()), Times.Never);
+        _repositoryMock.Verify(r => r.AddAsync(It.IsAny<CaseMetadata>()), Times.Never);
     }
 
     [Fact]

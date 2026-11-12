@@ -349,6 +349,86 @@ public class EgressClientTests
             token), Times.Once);
     }
 
+    [Theory]
+    [InlineData("Operation Alpha", true)]
+    [InlineData("OPERATION ALPHA", true)]
+    [InlineData("Operation Alpha 2", false)]
+    public async Task WorkspaceExistsAsync_MatchesExactNameIgnoringCase(string existingName, bool expected)
+    {
+        // Arrange
+        var token = _fixture.Create<string>();
+        var tokenResponse = new GetWorkspaceTokenResponse { Token = token };
+        var workspaceResponse = new ListWorkspacesResponse
+        {
+            Data = [new ListWorkspacesResponseData { Id = _fixture.Create<string>(), Name = existingName }],
+            DataInfo = new DataInfoResponse { NumReturned = 1, Skip = 0, Limit = 100, TotalResults = 1 }
+        };
+
+        _requestFactoryMock
+            .Setup(f => f.GetWorkspaceTokenRequest(It.IsAny<string>(), It.IsAny<string>()))
+            .Returns(new HttpRequestMessage(HttpMethod.Get, $"{TestUrl}/api/v1/auth"));
+        _requestFactoryMock
+            .Setup(f => f.ListWorkspacesRequest(It.IsAny<ListEgressWorkspacesArg>(), token))
+            .Returns(() => new HttpRequestMessage(HttpMethod.Get, $"{TestUrl}/api/v1/workspaces"));
+
+        SetupHttpMockResponses(
+            ("token", tokenResponse),
+            ("workspace", workspaceResponse)
+        );
+
+        // Act
+        var result = await _client.WorkspaceExistsAsync("Operation Alpha");
+
+        // Assert
+        Assert.Equal(expected, result);
+        _requestFactoryMock.Verify(
+            f => f.ListWorkspacesRequest(It.Is<ListEgressWorkspacesArg>(a => a.Name == "Operation Alpha"), token),
+            Times.Once);
+        _requestFactoryMock.Verify(
+            f => f.GetWorkspacePermissionsRequest(It.IsAny<GetWorkspacePermissionArg>(), It.IsAny<string>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task WorkspaceExistsAsync_PagesThroughResults_UntilMatchFound()
+    {
+        // Arrange
+        var token = _fixture.Create<string>();
+        var tokenResponse = new GetWorkspaceTokenResponse { Token = token };
+        var firstPage = new ListWorkspacesResponse
+        {
+            Data = [new ListWorkspacesResponseData { Id = "1", Name = "Operation Alpha 2" }],
+            DataInfo = new DataInfoResponse { NumReturned = 1, Skip = 0, Limit = 100, TotalResults = 2 }
+        };
+        var secondPage = new ListWorkspacesResponse
+        {
+            Data = [new ListWorkspacesResponseData { Id = "2", Name = "Operation Alpha" }],
+            DataInfo = new DataInfoResponse { NumReturned = 1, Skip = 1, Limit = 100, TotalResults = 2 }
+        };
+
+        _requestFactoryMock
+            .Setup(f => f.GetWorkspaceTokenRequest(It.IsAny<string>(), It.IsAny<string>()))
+            .Returns(new HttpRequestMessage(HttpMethod.Get, $"{TestUrl}/api/v1/auth"));
+        _requestFactoryMock
+            .Setup(f => f.ListWorkspacesRequest(It.IsAny<ListEgressWorkspacesArg>(), token))
+            .Returns(() => new HttpRequestMessage(HttpMethod.Get, $"{TestUrl}/api/v1/workspaces"));
+
+        SetupHttpMockResponses(
+            ("token", tokenResponse),
+            ("workspace", firstPage),
+            ("workspace", secondPage)
+        );
+
+        // Act
+        var result = await _client.WorkspaceExistsAsync("Operation Alpha");
+
+        // Assert
+        Assert.True(result);
+        _requestFactoryMock.Verify(
+            f => f.ListWorkspacesRequest(It.Is<ListEgressWorkspacesArg>(a => a.Skip == 1), token),
+            Times.Once);
+    }
+
     private void SetupRequestFactory(string workspaceId, string token, ListEgressWorkspacesArg arg)
     {
         _requestFactoryMock

@@ -10,6 +10,7 @@ using CPS.ComplexCases.Common.Attributes;
 using CPS.ComplexCases.Common.Handlers;
 using CPS.ComplexCases.Common.Helpers;
 using CPS.ComplexCases.Common.Models.Requests;
+using CPS.ComplexCases.Common.Models.Results;
 using CPS.ComplexCases.Common.Services;
 using CPS.ComplexCases.Common.Telemetry;
 using CPS.ComplexCases.DDEI.Client;
@@ -59,6 +60,7 @@ public class ProvisionNetAppFolders(ILogger<ProvisionNetAppFolders> logger,
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.BadRequest, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.BadRequest)]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.Unauthorized, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.Unauthorized)]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.Forbidden, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.Forbidden)]
+    [OpenApiResponseWithBody(statusCode: HttpStatusCode.Conflict, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.Conflict)]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.InternalServerError, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.InternalServerError)]
     public async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "v1/cases/{caseId}/netapp/provision")] HttpRequest req, FunctionContext functionContext, int caseId)
     {
@@ -105,6 +107,16 @@ public class ProvisionNetAppFolders(ILogger<ProvisionNetAppFolders> logger,
 
         var bucketName = (await _userBucketAccessService.ResolveBucketAsync(
             context.BearerToken, caseMetadata?.NetappBucketName, provisionFoldersRequest.Value.BucketName)).BucketName;
+
+        var existingConnection = (await _caseMetadataService.GetCaseMetadataForNetAppFolderPathsAsync(
+            [folderPathName, $"{bucketName}:{folderPathName}"])).FirstOrDefault();
+        if (existingConnection != null)
+        {
+            _logger.LogWarning(
+                "Duplicate NetApp provisioning attempt: folder path '{FolderPath}' is already connected to case {ExistingCaseId}. Requested by case {RequestedCaseId}.",
+                folderPathName, existingConnection.CaseId, caseId);
+            return new ConflictObjectResult($"Folder path '{folderPathName}' is already connected to another case.");
+        }
 
         var telemetryEvent = new ProvisionNetAppFoldersEvent
         {
@@ -178,13 +190,21 @@ public class ProvisionNetAppFolders(ILogger<ProvisionNetAppFolders> logger,
             return new ObjectResult("NetApp folder provisioning failed.") { StatusCode = (int)HttpStatusCode.InternalServerError };
         }
 
-        await _caseMetadataService.CreateNetAppConnectionAsync(new Data.Models.Requests.CreateNetAppConnectionDto
+        var connectionResult = await _caseMetadataService.CreateNetAppConnectionAsync(new Data.Models.Requests.CreateNetAppConnectionDto
         {
             CaseId = caseId,
             NetAppFolderPath = folderPathName,
             OperationName = caseNameDto.OperationName,
             BucketName = bucketName
         });
+
+        if (connectionResult == CreateConnectionResult.Conflict)
+        {
+            _logger.LogError("NetApp folders were provisioned at '{FolderPath}' but could not be linked to case {CaseId} because a concurrent request connected it first.",
+                folderPathName, caseId);
+            TrackProvisioningFailure(telemetryEvent, "Case metadata conflict");
+            return new ConflictObjectResult($"Folder path '{folderPathName}' could not be connected to case {caseId} because one of them is already connected.");
+        }
 
         try
         {

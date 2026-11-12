@@ -9,8 +9,10 @@ using CPS.ComplexCases.API.Validators.Requests;
 using CPS.ComplexCases.Common.Handlers;
 using CPS.ComplexCases.Common.Helpers;
 using CPS.ComplexCases.Common.Models;
+using CPS.ComplexCases.Common.Models.Results;
 using CPS.ComplexCases.Common.Services;
 using CPS.ComplexCases.Common.Telemetry;
+using CPS.ComplexCases.Data.Entities;
 using CPS.ComplexCases.Data.Models.Requests;
 using CPS.ComplexCases.DDEI.Client;
 using CPS.ComplexCases.DDEI.Factories;
@@ -181,7 +183,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
                     dto => dto.CaseId == _caseId &&
                     dto.EgressWorkspaceId == _workspaceId &&
                     dto.EgressWorkspaceName == expectedWorkspaceName)))
-                .Returns(Task.CompletedTask);
+                .ReturnsAsync(CreateConnectionResult.Created);
 
             _activityLogServiceMock
                 .Setup(s => s.CreateActivityLogAsync(
@@ -484,7 +486,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
             _caseMetadataServiceMock
                 .Setup(s => s.CreateEgressConnectionAsync(It.Is<CreateEgressConnectionDto>(
                     dto => dto.CaseId == _caseId && dto.EgressWorkspaceId == _workspaceId)))
-                .Returns(Task.CompletedTask);
+                .ReturnsAsync(CreateConnectionResult.Created);
 
             _activityLogServiceMock
                 .Setup(s => s.CreateActivityLogAsync(
@@ -628,6 +630,134 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
                 It.IsAny<string>(),
                 It.IsAny<string>(),
                 null), Times.Never);
+        }
+
+        [Fact]
+        public async Task Run_ReturnsConflict_WhenCaseAlreadyHasEgressWorkspace()
+        {
+            // Arrange
+            _requestValidatorMock
+                .Setup(v => v.GetJsonBody<CreateEgressWorkspaceRequest, CreateEgressWorkspaceRequestValidator>(It.IsAny<HttpRequest>()))
+                .ReturnsAsync(new ValidatableRequest<CreateEgressWorkspaceRequest>
+                {
+                    IsValid = true,
+                    Value = new CreateEgressWorkspaceRequest { CaseId = _caseId, TemplateId = _templateId }
+                });
+
+            _caseMetadataServiceMock
+                .Setup(s => s.GetCaseMetadataForCaseIdAsync(_caseId))
+                .ReturnsAsync(new CaseMetadata { CaseId = _caseId, EgressWorkspaceId = _fixture.Create<string>() });
+
+            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_correlationId, _cmsAuthValues, _username, _bearerToken);
+            var httpRequest = HttpRequestStubHelper.CreateHttpRequestWithQueryParameters(new Dictionary<string, string>(), _correlationId);
+
+            // Act
+            var result = await _function.Run(httpRequest, functionContext);
+
+            // Assert
+            var conflict = Assert.IsType<ConflictObjectResult>(result);
+            Assert.Equal($"Case with ID {_caseId} already has an Egress workspace connected.", conflict.Value);
+            _ddeiClientMock.Verify(c => c.GetCaseAsync(It.IsAny<DdeiCaseIdArgDto>()), Times.Never);
+            _egressClientMock.Verify(c => c.CreateWorkspaceAsync(It.IsAny<CreateEgressWorkspaceArg>()), Times.Never);
+            _caseMetadataServiceMock.Verify(s => s.CreateEgressConnectionAsync(It.IsAny<CreateEgressConnectionDto>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task Run_ReturnsConflict_AndDoesNotCreateWorkspace_WhenWorkspaceNameAlreadyExists()
+        {
+            // Arrange
+            var expectedWorkspaceName = $"{_operationName}-{_urn}";
+            var caseResponse = new CaseDto { OperationName = _operationName, Urn = _urn, LeadDefendantSurname = _leadDefendantName };
+            var cmsArg = _fixture.Create<DdeiCaseIdArgDto>();
+
+            ArrangeValidRequestAndCase(caseResponse, cmsArg, expectedWorkspaceName);
+
+            _egressClientMock
+                .Setup(c => c.WorkspaceExistsAsync(expectedWorkspaceName))
+                .ReturnsAsync(true);
+
+            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_correlationId, _cmsAuthValues, _username, _bearerToken);
+            var httpRequest = HttpRequestStubHelper.CreateHttpRequestWithQueryParameters(new Dictionary<string, string>(), _correlationId);
+
+            // Act
+            var result = await _function.Run(httpRequest, functionContext);
+
+            // Assert
+            var conflict = Assert.IsType<ConflictObjectResult>(result);
+            Assert.Equal($"An Egress workspace named '{expectedWorkspaceName}' already exists.", conflict.Value);
+            _egressClientMock.Verify(c => c.WorkspaceExistsAsync(expectedWorkspaceName), Times.Once);
+            _egressClientMock.Verify(c => c.CreateWorkspaceAsync(It.IsAny<CreateEgressWorkspaceArg>()), Times.Never);
+            _caseMetadataServiceMock.Verify(s => s.CreateEgressConnectionAsync(It.IsAny<CreateEgressConnectionDto>()), Times.Never);
+            _telemetryClientMock.Verify(t => t.TrackEvent(It.IsAny<EgressWorkspaceCreatedEvent>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task Run_ReturnsConflict_WhenConcurrentRequestConnectsWorkspaceFirst()
+        {
+            // Arrange
+            var expectedWorkspaceName = $"{_operationName}-{_urn}";
+            var caseResponse = new CaseDto { OperationName = _operationName, Urn = _urn, LeadDefendantSurname = _leadDefendantName };
+            var cmsArg = _fixture.Create<DdeiCaseIdArgDto>();
+            var createWorkspaceArg = _fixture.Create<CreateEgressWorkspaceArg>();
+            var grantPermissionArg = _fixture.Create<GrantWorkspacePermissionArg>();
+
+            ArrangeValidRequestAndCase(caseResponse, cmsArg, expectedWorkspaceName);
+
+            _egressArgFactoryMock
+                .Setup(f => f.CreateEgressWorkspaceArg(expectedWorkspaceName, _templateId))
+                .Returns(createWorkspaceArg);
+            _egressClientMock
+                .Setup(c => c.CreateWorkspaceAsync(createWorkspaceArg))
+                .ReturnsAsync(new CreateWorkspaceResponse { Id = _workspaceId, Name = expectedWorkspaceName });
+            _egressClientMock
+                .Setup(c => c.ListWorkspaceRolesAsync(_workspaceId))
+                .ReturnsAsync([new ListWorkspaceRoleDto { RoleId = _administratorRoleId, RoleName = "Administrator" }]);
+            _egressArgFactoryMock
+                .Setup(f => f.CreateGrantWorkspacePermissionArg(_workspaceId, _username, _administratorRoleId))
+                .Returns(grantPermissionArg);
+            _caseMetadataServiceMock
+                .Setup(s => s.CreateEgressConnectionAsync(It.IsAny<CreateEgressConnectionDto>()))
+                .ReturnsAsync(CreateConnectionResult.Conflict);
+
+            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_correlationId, _cmsAuthValues, _username, _bearerToken);
+            var httpRequest = HttpRequestStubHelper.CreateHttpRequestWithQueryParameters(new Dictionary<string, string>(), _correlationId);
+
+            // Act
+            var result = await _function.Run(httpRequest, functionContext);
+
+            // Assert
+            Assert.IsType<ConflictObjectResult>(result);
+            _activityLogServiceMock.Verify(s => s.CreateActivityLogAsync(
+                It.IsAny<ActionType>(),
+                It.IsAny<ResourceType>(),
+                It.IsAny<int>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                null), Times.Never);
+        }
+
+        private void ArrangeValidRequestAndCase(CaseDto caseResponse, DdeiCaseIdArgDto cmsArg, string workspaceName)
+        {
+            _requestValidatorMock
+                .Setup(v => v.GetJsonBody<CreateEgressWorkspaceRequest, CreateEgressWorkspaceRequestValidator>(It.IsAny<HttpRequest>()))
+                .ReturnsAsync(new ValidatableRequest<CreateEgressWorkspaceRequest>
+                {
+                    IsValid = true,
+                    Value = new CreateEgressWorkspaceRequest { CaseId = _caseId, TemplateId = _templateId }
+                });
+
+            _ddeiArgFactoryMock
+                .Setup(f => f.CreateCaseArg(_cmsAuthValues, _correlationId, _caseId))
+                .Returns(cmsArg);
+
+            _ddeiClientMock
+                .Setup(c => c.GetCaseAsync(cmsArg))
+                .ReturnsAsync(caseResponse);
+
+            _caseNamingServiceMock
+                .Setup(s => s.GenerateCaseName(caseResponse))
+                .ReturnsAsync(new CaseNameDto { CaseName = workspaceName, OperationName = _operationName });
         }
     }
 }
