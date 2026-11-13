@@ -7,6 +7,7 @@ using CPS.ComplexCases.API.Validators.Requests;
 using CPS.ComplexCases.Common.Attributes;
 using CPS.ComplexCases.Common.Handlers;
 using CPS.ComplexCases.Common.Helpers;
+using CPS.ComplexCases.Common.Models.Results;
 using CPS.ComplexCases.Common.Services;
 using CPS.ComplexCases.Data.Models.Requests;
 using CPS.ComplexCases.NetApp.Client;
@@ -76,6 +77,16 @@ public class CreateNetAppConnection(ILogger<CreateNetAppConnection> logger,
         }
 
         var folderPath = netAppConnectionRequest.Value.NetAppFolderPath;
+
+        var caseMetadata = await _caseMetadataService.GetCaseMetadataForCaseIdAsync(netAppConnectionRequest.Value.CaseId);
+        if (!string.IsNullOrEmpty(caseMetadata?.NetappFolderPath))
+        {
+            _logger.LogWarning(
+                "Duplicate NetApp connection attempt: case {CaseId} is already connected to folder path '{ExistingFolderPath}'. Requested folder path '{RequestedFolderPath}'.",
+                netAppConnectionRequest.Value.CaseId, caseMetadata.NetappFolderPath, folderPath);
+            return new ConflictObjectResult($"Case with ID {netAppConnectionRequest.Value.CaseId} already has a NetApp folder connected.");
+        }
+
         var lookupPaths = new[] { folderPath, $"{bucketName}:{folderPath}" };
         var existingConnections = await _caseMetadataService.GetCaseMetadataForNetAppFolderPathsAsync(lookupPaths);
         var existingConnection = existingConnections.FirstOrDefault();
@@ -91,7 +102,11 @@ public class CreateNetAppConnection(ILogger<CreateNetAppConnection> logger,
         // Persist the resolved bucket even when the client sent none, so every new row is populated.
         netAppConnectionRequest.Value.BucketName = bucketName;
 
-        await _caseMetadataService.CreateNetAppConnectionAsync(netAppConnectionRequest.Value);
+        var connectionResult = await _caseMetadataService.CreateNetAppConnectionAsync(netAppConnectionRequest.Value);
+        if (connectionResult == CreateConnectionResult.Conflict)
+        {
+            return new ConflictObjectResult($"Folder path '{folderPath}' could not be connected to case {netAppConnectionRequest.Value.CaseId} because one of them is already connected.");
+        }
 
         try
         {

@@ -11,6 +11,7 @@ public interface IEgressClient
     Task<bool> GetWorkspacePermission(GetWorkspacePermissionArg arg);
     Task<ListCaseMaterialDto> ListCaseMaterialAsync(ListWorkspaceMaterialArg arg);
     Task<ListTemplatesDto> ListTemplatesAsync(PaginationArg arg);
+    Task<bool> WorkspaceExistsAsync(string name);
     Task<CreateWorkspaceResponse> CreateWorkspaceAsync(CreateEgressWorkspaceArg arg);
     Task GrantWorkspacePermission(GrantWorkspacePermissionArg arg);
     Task<IEnumerable<ListWorkspaceRoleDto>> ListWorkspaceRolesAsync(string workspaceId);

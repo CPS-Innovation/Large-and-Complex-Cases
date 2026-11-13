@@ -8,6 +8,7 @@ using CPS.ComplexCases.API.Validators.Requests;
 using CPS.ComplexCases.Common.Attributes;
 using CPS.ComplexCases.Common.Handlers;
 using CPS.ComplexCases.Common.Helpers;
+using CPS.ComplexCases.Common.Models.Results;
 using CPS.ComplexCases.Common.Services;
 using CPS.ComplexCases.Common.Telemetry;
 using CPS.ComplexCases.Data.Models.Requests;
@@ -63,6 +64,7 @@ public class CreateEgressWorkspace(
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.BadRequest, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.BadRequest)]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.Unauthorized, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.Unauthorized)]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.Forbidden, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.Forbidden)]
+    [OpenApiResponseWithBody(statusCode: HttpStatusCode.Conflict, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.Conflict)]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.InternalServerError, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.InternalServerError)]
     public async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "v1/egress/workspaces")] HttpRequest req, FunctionContext functionContext)
     {
@@ -77,11 +79,26 @@ public class CreateEgressWorkspace(
 
         _initializationHandler.Initialize(context.Username, context.CorrelationId, request.Value.CaseId);
 
+        var caseMetadata = await _caseMetadataService.GetCaseMetadataForCaseIdAsync(request.Value.CaseId);
+        if (!string.IsNullOrEmpty(caseMetadata?.EgressWorkspaceId))
+        {
+            _logger.LogWarning("Duplicate Egress workspace creation attempt: case {CaseId} is already connected to workspace {WorkspaceId}.",
+                request.Value.CaseId, caseMetadata.EgressWorkspaceId);
+            return new ConflictObjectResult($"Case with ID {request.Value.CaseId} already has an Egress workspace connected.");
+        }
+
         var cmsArg = _ddeiArgFactory.CreateCaseArg(functionContext.GetRequestContext().CmsAuthValues, functionContext.GetRequestContext().CorrelationId, request.Value.CaseId);
         var cmsResponse = await _ddeiClient.GetCaseAsync(cmsArg);
 
         var caseNameDto = await _caseNamingService.GenerateCaseName(cmsResponse);
         string workspaceName = caseNameDto.CaseName;
+
+        if (await _egressClient.WorkspaceExistsAsync(workspaceName))
+        {
+            _logger.LogWarning("Duplicate Egress workspace creation attempt: workspace '{WorkspaceName}' already exists. Requested by case {CaseId}.",
+                workspaceName, request.Value.CaseId);
+            return new ConflictObjectResult($"An Egress workspace named '{workspaceName}' already exists.");
+        }
 
         var isExplicitTemplate = !string.IsNullOrWhiteSpace(request.Value.TemplateId);
         var template = isExplicitTemplate
@@ -118,12 +135,19 @@ public class CreateEgressWorkspace(
         var workspacePermissionArg = _egressArgFactory.CreateGrantWorkspacePermissionArg(workspace.Id, context.Username, administratorRole);
         await _egressClient.GrantWorkspacePermission(workspacePermissionArg);
 
-        await _caseMetadataService.CreateEgressConnectionAsync(new CreateEgressConnectionDto
+        var connectionResult = await _caseMetadataService.CreateEgressConnectionAsync(new CreateEgressConnectionDto
         {
             CaseId = request.Value.CaseId,
             EgressWorkspaceId = workspace.Id,
             EgressWorkspaceName = workspace.Name
         });
+
+        if (connectionResult == CreateConnectionResult.Conflict)
+        {
+            _logger.LogError("Egress workspace {WorkspaceId} was created but could not be linked to case {CaseId} because a concurrent request connected another workspace. The new workspace is orphaned.",
+                workspace.Id, request.Value.CaseId);
+            return new ConflictObjectResult($"Case with ID {request.Value.CaseId} already has an Egress workspace connected.");
+        }
 
         await _activityLogService.CreateActivityLogAsync(
           ActivityLog.Enums.ActionType.ConnectionToEgress,

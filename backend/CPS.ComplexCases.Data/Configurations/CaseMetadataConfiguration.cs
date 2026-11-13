@@ -18,5 +18,14 @@ public class CaseMetadataConfiguration : IEntityTypeConfiguration<CaseMetadata>
         builder.Property(x => x.NetappFolderPath).HasColumnName("netapp_folder_path").HasMaxLength(260);
         builder.Property(x => x.NetappBucketName).HasColumnName("netapp_bucket_name").HasMaxLength(200);
         builder.Property(x => x.ActiveTransferId).HasColumnName("active_transfer_id");
+
+        builder.HasIndex(x => x.EgressWorkspaceId)
+            .IsUnique()
+            .HasFilter("egress_workspace_id IS NOT NULL")
+            .HasDatabaseName("ux_case_metadata_egress_workspace_id");
+        builder.HasIndex(x => x.NetappFolderPath)
+            .IsUnique()
+            .HasFilter("netapp_folder_path IS NOT NULL")
+            .HasDatabaseName("ux_case_metadata_netapp_folder_path");
     }
 }

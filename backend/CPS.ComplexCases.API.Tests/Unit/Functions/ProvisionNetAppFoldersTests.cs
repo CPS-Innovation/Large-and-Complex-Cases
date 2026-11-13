@@ -14,6 +14,7 @@ using CPS.ComplexCases.Common.Handlers;
 using CPS.ComplexCases.Common.Helpers;
 using CPS.ComplexCases.Common.Models;
 using CPS.ComplexCases.Common.Models.Requests;
+using CPS.ComplexCases.Common.Models.Results;
 using CPS.ComplexCases.Common.Services;
 using CPS.ComplexCases.Common.Telemetry;
 using CPS.ComplexCases.Data.Entities;
@@ -761,6 +762,67 @@ public class ProvisionNetAppFoldersTests
         var badRequest = Assert.IsType<BadRequestObjectResult>(result);
         Assert.Equal(errorBody, badRequest.Value);
         _caseMetadataServiceMock.Verify(s => s.CreateNetAppConnectionAsync(It.IsAny<CreateNetAppConnectionDto>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Run_WhenResolvedFolderPathLinkedToAnotherCase_ReturnsConflictWithoutProvisioning()
+    {
+        // Arrange
+        var dto = _fixture.Create<ProvisionNetAppFoldersDto>();
+        var cmsArg = _fixture.Create<DdeiCaseIdArgDto>();
+        var caseResponse = _fixture.Create<CaseDto>();
+        var expectedFolderPath = $"{_caseName}/";
+
+        SetupValidRequest(dto, cmsArg);
+        SetupSuccessfulTransfer(caseResponse, "Completed");
+
+        _caseMetadataServiceMock
+            .Setup(s => s.GetCaseMetadataForNetAppFolderPathsAsync(It.Is<IEnumerable<string>>(paths =>
+                paths.Contains(expectedFolderPath) && paths.Contains($"{_bucketName}:{expectedFolderPath}"))))
+            .ReturnsAsync([new CaseMetadata { CaseId = _caseId + 1, NetappFolderPath = expectedFolderPath }]);
+
+        var request = HttpRequestStubHelper.CreateHttpRequestFor(dto);
+        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_correlationId, _cmsAuthValues, _username, _bearerToken);
+
+        // Act
+        var result = await _function.Run(request, functionContext, _caseId);
+
+        // Assert
+        var conflict = Assert.IsType<ConflictObjectResult>(result);
+        Assert.Equal($"Folder path '{expectedFolderPath}' is already connected to another case.", conflict.Value);
+        _fileTransferClientMock.Verify(c => c.ProvisionNetAppFoldersAsync(It.IsAny<ProvisionNetAppFoldersRequest>(), It.IsAny<Guid>()), Times.Never);
+        _caseMetadataServiceMock.Verify(s => s.CreateNetAppConnectionAsync(It.IsAny<CreateNetAppConnectionDto>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Run_WhenConcurrentRequestConnectsFolderFirst_ReturnsConflict()
+    {
+        // Arrange
+        var dto = _fixture.Create<ProvisionNetAppFoldersDto>();
+        var cmsArg = _fixture.Create<DdeiCaseIdArgDto>();
+        var caseResponse = _fixture.Create<CaseDto>();
+
+        SetupValidRequest(dto, cmsArg);
+        SetupSuccessfulTransfer(caseResponse, "Completed");
+
+        _caseMetadataServiceMock
+            .Setup(s => s.CreateNetAppConnectionAsync(It.IsAny<CreateNetAppConnectionDto>()))
+            .ReturnsAsync(CreateConnectionResult.Conflict);
+
+        var request = HttpRequestStubHelper.CreateHttpRequestFor(dto);
+        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_correlationId, _cmsAuthValues, _username, _bearerToken);
+
+        // Act
+        var result = await _function.Run(request, functionContext, _caseId);
+
+        // Assert
+        Assert.IsType<ConflictObjectResult>(result);
+        _activityLogServiceMock.Verify(s => s.CreateActivityLogAsync(
+            It.IsAny<ActionType>(), It.IsAny<ResourceType>(),
+            It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>(),
+            It.IsAny<string>(), null), Times.Never);
+        _telemetryClientMock.Verify(t => t.TrackEventFailure(It.Is<ProvisionNetAppFoldersEvent>(e =>
+            e.CaseId == _caseId && !e.IsSuccessful)), Times.Once);
     }
 
     private void SetupValidRequest(ProvisionNetAppFoldersDto dto, DdeiCaseIdArgDto cmsArg)

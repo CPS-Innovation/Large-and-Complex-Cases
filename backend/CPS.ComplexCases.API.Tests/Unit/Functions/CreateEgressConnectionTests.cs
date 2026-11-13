@@ -6,7 +6,9 @@ using CPS.ComplexCases.API.Validators.Requests;
 using CPS.ComplexCases.Common.Handlers;
 using CPS.ComplexCases.Common.Helpers;
 using CPS.ComplexCases.Common.Models;
+using CPS.ComplexCases.Common.Models.Results;
 using CPS.ComplexCases.Common.Services;
+using CPS.ComplexCases.Data.Entities;
 using CPS.ComplexCases.Data.Models.Requests;
 using CPS.ComplexCases.Egress.Client;
 using CPS.ComplexCases.Egress.Factories;
@@ -51,6 +53,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
             _testBearerToken = _fixture.Create<string>();
 
             _function = new CreateEgressConnection(
+                _loggerMock.Object,
                 _caseMetadataServiceMock.Object,
                 _egressClientMock.Object,
                 _egressArgFactoryMock.Object,
@@ -145,7 +148,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
 
             _caseMetadataServiceMock
                 .Setup(x => x.CreateEgressConnectionAsync(egressConnectionRequest))
-                .Returns(Task.CompletedTask);
+                .ReturnsAsync(CreateConnectionResult.Created);
 
             _activityLogServiceMock
                 .Setup(x => x.CreateActivityLogAsync(
@@ -277,6 +280,124 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
 
             // Assert
             _caseMetadataServiceMock.Verify(x => x.CreateEgressConnectionAsync(It.IsAny<CreateEgressConnectionDto>()), Times.Never);
+            _activityLogServiceMock.Verify(x => x.CreateActivityLogAsync(
+                It.IsAny<ActivityLog.Enums.ActionType>(),
+                It.IsAny<ActivityLog.Enums.ResourceType>(),
+                It.IsAny<int>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<System.Text.Json.JsonDocument>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task Run_WhenCaseAlreadyHasWorkspace_ReturnsConflict()
+        {
+            // Arrange
+            var egressConnectionRequest = _fixture.Create<CreateEgressConnectionDto>();
+            ArrangeValidRequestWithPermission(egressConnectionRequest);
+
+            _caseMetadataServiceMock
+                .Setup(x => x.GetCaseMetadataForCaseIdAsync(egressConnectionRequest.CaseId))
+                .ReturnsAsync(new CaseMetadata
+                {
+                    CaseId = egressConnectionRequest.CaseId,
+                    EgressWorkspaceId = _fixture.Create<string>()
+                });
+
+            var request = HttpRequestStubHelper.CreateHttpRequestFor(egressConnectionRequest);
+            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername, _testBearerToken);
+
+            // Act
+            var result = await _function.Run(request, functionContext);
+
+            // Assert
+            var conflict = Assert.IsType<ConflictObjectResult>(result);
+            Assert.Equal(
+                $"Case with ID {egressConnectionRequest.CaseId} already has an Egress workspace connected.",
+                conflict.Value);
+            _caseMetadataServiceMock.Verify(x => x.CreateEgressConnectionAsync(It.IsAny<CreateEgressConnectionDto>()), Times.Never);
+            VerifyNoActivityLog();
+        }
+
+        [Fact]
+        public async Task Run_WhenWorkspaceLinkedToAnotherCase_ReturnsConflict()
+        {
+            // Arrange
+            var egressConnectionRequest = _fixture.Create<CreateEgressConnectionDto>();
+            ArrangeValidRequestWithPermission(egressConnectionRequest);
+
+            _caseMetadataServiceMock
+                .Setup(x => x.GetCaseMetadataForEgressWorkspaceIdsAsync(It.Is<IEnumerable<string>>(ids =>
+                    ids.Contains(egressConnectionRequest.EgressWorkspaceId))))
+                .ReturnsAsync([
+                    new CaseMetadata
+                    {
+                        CaseId = egressConnectionRequest.CaseId + 1,
+                        EgressWorkspaceId = egressConnectionRequest.EgressWorkspaceId
+                    }
+                ]);
+
+            var request = HttpRequestStubHelper.CreateHttpRequestFor(egressConnectionRequest);
+            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername, _testBearerToken);
+
+            // Act
+            var result = await _function.Run(request, functionContext);
+
+            // Assert
+            var conflict = Assert.IsType<ConflictObjectResult>(result);
+            Assert.Equal(
+                $"Egress workspace '{egressConnectionRequest.EgressWorkspaceId}' is already connected to another case.",
+                conflict.Value);
+            _caseMetadataServiceMock.Verify(x => x.CreateEgressConnectionAsync(It.IsAny<CreateEgressConnectionDto>()), Times.Never);
+            VerifyNoActivityLog();
+        }
+
+        [Fact]
+        public async Task Run_WhenConcurrentRequestWinsPersistence_ReturnsConflict()
+        {
+            // Arrange
+            var egressConnectionRequest = _fixture.Create<CreateEgressConnectionDto>();
+            ArrangeValidRequestWithPermission(egressConnectionRequest);
+
+            _caseMetadataServiceMock
+                .Setup(x => x.CreateEgressConnectionAsync(egressConnectionRequest))
+                .ReturnsAsync(CreateConnectionResult.Conflict);
+
+            var request = HttpRequestStubHelper.CreateHttpRequestFor(egressConnectionRequest);
+            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername, _testBearerToken);
+
+            // Act
+            var result = await _function.Run(request, functionContext);
+
+            // Assert
+            Assert.IsType<ConflictObjectResult>(result);
+            VerifyNoActivityLog();
+        }
+
+        private void ArrangeValidRequestWithPermission(CreateEgressConnectionDto egressConnectionRequest)
+        {
+            var egressArg = _fixture.Create<GetWorkspacePermissionArg>();
+
+            _requestValidatorMock
+                .Setup(x => x.GetJsonBody<CreateEgressConnectionDto, CreateEgressConnectionValidator>(It.IsAny<HttpRequest>()))
+                .ReturnsAsync(new ValidatableRequest<CreateEgressConnectionDto>
+                {
+                    IsValid = true,
+                    Value = egressConnectionRequest
+                });
+
+            _egressArgFactoryMock
+                .Setup(x => x.CreateGetWorkspacePermissionArg(egressConnectionRequest.EgressWorkspaceId, _testUsername))
+                .Returns(egressArg);
+
+            _egressClientMock
+                .Setup(x => x.GetWorkspacePermission(egressArg))
+                .ReturnsAsync(true);
+        }
+
+        private void VerifyNoActivityLog()
+        {
             _activityLogServiceMock.Verify(x => x.CreateActivityLogAsync(
                 It.IsAny<ActivityLog.Enums.ActionType>(),
                 It.IsAny<ActivityLog.Enums.ResourceType>(),

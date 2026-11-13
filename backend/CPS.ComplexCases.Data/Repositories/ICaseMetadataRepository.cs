@@ -11,5 +11,7 @@ namespace CPS.ComplexCases.Data.Repositories
         Task<IEnumerable<CaseMetadata>> GetByEgressWorkspaceIdsAsync(IEnumerable<string> egressWorkspaceIds);
         Task<IEnumerable<CaseMetadata>> GetByNetAppFolderPathsAsync(IEnumerable<string> netAppFolderPaths);
         Task<CaseMetadata?> GetByActiveTransferIdAsync(Guid activeTransferId);
+        Task<bool> TrySetEgressConnectionAsync(int caseId, string workspaceId, string? workspaceName);
+        Task<bool> TrySetNetAppConnectionAsync(int caseId, string folderPath, string? bucketName);
     }
 }

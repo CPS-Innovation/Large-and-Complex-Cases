@@ -9,6 +9,7 @@ using CPS.ComplexCases.API.Validators.Requests;
 using CPS.ComplexCases.Common.Handlers;
 using CPS.ComplexCases.Common.Helpers;
 using CPS.ComplexCases.Common.Models;
+using CPS.ComplexCases.Common.Models.Results;
 using CPS.ComplexCases.Common.Services;
 using CPS.ComplexCases.Data.Entities;
 using CPS.ComplexCases.Data.Models.Requests;
@@ -177,7 +178,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
 
             _caseMetadataServiceMock
                 .Setup(x => x.CreateNetAppConnectionAsync(netAppConnectionRequest))
-                .Returns(Task.CompletedTask);
+                .ReturnsAsync(CreateConnectionResult.Created);
 
             _activityLogServiceMock
                 .Setup(x => x.CreateActivityLogAsync(
@@ -478,7 +479,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
 
             _caseMetadataServiceMock
                 .Setup(x => x.CreateNetAppConnectionAsync(netAppConnectionRequest))
-                .Returns(Task.CompletedTask);
+                .ReturnsAsync(CreateConnectionResult.Created);
 
             _activityLogServiceMock
                 .Setup(x => x.CreateActivityLogAsync(
@@ -603,6 +604,72 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
             await Assert.ThrowsAsync<MissingSecurityGroupException>(() => _function.Run(request, functionContext));
 
             _caseMetadataServiceMock.Verify(x => x.CreateNetAppConnectionAsync(It.IsAny<CreateNetAppConnectionDto>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task Run_WhenCaseAlreadyHasNetAppFolder_ReturnsConflict()
+        {
+            // Arrange
+            var netAppConnectionRequest = _fixture.Create<CreateNetAppConnectionDto>();
+            ArrangeSuccessfulConnect(netAppConnectionRequest);
+
+            _caseMetadataServiceMock
+                .Setup(x => x.GetCaseMetadataForCaseIdAsync(netAppConnectionRequest.CaseId))
+                .ReturnsAsync(new CaseMetadata
+                {
+                    CaseId = netAppConnectionRequest.CaseId,
+                    NetappFolderPath = "existing/folder/"
+                });
+
+            var request = HttpRequestStubHelper.CreateHttpRequestFor(netAppConnectionRequest);
+            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername, _testBearerToken);
+
+            // Act
+            var result = await _function.Run(request, functionContext);
+
+            // Assert
+            var conflict = Assert.IsType<ConflictObjectResult>(result);
+            Assert.Equal(
+                $"Case with ID {netAppConnectionRequest.CaseId} already has a NetApp folder connected.",
+                conflict.Value);
+            _caseMetadataServiceMock.Verify(x => x.CreateNetAppConnectionAsync(It.IsAny<CreateNetAppConnectionDto>()), Times.Never);
+            _activityLogServiceMock.Verify(x => x.CreateActivityLogAsync(
+                It.IsAny<ActivityLog.Enums.ActionType>(),
+                It.IsAny<ActivityLog.Enums.ResourceType>(),
+                It.IsAny<int>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<System.Text.Json.JsonDocument>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task Run_WhenConcurrentRequestWinsPersistence_ReturnsConflict()
+        {
+            // Arrange
+            var netAppConnectionRequest = _fixture.Create<CreateNetAppConnectionDto>();
+            ArrangeSuccessfulConnect(netAppConnectionRequest);
+
+            _caseMetadataServiceMock
+                .Setup(x => x.CreateNetAppConnectionAsync(netAppConnectionRequest))
+                .ReturnsAsync(CreateConnectionResult.Conflict);
+
+            var request = HttpRequestStubHelper.CreateHttpRequestFor(netAppConnectionRequest);
+            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername, _testBearerToken);
+
+            // Act
+            var result = await _function.Run(request, functionContext);
+
+            // Assert
+            Assert.IsType<ConflictObjectResult>(result);
+            _activityLogServiceMock.Verify(x => x.CreateActivityLogAsync(
+                It.IsAny<ActivityLog.Enums.ActionType>(),
+                It.IsAny<ActivityLog.Enums.ResourceType>(),
+                It.IsAny<int>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<System.Text.Json.JsonDocument>()), Times.Never);
         }
 
         private void ArrangeSuccessfulConnect(CreateNetAppConnectionDto netAppConnectionRequest)

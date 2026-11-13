@@ -162,6 +162,32 @@ public class EgressClient(
         };
     }
 
+    public async Task<bool> WorkspaceExistsAsync(string name)
+    {
+        const int pageSize = 100;
+        var token = await GetWorkspaceToken();
+        var skip = 0;
+
+        // Not filtered by user permissions: a workspace the caller cannot see still counts as existing.
+        while (true)
+        {
+            var arg = new ListEgressWorkspacesArg { Name = name, Skip = skip, Take = pageSize };
+            var response = await SendRequestAsync<ListWorkspacesResponse>(_egressRequestFactory.ListWorkspacesRequest(arg, token));
+            var page = response.Data.ToArray();
+
+            if (page.Any(w => string.Equals(w.Name, name, StringComparison.OrdinalIgnoreCase)))
+            {
+                return true;
+            }
+
+            skip += page.Length;
+            if (page.Length == 0 || skip >= response.DataInfo.TotalResults)
+            {
+                return false;
+            }
+        }
+    }
+
     public async Task<CreateWorkspaceResponse> CreateWorkspaceAsync(CreateEgressWorkspaceArg arg)
     {
         var token = await GetWorkspaceToken();
