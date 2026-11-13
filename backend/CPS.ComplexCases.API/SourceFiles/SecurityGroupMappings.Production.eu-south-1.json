@@ -24,10 +24,17 @@
     "description": "York CTD Users security group for CPS Complex Cases"
   },
   {
-    "id": "086813d3-b340-44cc-b6dd-5ebb8487c13d",
-    "displayName": "Manchester-Cases",
+    "id": "eb12b1bd-890d-4556-92e8-0efce0ff4830",
+    "displayName": "RWD-North-Cases",
     "bucketName": "mslpublic",
     "volumeUuid": "89938c17-d63b-4f8b-8c65-154f191f4efe",
+    "description": "RWD North Users security group for CPS Complex Cases"
+  },
+  {
+    "id": "086813d3-b340-44cc-b6dd-5ebb8487c13d",
+    "displayName": "Manchester-Cases",
+    "bucketName": "north-west",
+    "volumeUuid": "b819fb84-b356-11f1-b276-00224807a902",
     "description": "Manchester Users security group for CPS Complex Cases"
   },
   {
