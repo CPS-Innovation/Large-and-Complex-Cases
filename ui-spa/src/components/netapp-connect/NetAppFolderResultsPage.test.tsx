@@ -21,7 +21,7 @@ vi.mock("../govuk", async () => {
 });
 
 describe("NetAppFolderResultsPage", () => {
-  const handleConnectFolderMock = vi.fn();
+  const handleFolderActionMock = vi.fn();
   const handleGetFolderContentMock = vi.fn();
 
   const renderPage = ({
@@ -36,12 +36,13 @@ describe("NetAppFolderResultsPage", () => {
     render(
       <MemoryRouter>
         <NetAppFolderResultsPage
+          setupType="connect"
           backLinkUrl="/search-results"
           rootFolderPath={rootFolderPath}
           netAppFolderResults={netAppFolderResults}
           isNetAppFolderResultsLoading={false}
           accessibleRoots={accessibleRoots}
-          handleConnectFolder={handleConnectFolderMock}
+          handleFolderAction={handleFolderActionMock}
           handleGetFolderContent={handleGetFolderContentMock}
         />
       </MemoryRouter>,
@@ -51,7 +52,9 @@ describe("NetAppFolderResultsPage", () => {
     renderPage({
       netAppFolderResults: {
         rootPath: "",
-        folders: [{ folderPath: "thunderstrike/", caseId: null }],
+        folders: [
+          { folderPath: "thunderstrike/", caseId: null, hasTemplates: true },
+        ],
       },
     });
 
@@ -59,7 +62,7 @@ describe("NetAppFolderResultsPage", () => {
       screen.queryByTestId("restricted-root-text"),
     ).not.toBeInTheDocument();
     expect(
-      screen.getByText(/If the folder you need is not listed/),
+      screen.getByText(/Select a folder to connect it to this case./),
     ).toBeInTheDocument();
   });
 
@@ -68,8 +71,8 @@ describe("NetAppFolderResultsPage", () => {
       netAppFolderResults: {
         rootPath: "",
         folders: [
-          { folderPath: "RCF/", caseId: null },
-          { folderPath: "RCW/Cardiff/", caseId: null },
+          { folderPath: "RCF/", caseId: null, hasTemplates: true },
+          { folderPath: "RCW/Cardiff/", caseId: null, hasTemplates: false },
         ],
         isRestrictedRoot: true,
         accessibleRoots: ["RCF/", "RCW/Cardiff/"],
@@ -79,7 +82,7 @@ describe("NetAppFolderResultsPage", () => {
 
     expect(screen.getByTestId("restricted-root-text")).toBeInTheDocument();
     expect(
-      screen.queryByText(/If the folder you need is not listed/),
+      screen.queryByText(/Select a folder to connect it to this case./),
     ).not.toBeInTheDocument();
   });
 

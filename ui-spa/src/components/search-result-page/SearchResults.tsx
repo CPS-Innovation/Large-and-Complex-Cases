@@ -48,7 +48,7 @@ const SearchResults: React.FC<SearchResultsProps> = ({
       );
     }
     if (!data.netappFolderPath) {
-      const netAppConnectUrl = `/case/${data.caseId}/netapp-connect?${getUrlSearchParam("operation-name", operationName)}`;
+      const netAppConnectUrl = `/case/${data.caseId}/shared-drive-connect?${getUrlSearchParam("operation-name", operationName)}`;
       const handleClick = (
         e: React.MouseEvent<HTMLAnchorElement, MouseEvent>,
       ) => {

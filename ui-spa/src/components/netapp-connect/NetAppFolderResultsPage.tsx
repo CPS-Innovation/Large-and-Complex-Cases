@@ -14,8 +14,10 @@ type NetAppFolderResultsPageProps = {
   netAppFolderResults: ConnectNetAppFolderData;
   isNetAppFolderResultsLoading: boolean;
   accessibleRoots?: string[] | null;
+  setupType: "create" | "connect";
+  disableBtns?: boolean;
   handleGetFolderContent: (folderId: string) => void;
-  handleConnectFolder: (id: string) => void;
+  handleFolderAction: (id: string) => void;
 };
 
 const NetAppFolderResultsPage: React.FC<NetAppFolderResultsPageProps> = ({
@@ -24,7 +26,9 @@ const NetAppFolderResultsPage: React.FC<NetAppFolderResultsPageProps> = ({
   netAppFolderResults,
   isNetAppFolderResultsLoading,
   accessibleRoots,
-  handleConnectFolder,
+  setupType,
+  disableBtns = false,
+  handleFolderAction,
   handleGetFolderContent,
 }) => {
   const [sortValues, setSortValues] = useState<{
@@ -70,10 +74,36 @@ const NetAppFolderResultsPage: React.FC<NetAppFolderResultsPageProps> = ({
     return withHome;
   }, [rootFolderPath, accessibleRoots]);
 
+  const getActionsRow = (data: {
+    folderPath: string;
+    caseId: number | null;
+    hasTemplates?: boolean;
+  }) => {
+    if (
+      (setupType === "create" && data?.hasTemplates) ||
+      (setupType === "connect" && !data.caseId)
+    ) {
+      return {
+        children: (
+          <Button
+            className="govuk-button--secondary"
+            name="secondary"
+            onClick={() => handleFolderAction(data.folderPath)}
+            disabled={disableBtns}
+          >
+            {setupType === "create" ? "Create" : "Connect"}
+          </Button>
+        ),
+      };
+    }
+    return { children: <></> };
+  };
+
   const getTableRowData = () => {
     return netappFolderData.map((data) => {
       return {
         cells: [
+          getActionsRow(data),
           {
             children: (
               <div className={styles.folderWrapper}>
@@ -89,19 +119,6 @@ const NetAppFolderResultsPage: React.FC<NetAppFolderResultsPageProps> = ({
               </div>
             ),
           },
-
-          {
-            children: (
-              <Button
-                className="govuk-button--secondary"
-                name="secondary"
-                onClick={() => handleConnect(data.folderPath)}
-                disabled={!!data.caseId}
-              >
-                Connect
-              </Button>
-            ),
-          },
         ],
       };
     });
@@ -110,14 +127,13 @@ const NetAppFolderResultsPage: React.FC<NetAppFolderResultsPageProps> = ({
   const getTableHeadData = () => {
     return [
       {
+        children: <span className="govuk-visually-hidden">Action</span>,
+        sortable: false,
+      },
+      {
         children: <>Folder name</>,
         sortable: true,
         sortName: "folder-name",
-      },
-
-      {
-        children: <></>,
-        sortable: false,
       },
     ];
   };
@@ -129,10 +145,6 @@ const NetAppFolderResultsPage: React.FC<NetAppFolderResultsPageProps> = ({
     setSortValues({ name: sortName, type: sortType });
   };
 
-  const handleConnect = (id: string) => {
-    handleConnectFolder(id);
-  };
-
   const handleFolderPathClick = (path: string) => {
     handleGetFolderContent(path);
   };
@@ -142,7 +154,9 @@ const NetAppFolderResultsPage: React.FC<NetAppFolderResultsPageProps> = ({
       <BackLink to={backLinkUrl}>Back</BackLink>
       <PageContentWrapper>
         <h1 className="govuk-heading-xl govuk-!-margin-bottom-0">
-          Link a Shared Drive folder to the case
+          {setupType === "create"
+            ? "Choose a location for the new Shared Drive folder"
+            : "Connect a Shared Drive folder to this case"}
         </h1>
         <InsetText>
           {netAppFolderResults.isRestrictedRoot ? (
@@ -152,8 +166,9 @@ const NetAppFolderResultsPage: React.FC<NetAppFolderResultsPageProps> = ({
             </p>
           ) : (
             <p>
-              If the folder you need is not listed, check that you have the
-              correct permissions or contact the product team for support.
+              {setupType === "create"
+                ? "Select where you want to create the new Shared Drive folder. If you cannot see it, you may need to open other folders first. You'll only see folders you have permission to use."
+                : "Select a folder to connect it to this case."}
             </p>
           )}
         </InsetText>

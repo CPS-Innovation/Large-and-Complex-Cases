@@ -46,11 +46,13 @@ describe("NetAppPage", () => {
           }}
         >
           <MemoryRouter
-            initialEntries={["/case/12/netapp-connect?operation-name=opName"]}
+            initialEntries={[
+              "/case/12/shared-drive-connect?operation-name=opName",
+            ]}
           >
             <Routes>
               <Route
-                path="/case/:caseId/netapp-connect"
+                path="/case/:caseId/shared-drive-connect"
                 element={<NetAppPage />}
               />
             </Routes>

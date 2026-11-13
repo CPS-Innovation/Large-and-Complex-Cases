@@ -1,6 +1,9 @@
 import { useState, useEffect, useContext } from "react";
 import NetAppFolderResultsPage from "./NetAppFolderResultsPage";
-import { getConnectNetAppFolders } from "../../apis/gateway-api";
+import {
+  getConnectNetAppFolders,
+  connectNetAppFolder,
+} from "../../apis/gateway-api";
 import { getUrlSearchParam } from "../../common/utils/getUrlSearchParam";
 import { MainStateContext } from "../../providers/MainStateProvider";
 import { useQuery } from "@tanstack/react-query";
@@ -14,9 +17,24 @@ import {
 const NetAppPage = () => {
   const { state, dispatch } = useContext(MainStateContext);
   const navigate = useNavigate();
-  const { caseId } = useParams();
+  const { caseId: paramCaseId } = useParams();
   const [searchParams] = useSearchParams();
+  const { caseId: caseRegistrationCaseId } =
+    state.appData.caseRegistrationCaseDetails ?? {};
   const location = useLocation();
+  const [disableBtns, setDisableBtns] = useState(false);
+
+  const isRegistrationCreateFlow = location.pathname.includes(
+    "/case-registration/shared-drive-create",
+  );
+  const isRegistrationConnectFlow = location.pathname.includes(
+    "/case-registration/shared-drive-connect",
+  );
+
+  const isRegistrationFlow =
+    isRegistrationCreateFlow || isRegistrationConnectFlow;
+
+  const caseId = isRegistrationFlow ? caseRegistrationCaseId : paramCaseId;
 
   const {
     searchQueryString,
@@ -58,31 +76,33 @@ const NetAppPage = () => {
   }, [netAppFolderResults, rootFolderPath]);
 
   useEffect(() => {
-    if (location.pathname.endsWith("/netapp-connect")) {
-      const opName = searchParams.get("operation-name");
-      if (!opName) {
-        setOperationName("");
-        return;
-      }
-      setOperationName(opName);
+    const opName = searchParams.get("operation-name");
+    if (!opName) {
+      setOperationName("");
+      return;
     }
+    setOperationName(opName);
   }, [location, setOperationName, searchParams]);
 
   const handleGetFolderContent = (path: string) => {
     setRootFolderPath(path);
   };
 
-  const handleConnectFolder = (path: string) => {
-    dispatch({
-      type: "SET_SHARED_DRIVE_CONNECT_CONFIRMATION_PAGE",
-      payload: {
-        operationName: operationName,
-        backLinkUrl: `/case/${caseId}/netapp-connect?${getUrlSearchParam("operation-name", operationName)}`,
-        selectedWorkspace: {
-          folderPath: path,
-        },
-      },
-    });
+  const handleCreateFolder = async (path: string) => {
+    if (isRegistrationCreateFlow) {
+      setDisableBtns(true);
+      dispatch({
+        type: "SET_SELECTED_CREATE_SHARED_DRIVE_FOLDER_PATH",
+        payload: path,
+      });
+      setDisableBtns(false);
+      void navigate("/case-registration/shared-drive-templates");
+    }
+  };
+
+  const handleConnectFolder = async (path: string) => {
+    setDisableBtns(true);
+
     dispatch({
       type: "SET_SHARED_DRIVE_CONNECT_PAGE",
       payload: {
@@ -90,17 +110,60 @@ const NetAppPage = () => {
         accessibleRoots,
       },
     });
-    navigate(`/case/${caseId}/netapp-connect/confirmation`);
+
+    try {
+      if (caseId && operationName) {
+        await connectNetAppFolder({
+          operationName: operationName,
+          folderPath: path,
+          caseId: `${caseId}`,
+        });
+        if (isRegistrationFlow) {
+          void navigate(
+            "/case-registration/case-registration-final-confirmation",
+          );
+          return;
+        }
+        navigate(`/case/${caseId}/case-management`);
+      }
+    } catch (error) {
+      if (error) {
+        const basePath = isRegistrationFlow
+          ? `/case-registration/shared-drive-connect`
+          : `/case/${caseId}/shared-drive-connect`;
+        dispatch({
+          type: "SET_SHARED_DRIVE_CREATE_CONNECT_FAILURE_PAGE",
+          payload: {
+            backLinkUrl: `${basePath}?${getUrlSearchParam("operation-name", operationName)}`,
+          },
+        });
+        if (isRegistrationFlow) {
+          void navigate(`/case-registration/connect-shared-drive-folder-error`);
+          return;
+        }
+
+        navigate(`/case/${caseId}/connect-shared-drive-folder-error`);
+      }
+    }
+    setDisableBtns(false);
   };
 
   return (
     <NetAppFolderResultsPage
-      backLinkUrl={`/search-results?${searchQueryString}`}
+      backLinkUrl={
+        isRegistrationFlow
+          ? `/case-registration/manage-set-up-shared-drive`
+          : `/search-results?${searchQueryString}`
+      }
       rootFolderPath={rootFolderPath}
       netAppFolderResults={netAppFolderResults ?? { rootPath: "", folders: [] }}
       isNetAppFolderResultsLoading={isNetAppFolderResultsLoading}
       accessibleRoots={accessibleRoots}
-      handleConnectFolder={handleConnectFolder}
+      setupType={isRegistrationCreateFlow ? "create" : "connect"}
+      disableBtns={disableBtns}
+      handleFolderAction={
+        isRegistrationCreateFlow ? handleCreateFolder : handleConnectFolder
+      }
       handleGetFolderContent={handleGetFolderContent}
     />
   );

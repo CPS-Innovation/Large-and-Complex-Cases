@@ -123,7 +123,7 @@ test.describe("Skip-link test ", () => {
     );
     await page.getByRole("button", { name: "Connect" }).first().click();
 
-    await expect(page).toHaveURL("/case/13/egress-connect/error");
+    await expect(page).toHaveURL("/case/13/connect-egress-case-error");
     await expect(page.locator("h1")).toHaveText(
       "There is a problem connecting to Egress",
     );
@@ -136,11 +136,11 @@ test.describe("Skip-link test ", () => {
     await expect(page).toHaveURL(/#main-content$/);
     await page.keyboard.press("Tab");
     await expect(
-      page.getByRole("link", { name: /Search for another case./i }),
+      page.getByRole("button", { name: /Try again/i }),
     ).toBeFocused();
   });
 
-  test("Shared Drive Connect, confirmation and error page - clicking skip-link should take you to the main content", async ({
+  test("Shared Drive Connect and error page - clicking skip-link should take you to the main content", async ({
     page,
     worker,
   }) => {
@@ -151,9 +151,18 @@ test.describe("Skip-link test ", () => {
     await expect(page).toHaveURL(/\/search-results\?urn=11AA2222233/);
     await expect(page.locator("h1")).toHaveText(`Search results`);
     await page.locator('role=link[name="Connect"]').nth(2).click();
+    await worker.use(
+      http.post(
+        "https://mocked-out-api/api/v1/netapp/connections",
+        async () => {
+          await delay(10);
+          return new HttpResponse(null, { status: 500 });
+        },
+      ),
+    );
 
     await expect(page).toHaveURL(
-      "/case/14/netapp-connect?operation-name=Thunderstruck3_pl",
+      "/case/14/shared-drive-connect?operation-name=Thunderstruck3_pl",
     );
     await delay(500);
     await expect(
@@ -174,34 +183,8 @@ test.describe("Skip-link test ", () => {
       page.getByRole("button", { name: /Folder name/i }),
     ).toBeFocused();
     await page.getByRole("button", { name: "Connect" }).first().click();
-    await expect(page).toHaveURL("/case/14/netapp-connect/confirmation");
-    await expect(page.locator("h1")).toHaveText(`Are you sure?`);
-    await expect(
-      page.getByText(
-        `Confirm you want to link "thunderstrike" Shared Drive folder to the case?`,
-      ),
-    ).toBeVisible();
-    await page.keyboard.press("Tab");
-    await expect(
-      page.getByRole("link", { name: /Skip to main content/i }),
-    ).toBeFocused();
-    await page.keyboard.press("Enter");
-    await expect(page).toHaveURL(/#main-content$/);
-    await page.keyboard.press("Tab");
-    await expect(
-      await page.getByTestId("radio-netapp-connect-yes"),
-    ).toBeFocused();
-    await worker.use(
-      http.post(
-        "https://mocked-out-api/api/v1/netapp/connections",
-        async () => {
-          await delay(10);
-          return new HttpResponse(null, { status: 500 });
-        },
-      ),
-    );
-    await page.getByRole("button", { name: "Continue" }).click();
-    await expect(page).toHaveURL("/case/14/netapp-connect/error");
+
+    await expect(page).toHaveURL("/case/14/connect-shared-drive-folder-error");
     await expect(page.locator("h1")).toHaveText(
       "There is a problem connecting to the Shared Drive",
     );
@@ -214,7 +197,7 @@ test.describe("Skip-link test ", () => {
     await expect(page).toHaveURL(/#main-content$/);
     await page.keyboard.press("Tab");
     await expect(
-      page.getByRole("link", { name: /Search for another case./i }),
+      page.getByRole("button", { name: /Try again/i }),
     ).toBeFocused();
   });
 

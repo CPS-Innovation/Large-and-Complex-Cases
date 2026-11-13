@@ -18,6 +18,9 @@ import {
   disconnectNetAppFolder,
   disconnectEgressFolder,
   logTelemetryEvent,
+  createEgressCase,
+  createSharedDriveFolder,
+  getSharedDriveTemplates,
 } from "./gateway-api";
 import { ApiError } from "../common/errors/ApiError";
 import { v4 } from "uuid";
@@ -623,7 +626,9 @@ describe("gateway apis", () => {
       const mockData1 = {
         data: {
           rootPath: "netapp/",
-          folders: [{ folderPath: "thunderstrikeab/", caseId: 123 }],
+          folders: [
+            { folderPath: "thunderstrikeab/", caseId: 123, hasTemplates: true },
+          ],
         },
 
         pagination: {
@@ -634,7 +639,13 @@ describe("gateway apis", () => {
       const mockData2 = {
         data: {
           rootPath: "netapp/",
-          folders: [{ folderPath: "thunderstrikeacb/", caseId: 1243 }],
+          folders: [
+            {
+              folderPath: "thunderstrikeacb/",
+              caseId: 1243,
+              hasTemplates: false,
+            },
+          ],
         },
         pagination: {
           maxKeys: 100,
@@ -660,8 +671,12 @@ describe("gateway apis", () => {
       expect(result).toEqual({
         rootPath: "netapp/",
         folders: [
-          { folderPath: "thunderstrikeab/", caseId: 123 },
-          { folderPath: "thunderstrikeacb/", caseId: 1243 },
+          { folderPath: "thunderstrikeab/", caseId: 123, hasTemplates: true },
+          {
+            folderPath: "thunderstrikeacb/",
+            caseId: 1243,
+            hasTemplates: false,
+          },
         ],
       });
       expect(fetch).toHaveBeenCalledTimes(2);
@@ -2606,6 +2621,279 @@ describe("gateway apis", () => {
       expect(consoleWarnMock).toHaveBeenCalledWith(
         "Logging telemetry event failed due to network or auth error:",
         Error("network down"),
+      );
+    });
+  });
+
+  describe("createEgressCase", () => {
+    it("createEgressCase -should handle when post request is successful", async () => {
+      (v4 as any).mockReturnValue("id_123");
+      (getAccessToken as any).mockResolvedValue("access_token");
+      (fetch as any).mockResolvedValue({
+        ok: true,
+      });
+
+      await createEgressCase({ caseId: 123 });
+      expect(fetch).toHaveBeenCalledWith(
+        `gateway_url/api/v1/egress/workspaces`,
+        expect.objectContaining({
+          method: "POST",
+          credentials: "include",
+          headers: {
+            Authorization: "Bearer access_token",
+            "Correlation-Id": "id_123",
+          },
+        }),
+      );
+    });
+
+    it("createEgressCase - should throw an ApiError when fetch fails", async () => {
+      (v4 as any).mockReturnValue("id_123");
+      (getAccessToken as any).mockResolvedValue("access_token");
+      (fetch as any).mockResolvedValue({
+        ok: false,
+        status: 500,
+        statusText: "Internal Server Error",
+      });
+
+      await expect(createEgressCase({ caseId: 123 })).rejects.toThrow(
+        new ApiError(
+          `create egress case api failed`,
+          "gateway_url/api/v1/egress/workspaces",
+          {
+            status: 500,
+            statusText: "Internal Server Error",
+          },
+          {
+            correlationId: "id_123",
+          },
+        ),
+      );
+
+      expect(fetch).toHaveBeenCalledWith(
+        `gateway_url/api/v1/egress/workspaces`,
+        expect.objectContaining({
+          method: "POST",
+          credentials: "include",
+          headers: {
+            Authorization: "Bearer access_token",
+            "Correlation-Id": "id_123",
+          },
+        }),
+      );
+    });
+
+    it("createEgressCase - catches network/auth errors and warns", async () => {
+      (globalThis.fetch as any).mockRejectedValue(new Error("network down"));
+      await expect(createEgressCase({ caseId: 123 })).rejects.toThrow(
+        "API Error: gateway_url/api/v1/egress/workspaces returned 0 Network Error - Error: network down",
+      );
+    });
+  });
+
+  describe("createSharedDriveFolder", () => {
+    it("createSharedDriveFolder -should handle when post request is successful", async () => {
+      (v4 as any).mockReturnValue("id_123");
+      (getAccessToken as any).mockResolvedValue("access_token");
+      (fetch as any).mockResolvedValue({
+        ok: true,
+      });
+
+      await createSharedDriveFolder(123, {
+        templateFolderPath: "abc",
+        parentFolderPath: "def",
+      });
+      expect(fetch).toHaveBeenCalledWith(
+        "gateway_url/api/v1/cases/123/netapp/provision",
+        expect.objectContaining({
+          method: "POST",
+          credentials: "include",
+          headers: {
+            Authorization: "Bearer access_token",
+            "Correlation-Id": "id_123",
+          },
+        }),
+      );
+    });
+
+    it("createSharedDriveFolder - should throw an ApiError when fetch fails", async () => {
+      (v4 as any).mockReturnValue("id_123");
+      (getAccessToken as any).mockResolvedValue("access_token");
+      (fetch as any).mockResolvedValue({
+        ok: false,
+        status: 500,
+        statusText: "Internal Server Error",
+      });
+
+      await expect(
+        createSharedDriveFolder(123, {
+          templateFolderPath: "abc",
+          parentFolderPath: "def",
+        }),
+      ).rejects.toThrow(
+        new ApiError(
+          `create shared drive folder api failed`,
+          "gateway_url/api/v1/cases/123/netapp/provision",
+          {
+            status: 500,
+            statusText: "Internal Server Error",
+          },
+          {
+            correlationId: "id_123",
+          },
+        ),
+      );
+
+      expect(fetch).toHaveBeenCalledWith(
+        `gateway_url/api/v1/cases/123/netapp/provision`,
+        expect.objectContaining({
+          method: "POST",
+          credentials: "include",
+          headers: {
+            Authorization: "Bearer access_token",
+            "Correlation-Id": "id_123",
+          },
+        }),
+      );
+    });
+
+    it("createSharedDriveFolder - catches network/auth errors and warns", async () => {
+      (globalThis.fetch as any).mockRejectedValue(new Error("network down"));
+      await expect(
+        createSharedDriveFolder(123, {
+          templateFolderPath: "abc",
+          parentFolderPath: "def",
+        }),
+      ).rejects.toThrow(
+        "API Error: gateway_url/api/v1/cases/123/netapp/provision returned 0 Network Error - Error: network down",
+      );
+    });
+  });
+
+  describe("getSharedDriveTemplates", () => {
+    it("getSharedDriveTemplates - should return shared drive templates when fetch is successful", async () => {
+      const mockData = {
+        parentFolderPath: "RCF/Cases/",
+        templates: [
+          {
+            name: "Standard Case",
+            path: "RCF/Cases/_templates/Standard Case/",
+          },
+          {
+            name: "Terrorism Case",
+            path: "RCF/Cases/_templates/Terrorism Case/",
+          },
+          { name: "Test Case", path: "RCF/Cases/_templates/Test Case/" },
+        ],
+        count: 3,
+      };
+
+      (v4 as any).mockReturnValue("id_123");
+      (getAccessToken as any).mockResolvedValue("access_token");
+      (fetch as any).mockResolvedValue({
+        ok: true,
+        json: async () => mockData,
+      });
+
+      const result = await getSharedDriveTemplates("abc");
+      expect(result).toEqual(mockData);
+      expect(fetch).toHaveBeenCalledWith(
+        `gateway_url/api/v1/netapp/templates?path=abc`,
+        expect.objectContaining({
+          method: "GET",
+          credentials: "include",
+          headers: {
+            Authorization: "Bearer access_token",
+            "Correlation-Id": "id_123",
+          },
+        }),
+      );
+    });
+
+    it("getSharedDriveTemplates - should throw an ApiError when fetch fails", async () => {
+      (v4 as any).mockReturnValue("id_123");
+      (getAccessToken as any).mockResolvedValue("access_token");
+      (fetch as any).mockResolvedValue({
+        ok: false,
+        status: 500,
+        statusText: "Internal Server Error",
+      });
+
+      await expect(getSharedDriveTemplates("abc")).rejects.toThrow(
+        new ApiError(
+          `Getting shared drive templates failed`,
+          "gateway_url/api/v1/netapp/templates?path=abc",
+          {
+            status: 500,
+            statusText: "Internal Server Error",
+          },
+          {
+            correlationId: "id_123",
+          },
+        ),
+      );
+      expect(fetch).toHaveBeenCalledWith(
+        `gateway_url/api/v1/netapp/templates?path=abc`,
+        expect.objectContaining({
+          method: "GET",
+          credentials: "include",
+          headers: {
+            Authorization: "Bearer access_token",
+            "Correlation-Id": "id_123",
+          },
+        }),
+      );
+    });
+
+    it("getSharedDriveTemplates - invalid json response throws error", async () => {
+      (globalThis.fetch as any).mockResolvedValue({
+        ok: true,
+        status: 200,
+        statusText: "OK",
+        json: () =>
+          Promise.reject(new SyntaxError("Unexpected token < in JSON")),
+      });
+
+      await expect(getSharedDriveTemplates("abc")).rejects.toBeInstanceOf(
+        ApiError,
+      );
+      await expect(getSharedDriveTemplates("abc")).rejects.toThrow(
+        "API Error: gateway_url/api/v1/netapp/templates?path=abc returned 200 OK - SyntaxError: Unexpected token < in JSON",
+      );
+    });
+
+    it("getSharedDriveTemplates -  response schema validation failed", async () => {
+      const mockData = {
+        parentFolderPath1: "RCF/Cases/",
+        templates: [
+          {
+            name: "Standard Case",
+            path: "RCF/Cases/_templates/Standard Case/",
+          },
+        ],
+        count: 3,
+      };
+      (v4 as any).mockReturnValue("id_123");
+      (getAccessToken as any).mockResolvedValue("access_token");
+      (fetch as any).mockResolvedValue({
+        ok: true,
+        status: 200,
+        statusText: "OK",
+        json: async () => mockData,
+      });
+
+      await expect(getSharedDriveTemplates("abc")).rejects.toBeInstanceOf(
+        ApiError,
+      );
+      await expect(getSharedDriveTemplates("abc")).rejects.toThrow(
+        "API Error: gateway_url/api/v1/netapp/templates?path=abc returned 200 OK - response schema validation failed",
+      );
+    });
+
+    it("getSharedDriveTemplates - catches network/auth errors and warns", async () => {
+      (globalThis.fetch as any).mockRejectedValue(new Error("network down"));
+      await expect(getSharedDriveTemplates("abc")).rejects.toThrow(
+        "API Error: gateway_url/api/v1/netapp/templates?path=abc returned 0 Network Error - Error: network down",
       );
     });
   });

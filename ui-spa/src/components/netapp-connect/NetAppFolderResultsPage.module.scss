@@ -1,8 +1,7 @@
 .mainContainer {
   margin-top: 0.5rem;
-
-  & :global(.govuk-table__cell:last-child) {
-    text-align: right;
+  & :global(.govuk-table__cell) {
+    vertical-align: middle;
   }
   .tableContainer {
     max-width: 100%;

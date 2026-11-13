@@ -3,10 +3,7 @@ import { useEffect, useContext } from "react";
 import CaseSearchPage from "./search-page";
 import CaseSearchResultPage from "./search-result-page";
 import EgressPage from "./egress-connect";
-import EgressConnectFailurePage from "./egress-connect/EgressConnectFailurePage";
 import NetAppPage from "./netapp-connect";
-import NetAppConnectConfirmationPage from "./netapp-connect/NetAppConnectConfirmationPage";
-import NetAppConnectFailurePage from "./netapp-connect/NetAppConnectFailurePage";
 import CaseManagementPage from "./case-management";
 import MetaDataErrorPage from "./case-management/transfer-materials/MetaDataErrorPage";
 import FolderAccessErrorPage from "./case-management/transfer-materials/FolderAccessErrorPage";
@@ -16,16 +13,18 @@ import DisconnectConfirmationPage from "./case-management/disconnect/DisconnectC
 import DisconnectSuccessPage from "./case-management/disconnect/DisconnectSuccessPage";
 import DisconnectFailurePage from "./case-management/disconnect/DisconnectFailurePage";
 import TransferDestinationPage from "./case-management/transfer-materials/TransferDestinationPage";
-import CaseRegistrationEgressConnectFailurePage from "./case-registration/manage-egress/CaseRegistrationEgressConnectFailurePage";
 import ManageEgressPage from "./case-registration/manage-egress";
 import EgressConnectedConfirmationPage from "./case-registration/manage-egress/EgressConnectedConfirmationPage";
 import ManageSharedDrivePage from "./case-registration/manage-shared-drive";
+import CaseRegistrationFinalConfirmationPage from "./case-registration/final-confirmation";
+import CreateConnectErrorPage from "./common/CreateConnectPageError";
 import MaintenancePage from "./maintenance-page";
 import UnAuthorisedPage from "./unauthorised";
 import { MainStateContext } from "../providers/MainStateProvider";
 import { useUserGroupsFeatureFlag } from "../common/hooks/useUserGroupsFeatureFlag";
 
 import ProtectedRoutes from "./ProtectedRoutes";
+import SharedDriveTemplatePage from "./case-registration/manage-shared-drive/SharedDriveTemplatePage";
 
 const AppRoutes = () => {
   const navigate = useNavigate();
@@ -93,18 +92,10 @@ const AppRoutes = () => {
         <Route path="/case/:caseId/egress-connect" element={<EgressPage />} />
 
         <Route
-          path="/case/:caseId/egress-connect/error"
-          element={<EgressConnectFailurePage />}
+          path="/case/:caseId/shared-drive-connect"
+          element={<NetAppPage />}
         />
-        <Route path="/case/:caseId/netapp-connect" element={<NetAppPage />} />
-        <Route
-          path="/case/:caseId/netapp-connect/confirmation"
-          element={<NetAppConnectConfirmationPage />}
-        />
-        <Route
-          path="/case/:caseId/netapp-connect/error"
-          element={<NetAppConnectFailurePage />}
-        />
+
         <Route
           path="/case/:caseId/case-management/egress-connection-error"
           element={<MetaDataErrorPage />}
@@ -134,8 +125,34 @@ const AppRoutes = () => {
           element={<EgressPage />}
         />
         <Route
-          path="/case-registration/egress-connect-error"
-          element={<CaseRegistrationEgressConnectFailurePage />}
+          path="/case/:caseId/connect-egress-case-error"
+          element={<CreateConnectErrorPage type="connect-egress-case-error" />}
+        />
+        <Route
+          path="/case-registration/connect-egress-case-error"
+          element={<CreateConnectErrorPage type="connect-egress-case-error" />}
+        />
+        <Route
+          path="/case-registration/create-egress-case-error"
+          element={<CreateConnectErrorPage type="create-egress-case-error" />}
+        />
+        <Route
+          path="/case/:caseId/connect-shared-drive-folder-error"
+          element={
+            <CreateConnectErrorPage type="connect-shared-drive-folder-error" />
+          }
+        />
+        <Route
+          path="/case-registration/connect-shared-drive-folder-error"
+          element={
+            <CreateConnectErrorPage type="connect-shared-drive-folder-error" />
+          }
+        />
+        <Route
+          path="/case-registration/create-shared-drive-folder-error"
+          element={
+            <CreateConnectErrorPage type="create-shared-drive-folder-error" />
+          }
         />
         <Route
           path="/case-registration/egress-connect-confirmation"
@@ -144,6 +161,23 @@ const AppRoutes = () => {
         <Route
           path="/case-registration/manage-set-up-shared-drive"
           element={<ManageSharedDrivePage />}
+        />
+
+        <Route
+          path="/case-registration/shared-drive-connect"
+          element={<NetAppPage />}
+        />
+        <Route
+          path="/case-registration/shared-drive-create"
+          element={<NetAppPage />}
+        />
+        <Route
+          path="/case-registration/shared-drive-templates"
+          element={<SharedDriveTemplatePage />}
+        />
+        <Route
+          path="/case-registration/case-registration-final-confirmation"
+          element={<CaseRegistrationFinalConfirmationPage />}
         />
       </Route>
 
